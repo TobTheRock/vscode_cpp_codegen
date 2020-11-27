@@ -1,10 +1,11 @@
 import {ISerializable, IDeserializable} from "../io/ISerial";
 
-export interface IFunction extends ISerializable,IDeserializable {
-    returnVal: string;
-    arguments: string[];
-    isConst: boolean;
-    isVirtual: boolean;
+export interface IFunction extends ISerializable {
+    readonly name: string;
+    readonly returnVal: string;
+    readonly args: string;
+    readonly isConst: boolean;
+    readonly isVirtual: boolean;
 }
 
 export interface IClass extends ISerializable,IDeserializable {

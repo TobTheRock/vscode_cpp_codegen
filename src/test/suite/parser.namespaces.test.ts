@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import {Parser} from '../../Parser';
 import {INamespace} from '../../cpptypes';
 
-suite('Parser test', () => {
+suite('Parser Namespace Tests', () => {
 	// vscode.window.showInformationMessage('Start all tests.');
 
 	test('ParseEmptyNamespace', (done) => {
