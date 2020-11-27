@@ -1,6 +1,5 @@
-import {FileBase} from "./FileBase"
-import {IDeserializable} from "../io/ISerial";
-import {Namespace} from "../cpptypes/Namespace";
+import {FileBase} from "./FileBase";
+import {INamespace} from "../cpptypes";
 
 
 import * as path from 'path';
@@ -33,5 +32,5 @@ export class CppHeaderFile extends FileBase
     {
         //Parser find name space
     }
-    private _namespaces: Namespace[]; 
+    private _namespaces: INamespace[]; 
 } 

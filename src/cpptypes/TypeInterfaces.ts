@@ -13,3 +13,10 @@ export interface IClass extends ISerializable,IDeserializable {
     protectedFunctions: IFunction[];
     inheritance: string[]; // TODO -> IClass?
 }
+
+export interface INamespace extends ISerializable,IDeserializable {
+    readonly name:string;
+    readonly classes:IClass[]; 
+    readonly functions:IFunction[];
+    readonly subnamespaces:INamespace[];
+}

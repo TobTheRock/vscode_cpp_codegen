@@ -1,19 +1,26 @@
-import { IClass, IFunction } from "./interfaces";
-import {ISerializable, IDeserializable} from "../io/ISerial";
+import { IClass, IFunction, INamespace } from "./TypeInterfaces";
 
-export class Namespace implements ISerializable,IDeserializable {
+export class Namespace implements INamespace {
     
-    constructor(name:string) {
+    constructor(name:string, subnamespaces:INamespace[] = []) {
         this.name = name;
         this.classes = [];
         this.functions = [];
+        this.subnamespaces = subnamespaces;
     }
-    serialize () => string;
-    deserialize (fileContent: string){
+
+    serialize () {
+        return "";
+    }
+
+    deserialize (content: string) {
+
+        //TODO Parser.findName
 
     }
 
     name:string;
     classes:IClass[]; 
     functions:IFunction[];
+    subnamespaces:INamespace[];
 }
