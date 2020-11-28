@@ -1,4 +1,6 @@
-import {ISerializable, IDeserializable} from "../io/ISerial";
+import {ISerializable, IDeserializable, ISerializableMode} from "../io/ISerial";
+
+export {ISerializableMode};
 
 export interface IFunction extends ISerializable {
     readonly name: string;
