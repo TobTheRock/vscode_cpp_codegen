@@ -16,7 +16,7 @@ suite('Parser Functions Tests', () => {
 void fncName (int argument);
 		`
 		;
-		let functions:IFunction[] = Parser.parseStandaloneFunction(testContent);
+		let functions:IFunction[] = Parser.parseStandaloneFunctiones(testContent);
 
 		assert.strictEqual(functions.length,1);
 		assert.strictEqual(functions[0].name,"fncName");
@@ -32,7 +32,7 @@ void fncName (int argument,
 	std::shared_ptr<XYZ> argument2);
 		`
 		;
-		let functions:IFunction[] = Parser.parseStandaloneFunction(testContent);
+		let functions:IFunction[] = Parser.parseStandaloneFunctiones(testContent);
 
 		assert.strictEqual(functions.length,1);
 		assert.strictEqual(functions[0].name,"fncName");
@@ -49,7 +49,7 @@ std::shared_ptr<XYZ> fncName2 (int args2,
 	void* arg3);
 		`
 		;
-		let functions:IFunction[] = Parser.parseStandaloneFunction(testContent);
+		let functions:IFunction[] = Parser.parseStandaloneFunctiones(testContent);
 
 		assert.strictEqual(functions.length,2);
 		assert.strictEqual(functions[0].name,"fncName");
@@ -68,7 +68,7 @@ const XYZ* fncName (int arg1,
 	void* arg2);
 		`
 		;
-		let functions:IFunction[] = Parser.parseStandaloneFunction(testContent);
+		let functions:IFunction[] = Parser.parseStandaloneFunctiones(testContent);
 
 		assert.strictEqual(functions.length,1);
 		assert.strictEqual(functions[0].name,"fncName");

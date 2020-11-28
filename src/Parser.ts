@@ -1,6 +1,4 @@
-import { IFunction, INamespace } from "./cpptypes";
-import { Namespace } from "./cpptypes/Namespace";
-import { StandaloneFunction } from "./cpptypes/StandaloneFunction";
+import * as cpptypes from "./cpptypes";
 
 
 class NamespaceMatch {
@@ -19,12 +17,13 @@ class NamespaceMatch {
     }
 
     // static readonly REGEX_STR:string = 'namespace ([^\\s]*)\\s*{([\\s\\S]*namespace [^\\s]*\\s*{[\\s\\S]*})*((?!namespace)[\\s\\S]*)}';
-    static readonly REGEX_STR:string = 'namespace ([^\\s]*)\\s*{([\\s\\S]*namespace [^\\s]*\\s*{[\\s\\S]*})*((?:(?!namespace)[\\s\\S])*)}';
+    static readonly REGEX_STR:string = 'namespace (\\S*)\\s*{([\\s\\S]*namespace \\S*\\s*{[\\s\\S]*})*((?:(?!namespace)[\\s\\S])*)}';
     static readonly NOF_GROUPMATCHES = 3;
-    nameMatch:string;
-    namespaceMatch:string;
-    contentMatch:string;
+    readonly nameMatch:string;
+    readonly namespaceMatch:string;
+    readonly contentMatch:string;
 }
+
 class StandaloneFunctionMatch {
     constructor(regexMatchArr:RegExpExecArray) {
         if (regexMatchArr.length-1 !== NamespaceMatch.NOF_GROUPMATCHES) {
@@ -44,19 +43,46 @@ class StandaloneFunctionMatch {
         this.argsMatch = (regexMatchArr[3]) ? regexMatchArr[3] : "";
     }
 
-    //TODO default args with initializers
-    static readonly REGEX_STR:string = '((?:const )?[\\S]*)[\\s]*([\\S]*)[\\s]*\\(([\\s\\S]*?)\\);';
+    static readonly REGEX_STR:string = '((?:const )?\\S*)\\s*(\\S*)\\s*\\(([\\s\\S]*?)\\)\\s*;';
     static readonly NOF_GROUPMATCHES = 3;
 
-    returnValMatch:string;
-    nameMatch:string;
-    argsMatch:string;
+    readonly returnValMatch:string;
+    readonly nameMatch:string;
+    readonly argsMatch:string;
+}
+
+class ClassMatch {
+    constructor(regexMatchArr:RegExpExecArray) {
+        if (regexMatchArr.length-1 !== NamespaceMatch.NOF_GROUPMATCHES) {
+            throw new Error("ParserError: Unexpected number of matches!");  
+        }
+        else if (regexMatchArr[1] === undefined) {
+            throw new Error("ParserError: No function return type, this should not happen!");               
+        }
+
+        else if (regexMatchArr[2] === undefined) {
+            throw new Error("ParserError: No function name, this should not happen!");               
+        }
+
+        this.nameMatch = regexMatchArr[1];
+
+        this.bodyMatch = (regexMatchArr[2]) ? regexMatchArr[2] : "";
+    }
+
+    // TODO: Inheritance
+    private static readonly classBeginRegex:string = 'class\\s+([\\S]+)\\s*{';
+    private static readonly classNonNestedBodyRegex:string = '((?!' + ClassMatch.classBeginRegex + ')[\\s\\S])*?}\\s*;';
+    static readonly REGEX_STR:string = ClassMatch.classBeginRegex + ClassMatch.classNonNestedBodyRegex;
+    static readonly NOF_GROUPMATCHES = 2;
+
+    readonly nameMatch:string;
+    readonly bodyMatch:string;
 }
 
 export abstract class Parser {
 
     static parseNamespaces(content:string) {
-        let namespaces:INamespace[] = [];
+        let namespaces:cpptypes.INamespace[] = [];
 
         Parser.findAllRegexMatches(
             NamespaceMatch.REGEX_STR,
@@ -65,13 +91,13 @@ export abstract class Parser {
                 let match = new NamespaceMatch (rawMatch);
 
                 //TODO avoid recursion?
-                let subNamespaces:INamespace[] = Parser.parseNamespaces(match.namespaceMatch);
-                let newNamespace =new Namespace(match.nameMatch, subNamespaces);
+                let subNamespaces:cpptypes.INamespace[] = Parser.parseNamespaces(match.namespaceMatch);
+                let newNamespace =new cpptypes.Namespace(match.nameMatch, subNamespaces);
                 try {
                     newNamespace.deserialize(match.contentMatch);
                     namespaces.push(newNamespace);
                 } catch (error) {
-                    console.log(error, "Failed to parse namespace contents, skipping!");
+                    console.log(error, "Failed to parse namespace contents, skipping!"); // TODO API error? e.g showErrorMessage
                 }
             }
         );
@@ -79,21 +105,44 @@ export abstract class Parser {
         return namespaces;
     }
 
-    static parseStandaloneFunction(content:string) {
-        let standaloneFunctions:IFunction[] = [];
+    static parseStandaloneFunctiones(content:string) {
+        let standaloneFunctions:cpptypes.IFunction[] = [];
 
         Parser.findAllRegexMatches(
             StandaloneFunctionMatch.REGEX_STR,
             content,
             (rawMatch) => {
                 let match = new StandaloneFunctionMatch(rawMatch);
-                standaloneFunctions.push(new StandaloneFunction(match.nameMatch, 
+                standaloneFunctions.push(new cpptypes.StandaloneFunction(match.nameMatch, 
                     match.returnValMatch, 
                     match.argsMatch));
             }
         );
 
         return standaloneFunctions;
+    }
+    
+    static parseGeneralClasses(content:string) {
+        let classes:cpptypes.IClass[] = [];
+
+        Parser.findAllRegexMatches(
+            ClassMatch.REGEX_STR,
+            content,
+            (rawMatch) => {
+                let match = new ClassMatch(rawMatch);
+                let newClass = new cpptypes.GeneralClass(match.nameMatch);
+                try {
+                    newClass.deserialize(match.bodyMatch);
+                    classes.push(newClass);
+                } catch (error) {
+                    console.log(error, "Failed to parse class contents, skipping!");
+                }
+
+                //TODO nested classes -> rm from string and search again ? -> Howto add them to belonging class?
+            }
+        );
+
+        return classes;
     }
 
     private static findAllRegexMatches(regex:string, 

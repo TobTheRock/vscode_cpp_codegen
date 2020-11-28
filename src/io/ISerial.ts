@@ -12,5 +12,5 @@ export interface ISerializable
 
 export interface IDeserializable
 {
-    deserialize: (fileContent:string) => void;
+    deserialize: (content:string) => void;
 }
