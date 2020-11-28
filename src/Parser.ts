@@ -45,7 +45,7 @@ class StandaloneFunctionMatch {
     }
 
     //TODO default args with initializers
-    static readonly REGEX_STR:string = '([\\S]*)[\\s]*([\\S]*)[\\s]*\\(([\\s\\S]*?)\\);';
+    static readonly REGEX_STR:string = '((?:const )?[\\S]*)[\\s]*([\\S]*)[\\s]*\\(([\\s\\S]*?)\\);';
     static readonly NOF_GROUPMATCHES = 3;
 
     returnValMatch:string;
