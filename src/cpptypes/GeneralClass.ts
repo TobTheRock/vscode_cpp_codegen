@@ -1,4 +1,5 @@
 import { IClass, IFunction, ISerializableMode } from "./TypeInterfaces";
+import {Parser} from "../Parser";
 
 
 export class GeneralClass implements IClass {
@@ -10,6 +11,10 @@ export class GeneralClass implements IClass {
 
     deserialize (content: string) {
         //TODO Member functions etc
+        let privateContent:string = Parser.parseClassPrivateScope(content);
+        this.privateFunctions = Parser.parseClassMemberFunctions(privateContent);
+
+
     }
 
 
@@ -19,9 +24,9 @@ export class GeneralClass implements IClass {
         return serial;
     }
 
-    readonly inheritance: string[] = []; // TODO
-    readonly publicFunctions:IFunction[] = [];
-    readonly privateFunctions:IFunction[] = [];
-    readonly nestedClasses: IClass[] = [];
-    readonly protectedFunctions:IFunction[] = [];
+    inheritance: string[] = []; // TODO
+    publicFunctions:IFunction[] = [];
+    privateFunctions:IFunction[] = [];
+    nestedClasses: IClass[] = [];
+    protectedFunctions:IFunction[] = [];
 }

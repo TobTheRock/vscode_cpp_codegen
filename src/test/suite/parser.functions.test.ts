@@ -72,7 +72,6 @@ const XYZ* fncName (int arg1,
 
 		assert.strictEqual(functions.length,1);
 		assert.strictEqual(functions[0].name,"fncName");
-		assert.strictEqual(functions[0].name,"fncName");
 		assert.strictEqual(functions[0].args, "int arg1,\n\tvoid* arg2");
 		assert.strictEqual(functions[0].returnVal, "const XYZ*");
 		done();

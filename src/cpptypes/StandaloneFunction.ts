@@ -30,9 +30,6 @@ export class StandaloneFunction implements IFunction {
         return serial;
     }
 
-    readonly isConst: boolean = false;
-    readonly isVirtual: boolean = false;
-
     private getHeading() {
         return this.returnVal + " " + this.name + " (" + this.args + " )";
     }

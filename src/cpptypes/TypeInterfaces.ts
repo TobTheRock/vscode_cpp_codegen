@@ -6,8 +6,6 @@ export interface IFunction extends ISerializable {
     readonly name: string;
     readonly returnVal: string;
     readonly args: string;
-    readonly isConst: boolean; // Todo move to impl?
-    readonly isVirtual: boolean; // Todo move to impl?
 }
 
 export interface IClass extends ISerializable,IDeserializable {

@@ -5,8 +5,13 @@ export class MemberFunction implements IFunction {
                 public readonly returnVal:string, 
                 public readonly args:string,       
                 public readonly isConst: boolean,
-                public readonly isVirtual: boolean
+                public readonly isVirtual: boolean,
+                public readonly isPure: boolean
                 ) {
+
+        if (!(this.isPure && this.isVirtual)) {
+            throw new Error("Function is pure, but not virtual!");               
+        }
     }
 
     serialize(mode:ISerializableMode) {
@@ -37,4 +42,5 @@ export class MemberFunction implements IFunction {
     private getHeading() {
         return this.returnVal + " " + this.name + " (" + this.args + " )";
     }
+
 }

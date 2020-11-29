@@ -79,9 +79,99 @@ class ClassMatch {
     readonly bodyMatch:string;
 }
 
+class ClassPublicScopeMatch {
+
+    constructor(regexMatchArr:RegExpExecArray) {
+        if (regexMatchArr.length-1 !== NamespaceMatch.NOF_GROUPMATCHES) {
+            throw new Error("ParserError: Unexpected number of matches!");  
+        }
+
+        this.scopeContent = (regexMatchArr[1]) ? regexMatchArr[1] : "";
+    }
+
+    static readonly REGEX_STR:string = "public:((?!private:|protected)[\\s\\S])*";
+    static readonly NOF_GROUPMATCHES = 1;
+
+    readonly scopeContent:string;
+}
+
+class MemberFunctionMatch {
+    constructor(regexMatchArr:RegExpExecArray) {
+        if (regexMatchArr.length-1 !== NamespaceMatch.NOF_GROUPMATCHES) {
+            throw new Error("ParserError: Unexpected number of matches!");  
+        }
+        else if (regexMatchArr[1] === undefined) {
+            throw new Error("ParserError: No function return type, this should not happen!");               
+        }
+
+        else if (regexMatchArr[2] === undefined) {
+            throw new Error("ParserError: No function name, this should not happen!");               
+        }
+
+        this.virtualMatch = (regexMatchArr[1]) ? true : false;
+        this.returnValMatch = regexMatchArr[2];
+        this.nameMatch = regexMatchArr[3];
+
+        this.argsMatch = (regexMatchArr[4]) ? regexMatchArr[4] : "";
+
+        this.constMatch = (regexMatchArr[5]) ? true : false;
+        this.pureMatch = (regexMatchArr[6]) ? true : false;
+
+    }
+
+    static readonly REGEX_STR:string = '(virtual)?\\s*((?:const\\s+)?\\S+)\\s+(\\S+)\\s*\\(([\\s\\S]*?)\\)\\s*(const)?\\s*(=0)?\\s*;';
+    static readonly NOF_GROUPMATCHES = 6;
+
+    readonly virtualMatch:boolean;
+    readonly returnValMatch:string;
+    readonly nameMatch:string;
+    readonly argsMatch:string;
+    readonly constMatch:boolean;
+    readonly pureMatch:boolean;
+}
+
+
+
 export abstract class Parser {
 
-    static parseNamespaces(content:string) {
+    static parseClassPrivateScope(content:string ): string {
+        let publicOrPrivateRegexMatcher:RegExp = /(?:public:|protected:)((?!private:)[\s\S])*/g;
+        let privateScope = content.replace(publicOrPrivateRegexMatcher, "");
+        return privateScope;
+    }
+
+    static parseClassPublicScope(content:string ): string {
+        let publicScope = "";
+        Parser.findAllRegexMatches(ClassPublicScopeMatch.REGEX_STR, content,
+            (rawMatch) => {
+                let match = new ClassPublicScopeMatch(rawMatch);
+                publicScope += match.scopeContent;
+            }
+            );
+
+
+        return publicScope;
+    }
+
+    static parseClassMemberFunctions(content: string): cpptypes.IFunction[] {
+        let memberFunctions:cpptypes.IFunction[] = [];
+        Parser.findAllRegexMatches(MemberFunctionMatch.REGEX_STR, content,
+            (rawMatch) => {
+                let match = new MemberFunctionMatch(rawMatch);              
+                try {  
+                    let newFunc = new cpptypes.MemberFunction(match.nameMatch, match.returnValMatch, match.argsMatch, 
+                        match.constMatch, match.virtualMatch, match.pureMatch);
+                    memberFunctions.push(newFunc);
+                } catch (error) {
+                    console.log(error, "Failed to create member function, skipping!");
+                }
+            }
+            );
+
+        return memberFunctions;
+    }
+
+    static parseNamespaces(content:string): cpptypes.INamespace[]  {
         let namespaces:cpptypes.INamespace[] = [];
 
         Parser.findAllRegexMatches(
@@ -105,7 +195,7 @@ export abstract class Parser {
         return namespaces;
     }
 
-    static parseStandaloneFunctiones(content:string) {
+    static parseStandaloneFunctiones(content:string): cpptypes.IFunction[] {
         let standaloneFunctions:cpptypes.IFunction[] = [];
 
         Parser.findAllRegexMatches(
@@ -122,7 +212,7 @@ export abstract class Parser {
         return standaloneFunctions;
     }
     
-    static parseGeneralClasses(content:string) {
+    static parseGeneralClasses(content:string):cpptypes.IClass[] {
         let classes:cpptypes.IClass[] = [];
 
         Parser.findAllRegexMatches(
@@ -139,23 +229,36 @@ export abstract class Parser {
                 }
 
                 //TODO nested classes -> rm from string and search again ? -> Howto add them to belonging class?
+                // OR find until next class (greedy body search)
+                // then find last class in file by different regex
+                // finally parse the body recursevly
             }
         );
 
         return classes;
     }
-
+    
     private static findAllRegexMatches(regex:string, 
             content:string, 
             onMatch: (rawMatch:RegExpExecArray) => void) {
         if (!content) {
             return;
         }
-        const namespaceRegex = new RegExp(regex, 'g');
+
+        const regexMatcher = new RegExp(regex, 'g');
+        return Parser.findRegexMatches(regexMatcher, content, onMatch);
+    }
+
+    private static findRegexMatches(regexMatcher:RegExp, 
+            content:string, 
+            onMatch: (rawMatch:RegExpExecArray) => void) {
+        if (!content) {
+            return;
+        }
         let rawMatch;
-        while ((rawMatch = namespaceRegex.exec(content)) !== null) {
-            if (rawMatch.index === namespaceRegex.lastIndex) {
-                namespaceRegex.lastIndex++;
+        while ((rawMatch = regexMatcher.exec(content)) !== null) {
+            if (rawMatch.index === regexMatcher.lastIndex) {
+                regexMatcher.lastIndex++;
             }
             onMatch(rawMatch);
         }
