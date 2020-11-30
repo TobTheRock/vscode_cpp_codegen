@@ -26,7 +26,7 @@ class NamespaceMatch {
 
 class StandaloneFunctionMatch {
     constructor(regexMatchArr:RegExpExecArray) {
-        if (regexMatchArr.length-1 !== NamespaceMatch.NOF_GROUPMATCHES) {
+        if (regexMatchArr.length-1 !== StandaloneFunctionMatch.NOF_GROUPMATCHES) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
         else if (regexMatchArr[1] === undefined) {
@@ -53,7 +53,7 @@ class StandaloneFunctionMatch {
 
 class ClassMatch {
     constructor(regexMatchArr:RegExpExecArray) {
-        if (regexMatchArr.length-1 !== NamespaceMatch.NOF_GROUPMATCHES) {
+        if (regexMatchArr.length-1 !== ClassMatch.NOF_GROUPMATCHES) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
         else if (regexMatchArr[1] === undefined) {
@@ -71,7 +71,7 @@ class ClassMatch {
 
     // TODO: Inheritance
     private static readonly classBeginRegex:string = 'class\\s+([\\S]+)\\s*{';
-    private static readonly classNonNestedBodyRegex:string = '((?!' + ClassMatch.classBeginRegex + ')[\\s\\S])*?}\\s*;';
+    private static readonly classNonNestedBodyRegex:string = '((?!class\\s+[\\S]+\\s*{)[\\s\\S]*?)}\\s*;';
     static readonly REGEX_STR:string = ClassMatch.classBeginRegex + ClassMatch.classNonNestedBodyRegex;
     static readonly NOF_GROUPMATCHES = 2;
 
@@ -82,7 +82,7 @@ class ClassMatch {
 class ClassPublicScopeMatch {
 
     constructor(regexMatchArr:RegExpExecArray) {
-        if (regexMatchArr.length-1 !== NamespaceMatch.NOF_GROUPMATCHES) {
+        if (regexMatchArr.length-1 !== ClassPublicScopeMatch.NOF_GROUPMATCHES) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
 
@@ -97,7 +97,7 @@ class ClassPublicScopeMatch {
 
 class MemberFunctionMatch {
     constructor(regexMatchArr:RegExpExecArray) {
-        if (regexMatchArr.length-1 !== NamespaceMatch.NOF_GROUPMATCHES) {
+        if (regexMatchArr.length-1 !== MemberFunctionMatch.NOF_GROUPMATCHES) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
         else if (regexMatchArr[1] === undefined) {
