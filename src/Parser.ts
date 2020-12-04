@@ -1,5 +1,7 @@
 import * as cpptypes from "./cpptypes";
+import { IFunction } from "./cpptypes";
 
+// TODO Error handling: do try catch in parser or move it to a higher level (prefered so we can catch errors in deserialze functions)?
 
 class NamespaceMatch {
     constructor(regexMatchArr:RegExpExecArray) {
@@ -100,11 +102,11 @@ class MemberFunctionMatch {
         if (regexMatchArr.length-1 !== MemberFunctionMatch.NOF_GROUPMATCHES) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
-        else if (regexMatchArr[1] === undefined) {
+        else if (regexMatchArr[2] === undefined) {
             throw new Error("ParserError: No function return type, this should not happen!");               
         }
 
-        else if (regexMatchArr[2] === undefined) {
+        else if (regexMatchArr[3] === undefined) {
             throw new Error("ParserError: No function name, this should not happen!");               
         }
 
@@ -117,9 +119,15 @@ class MemberFunctionMatch {
         this.constMatch = (regexMatchArr[5]) ? true : false;
         this.pureMatch = (regexMatchArr[6]) ? true : false;
 
+        if (!this.virtualMatch && this.pureMatch) {
+           throw new Error("ParserError: Invalid specifier combination: '=0' missing virtual for function: " + this.nameMatch);
+           return;
+        }
+
     }
 
-    static readonly REGEX_STR:string = '(virtual)?\\s*((?:const\\s+)?\\S+)\\s+(\\S+)\\s*\\(([\\s\\S]*?)\\)\\s*(const)?\\s*(=0)?\\s*;';
+    // TODO static, split up regex to make it more readable
+    static readonly REGEX_STR:string = '(virtual)?\\s*((?:const\\s+)?\\S+)\\s+(\\S+)\\s*\\(([\\s\\S]*?)\\)\\s*(const)?\\s*(=\\s*0)?\\s*;';
     static readonly NOF_GROUPMATCHES = 6;
 
     readonly virtualMatch:boolean;
@@ -157,14 +165,25 @@ export abstract class Parser {
         let memberFunctions:cpptypes.IFunction[] = [];
         Parser.findAllRegexMatches(MemberFunctionMatch.REGEX_STR, content,
             (rawMatch) => {
-                let match = new MemberFunctionMatch(rawMatch);              
-                try {  
-                    let newFunc = new cpptypes.MemberFunction(match.nameMatch, match.returnValMatch, match.argsMatch, 
-                        match.constMatch, match.virtualMatch, match.pureMatch);
-                    memberFunctions.push(newFunc);
-                } catch (error) {
-                    console.log(error, "Failed to create member function, skipping!");
+                let match = new MemberFunctionMatch(rawMatch);        
+
+                let newFunc:IFunction;
+                if (match.virtualMatch) {
+                    if (match.pureMatch) {
+                        newFunc = new cpptypes.PureVirtualMemberFunction(match.nameMatch, match.returnValMatch,
+                             match.argsMatch, match.constMatch);
+                    }
+                    else {
+                        newFunc = new cpptypes.VirtualMemberFunction(match.nameMatch, match.returnValMatch,
+                             match.argsMatch, match.constMatch);
+                    }
                 }
+                else {
+                    newFunc = new cpptypes.MemberFunction(match.nameMatch, match.returnValMatch,
+                        match.argsMatch, match.constMatch);
+                }
+
+                memberFunctions.push(newFunc);
             }
             );
 

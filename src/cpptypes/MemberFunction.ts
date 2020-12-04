@@ -1,24 +1,18 @@
-import { IFunction, ISerializableMode } from "./TypeInterfaces";
+import { IFunction,  SerializableMode} from "./TypeInterfaces";
 
 export class MemberFunction implements IFunction {
     constructor(public readonly name:string, 
                 public readonly returnVal:string, 
                 public readonly args:string,       
-                public readonly isConst: boolean,
-                public readonly isVirtual: boolean,
-                public readonly isPure: boolean
-                ) {
+                public readonly isConst: boolean
+                ) {}
 
-        if (!(this.isPure && this.isVirtual)) {
-            throw new Error("Function is pure, but not virtual!");               
-        }
-    }
-
-    serialize(mode:ISerializableMode) {
+    serialize(mode:SerializableMode) {
         let serial = "";
         
         switch (mode) {
-            case ISerializableMode.Source:
+            //TODO for source we need the class scope?!
+            case SerializableMode.Source:
                 serial = this.getHeading() + " {\n";
                 if (this.returnVal !== "void") {
                     serial = serial + this.returnVal + " returnValue;\n return returnValue;\n";
@@ -26,8 +20,7 @@ export class MemberFunction implements IFunction {
                 serial += "}";
                 break;
             
-            case ISerializableMode.InterfaceHeader:
-            case ISerializableMode.ImplHeader:
+            case SerializableMode.Header:
                 serial = this.getHeading() + ";";
                 break;
 
@@ -39,8 +32,73 @@ export class MemberFunction implements IFunction {
     }
 
 
-    private getHeading() {
-        return this.returnVal + " " + this.name + " (" + this.args + " )";
+    protected getHeading() {
+        return this.returnVal + " " + this.name + " (" + this.args + " )" + (this.isConst? " const" : "");
+    }
+}
+
+export class VirtualMemberFunction extends MemberFunction {
+    constructor(name:string, 
+                returnVal:string, 
+                args:string,       
+                isConst: boolean) {
+                   super(name,returnVal,args,isConst);
+                }
+
+    serialize(mode:SerializableMode) {
+        let serial = "";
+        
+        switch (mode) {
+            
+            case SerializableMode.InterfaceHeader:
+                serial = "virtual " + super.getHeading() + " =0;";
+                break;
+
+            default:
+                serial = super.serialize(mode);
+                break;
+        }
+    
+        return serial;
     }
 
 }
+
+export class PureVirtualMemberFunction  extends MemberFunction{
+    constructor(name:string, 
+                returnVal:string, 
+                args:string,       
+                isConst: boolean) {
+                    super(name,returnVal,args,isConst);
+                }
+
+    serialize(mode:SerializableMode) {
+        let serial = "";
+        
+        switch (mode) {
+            
+            case SerializableMode.InterfaceHeader:
+                serial = "virtual " + super.getHeading() + " =0;";
+                break;
+
+            case SerializableMode.ImplHeader:
+                serial = super.getHeading() + " override;";
+                break;
+
+            case SerializableMode.ImplSource:
+                serial =  super.serialize(SerializableMode.Source);
+                break;
+
+            default:
+                serial = super.serialize(mode);
+                break;
+        }
+    
+        return serial;
+    }
+
+}
+
+
+
+//TODO STATIC

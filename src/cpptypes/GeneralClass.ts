@@ -1,4 +1,4 @@
-import { IClass, IFunction, ISerializableMode } from "./TypeInterfaces";
+import { IClass, IFunction, SerializableMode } from "./TypeInterfaces";
 import {Parser} from "../Parser";
 
 
@@ -18,7 +18,7 @@ export class GeneralClass implements IClass {
     }
 
 
-    serialize (mode:ISerializableMode) {
+    serialize (mode:SerializableMode) {
         let serial = "";
 
         return serial;

@@ -1,4 +1,4 @@
-import { IClass, IFunction, INamespace, ISerializableMode} from "./TypeInterfaces";
+import { IClass, IFunction, INamespace, SerializableMode} from "./TypeInterfaces";
 
 export class Namespace implements INamespace {
     
@@ -9,7 +9,7 @@ export class Namespace implements INamespace {
         this.subnamespaces = subnamespaces;
     }
 
-    serialize (mode:ISerializableMode) {
+    serialize (mode:SerializableMode) {
         return "";
     }
 
