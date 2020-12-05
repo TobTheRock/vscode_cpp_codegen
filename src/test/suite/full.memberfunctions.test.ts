@@ -33,7 +33,7 @@ function renderTemplate(template:string, value:any) {
 
 suite('Full Member Function Tests', () => {
 
-	describe('ParseAndSerializeSingleLineEmpty', function() {
+	describe('ParseAndSerializeSingle', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
 		const testContent = 'int fncName('+arg+');';
 		const testClassName = "TestClass";
@@ -47,7 +47,7 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.args, arg);
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, false);
-		//Serialization
+
 		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'int fncName ('+arg+');');
 		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'int TestClass::fncName ('+arg+') {\n' +
 		'int returnValue;\n return returnValue;\n}');
@@ -59,73 +59,173 @@ suite('Full Member Function Tests', () => {
 		done();
 		});
 	});			
-	
-	describe('ParseAndSerializeSingleLineWithArgs', function() {
-		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
-		let testContentSingleArg = 'int fncName('+arg+');';
 
-		done();
-		});
-	});		
-
-	describe('ParseAndSerializeSingleLineWithConstReturn', function() {
+	describe('ParseAndSerializeSingleWithConstReturn', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
-		let testContent =  "const int fncName("+arg+");";
+		let testContent =  "const int* fncName("+arg+");";
+		const testClassName = "TestClass";
+		const classNameGen = new ClassNameGenerator(testClassName, false);
+
+		let parsedFunctions = Parser.parseClassMemberFunctions(testContent, classNameGen);
+		assert.strictEqual(parsedFunctions.length, 1);
+
+		let memberFnct:MemberFunction = parsedFunctions[0] as MemberFunction;	
+		assert.strictEqual(memberFnct.name,"fncName");
+		assert.strictEqual(memberFnct.args, arg);
+		assert.strictEqual(memberFnct.returnVal, "const int*");
+		assert.strictEqual(memberFnct.isConst, false);
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'const int* fncName ('+arg+');');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'const int* TestClass::fncName ('+arg+') {\n' +
+		'const int* returnValue;\n return returnValue;\n}');
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
+
 
 		done();
 		});
 	});
 
-	describe('ParseAndSerializeSingleLineConst', function() {
+	describe('ParseAndSerializeSingleConst', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
 		let testContent =  "int fncName("+arg+") const;";
+		const testClassName = "TestClass";
+		const classNameGen = new ClassNameGenerator(testClassName, false);
+
+		let parsedFunctions = Parser.parseClassMemberFunctions(testContent, classNameGen);
+		assert.strictEqual(parsedFunctions.length, 1);
+
+		let memberFnct:MemberFunction = parsedFunctions[0] as MemberFunction;	
+		assert.strictEqual(memberFnct.name,"fncName");
+		assert.strictEqual(memberFnct.args, arg);
+		assert.strictEqual(memberFnct.returnVal, "int");
+		assert.strictEqual(memberFnct.isConst, true);
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'int fncName ('+arg+') const;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'int TestClass::fncName ('+arg+') const {\n' +
+		'int returnValue;\n return returnValue;\n}');
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
+
 
 		done();
 		});
 	});
 
-	describe('ParseAndSerializeSingleLineVirtual', function() {
+	describe('ParseAndSerializeSingleVirtual', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
 		let testContent =  "virtual int fncName("+arg+")  ;";
+		const testClassName = "TestClass";
+		const classNameGen = new ClassNameGenerator(testClassName, false);
+
+		let parsedFunctions = Parser.parseClassMemberFunctions(testContent, classNameGen);
+		assert.strictEqual(parsedFunctions.length, 1);
+
+		let memberFnct:MemberFunction = parsedFunctions[0] as MemberFunction;	
+		assert.strictEqual(memberFnct.name,"fncName");
+		assert.strictEqual(memberFnct.args, arg);
+		assert.strictEqual(memberFnct.returnVal, "int");
+		assert.strictEqual(memberFnct.isConst, false);
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'virtual int fncName ('+arg+');');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'int TestClass::fncName ('+arg+') {\n' +
+		'int returnValue;\n return returnValue;\n}');
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), 'virtual int fncName ('+arg+') =0;');
+
+
 
 		done();
 		});
 	});
 
-	describe('ParseAndSerializeSingleLineVirtualConst', function() {
+	describe('ParseAndSerializeSingleVirtualConst', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
 		let testContent =  "virtual int fncName("+arg+")   const;";
+		const testClassName = "TestClass";
+		const classNameGen = new ClassNameGenerator(testClassName, false);
 
+		let parsedFunctions = Parser.parseClassMemberFunctions(testContent, classNameGen);
+		assert.strictEqual(parsedFunctions.length, 1);
+
+		let memberFnct:MemberFunction = parsedFunctions[0] as MemberFunction;	
+		assert.strictEqual(memberFnct.name,"fncName");
+		assert.strictEqual(memberFnct.args, arg);
+		assert.strictEqual(memberFnct.returnVal, "int");
+		assert.strictEqual(memberFnct.isConst, true);
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'virtual int fncName ('+arg+') const;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'int TestClass::fncName ('+arg+') const {\n' +
+		'int returnValue;\n return returnValue;\n}');
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), 'virtual int fncName ('+arg+') const =0;');
 		done();
 		});
 	});
 
 
-	describe('ParseAndSerializeSingleLinePureVirtual', function() {
+	describe('ParseAndSerializeSinglePureVirtual', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
-		let testContent =  "virtual int fncName("+arg+")  ;";
+		let testContent =  "virtual int fncName("+arg+") =0;";
+		const testClassName = "ITestClass";
+		const classNameGen = new ClassNameGenerator(testClassName, true);
+
+		let parsedFunctions = Parser.parseClassMemberFunctions(testContent, classNameGen);
+		assert.strictEqual(parsedFunctions.length, 1);
+
+		let memberFnct:MemberFunction = parsedFunctions[0] as MemberFunction;	
+		assert.strictEqual(memberFnct.name,"fncName");
+		assert.strictEqual(memberFnct.args, arg);
+		assert.strictEqual(memberFnct.returnVal, "int");
+		assert.strictEqual(memberFnct.isConst, false);
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'virtual int fncName ('+arg+') =0;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), '');
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), 'int fncName ('+arg+') override;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), 'int TestClass::fncName ('+arg+') {\n' +
+		'int returnValue;\n return returnValue;\n}');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
 
 		done();
 		});
 	});
 
-	describe('ParseAndSerializeSingleLinePureVirtualConst', function() {
+	describe('ParseAndSerializeSinglePureVirtualConst', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
-		let testContent =  "virtual int fncName("+arg+")   const;";
+		let testContent =  "virtual int fncName("+arg+")   const = 0;";		const testClassName = "ITestClass";
+		const classNameGen = new ClassNameGenerator(testClassName, true);
+
+		let parsedFunctions = Parser.parseClassMemberFunctions(testContent, classNameGen);
+		assert.strictEqual(parsedFunctions.length, 1);
+
+		let memberFnct:MemberFunction = parsedFunctions[0] as MemberFunction;	
+		assert.strictEqual(memberFnct.name,"fncName");
+		assert.strictEqual(memberFnct.args, arg);
+		assert.strictEqual(memberFnct.returnVal, "int");
+		assert.strictEqual(memberFnct.isConst, true);
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'virtual int fncName ('+arg+') const =0;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), '');
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), 'int fncName ('+arg+') const override;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), 'int TestClass::fncName ('+arg+') const {\n' +
+		'int returnValue;\n return returnValue;\n}');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
 
 		done();
 		});
 	});
-	
-	describe('ParseAndSerializeMultipleOnSingleLine', function() {
-		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
 		
-		done();
-		});
-	});
-
-		
-	describe('ParseMixedLineMixedType', function() {
+	describe('ParseMultipleMixedType', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
 
 

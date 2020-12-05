@@ -67,6 +67,10 @@ export class VirtualMemberFunction extends MemberFunction {
         let serial = "";
         
         switch (mode) {
+            //TODO use override?
+            case SerializableMode.Header:
+                serial = "virtual " + super.getHeading(mode) + ";";
+                break;
             
             case SerializableMode.InterfaceHeader:
                 serial = "virtual " + super.getHeading(mode) + " =0;";
@@ -95,8 +99,7 @@ export class PureVirtualMemberFunction  extends MemberFunction{
         let serial = "";
         
         switch (mode) {
-            
-            case SerializableMode.InterfaceHeader:
+            case SerializableMode.Header:
                 serial = "virtual " + super.getHeading(mode) + " =0;";
                 break;
 
@@ -104,12 +107,18 @@ export class PureVirtualMemberFunction  extends MemberFunction{
                 serial = super.getHeading(mode) + " override;";
                 break;
 
-            case SerializableMode.ImplSource:
-                serial =  super.serialize(SerializableMode.Source);
+            case SerializableMode.ImplSource:                
+                serial = this.getHeading(mode) + " {\n";
+                if (this.returnVal !== "void") {
+                    serial = serial + this.returnVal + " returnValue;\n return returnValue;\n";
+                }
+                serial += "}";
                 break;
 
+            case SerializableMode.InterfaceHeader:
+            case SerializableMode.Source:
             default:
-                serial = super.serialize(mode);
+                serial = "";
                 break;
         }
     
