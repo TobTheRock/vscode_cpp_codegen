@@ -1,6 +1,6 @@
 
 export enum SerializableMode {
-    Header,                 // matching header file (respective to current file, which is a Header) 
+    Header,                 // matching header file (respective to current file, which is a Source) 
     Source,                 // matching source file (respective to current file, which is a Header) 
     ImplHeader,             // implementation header file (respective to current file, which has a class with pure virtual functions)
     ImplSource,             // implementation source file (respective to current file, which has a class with pure virtual functions)

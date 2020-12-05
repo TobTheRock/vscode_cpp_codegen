@@ -1,5 +1,5 @@
 import * as cpptypes from "./cpptypes";
-import { IFunction } from "./cpptypes";
+import * as io from "./io"
 
 // TODO Error handling: do try catch in parser or move it to a higher level (prefered so we can catch errors in deserialze functions)?
 
@@ -161,26 +161,26 @@ export abstract class Parser {
         return publicScope;
     }
 
-    static parseClassMemberFunctions(content: string): cpptypes.IFunction[] {
+    static parseClassMemberFunctions(content: string, classNameGen:io.ClassNameGenerator): cpptypes.IFunction[] {
         let memberFunctions:cpptypes.IFunction[] = [];
         Parser.findAllRegexMatches(MemberFunctionMatch.REGEX_STR, content,
             (rawMatch) => {
                 let match = new MemberFunctionMatch(rawMatch);        
 
-                let newFunc:IFunction;
+                let newFunc:cpptypes.IFunction;
                 if (match.virtualMatch) {
                     if (match.pureMatch) {
                         newFunc = new cpptypes.PureVirtualMemberFunction(match.nameMatch, match.returnValMatch,
-                             match.argsMatch, match.constMatch);
+                             match.argsMatch, match.constMatch, classNameGen);
                     }
                     else {
                         newFunc = new cpptypes.VirtualMemberFunction(match.nameMatch, match.returnValMatch,
-                             match.argsMatch, match.constMatch);
+                             match.argsMatch, match.constMatch, classNameGen);
                     }
                 }
                 else {
                     newFunc = new cpptypes.MemberFunction(match.nameMatch, match.returnValMatch,
-                        match.argsMatch, match.constMatch);
+                        match.argsMatch, match.constMatch, classNameGen);
                 }
 
                 memberFunctions.push(newFunc);
@@ -202,6 +202,7 @@ export abstract class Parser {
                 //TODO avoid recursion?
                 let subNamespaces:cpptypes.INamespace[] = Parser.parseNamespaces(match.namespaceMatch);
                 let newNamespace =new cpptypes.Namespace(match.nameMatch, subNamespaces);
+                // TODO move error catching to a higher level
                 try {
                     newNamespace.deserialize(match.contentMatch);
                     namespaces.push(newNamespace);
@@ -239,6 +240,9 @@ export abstract class Parser {
             content,
             (rawMatch) => {
                 let match = new ClassMatch(rawMatch);
+
+                //TODO interface detection search for virtual[/s/S]*=[\s]*0;
+                // TODO catch error on higher level
                 let newClass = new cpptypes.GeneralClass(match.nameMatch);
                 try {
                     newClass.deserialize(match.bodyMatch);

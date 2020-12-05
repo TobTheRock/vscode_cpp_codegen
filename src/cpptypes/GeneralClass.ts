@@ -1,5 +1,6 @@
 import { IClass, IFunction, SerializableMode } from "./TypeInterfaces";
 import {Parser} from "../Parser";
+import { ClassNameGenerator } from "../io";
 
 
 export class GeneralClass implements IClass {
@@ -11,8 +12,9 @@ export class GeneralClass implements IClass {
 
     deserialize (content: string) {
         //TODO Member functions etc
+        const classNameGen:ClassNameGenerator = new ClassNameGenerator(this.name, false); // TODO interface handling!
         let privateContent:string = Parser.parseClassPrivateScope(content);
-        this.privateFunctions = Parser.parseClassMemberFunctions(privateContent);
+        this.privateFunctions = Parser.parseClassMemberFunctions(privateContent, classNameGen);
 
 
     }

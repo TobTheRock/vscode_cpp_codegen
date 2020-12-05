@@ -1,10 +1,12 @@
 import { IFunction,  SerializableMode} from "./TypeInterfaces";
+import { ClassNameGenerator } from "../io";
 
 export class MemberFunction implements IFunction {
     constructor(public readonly name:string, 
                 public readonly returnVal:string, 
                 public readonly args:string,       
-                public readonly isConst: boolean
+                public readonly isConst: boolean,
+                private readonly classNameGen:ClassNameGenerator
                 ) {}
 
     serialize(mode:SerializableMode) {
@@ -13,7 +15,7 @@ export class MemberFunction implements IFunction {
         switch (mode) {
             //TODO for source we need the class scope?!
             case SerializableMode.Source:
-                serial = this.getHeading() + " {\n";
+                serial = this.getHeading(mode) + " {\n";
                 if (this.returnVal !== "void") {
                     serial = serial + this.returnVal + " returnValue;\n return returnValue;\n";
                 }
@@ -21,7 +23,7 @@ export class MemberFunction implements IFunction {
                 break;
             
             case SerializableMode.Header:
-                serial = this.getHeading() + ";";
+                serial = this.getHeading(mode) + ";";
                 break;
 
             default:
@@ -32,8 +34,23 @@ export class MemberFunction implements IFunction {
     }
 
 
-    protected getHeading() {
-        return this.returnVal + " " + this.name + " (" + this.args + " )" + (this.isConst? " const" : "");
+    protected getHeading(mode:SerializableMode) {
+
+        switch (mode) {
+            case SerializableMode.Header:
+            case SerializableMode.ImplHeader:
+            case SerializableMode.InterfaceHeader:
+                return this.returnVal + " " + this.name + " (" + this.args + ")" + (this.isConst? " const" : "");
+            case SerializableMode.Source:
+            case SerializableMode.ImplSource:
+                return this.returnVal + " " + this.classNameGen.createName(mode) + "::" + this.name + " (" + this.args + ")" + (this.isConst? " const" : "");
+            default:
+                break;
+        }
+
+    }
+
+    protected getHeaderSignature() {
     }
 }
 
@@ -41,8 +58,9 @@ export class VirtualMemberFunction extends MemberFunction {
     constructor(name:string, 
                 returnVal:string, 
                 args:string,       
-                isConst: boolean) {
-                   super(name,returnVal,args,isConst);
+                isConst: boolean,
+                classNameGen:ClassNameGenerator) {
+                   super(name,returnVal,args,isConst, classNameGen);
                 }
 
     serialize(mode:SerializableMode) {
@@ -51,7 +69,7 @@ export class VirtualMemberFunction extends MemberFunction {
         switch (mode) {
             
             case SerializableMode.InterfaceHeader:
-                serial = "virtual " + super.getHeading() + " =0;";
+                serial = "virtual " + super.getHeading(mode) + " =0;";
                 break;
 
             default:
@@ -68,8 +86,9 @@ export class PureVirtualMemberFunction  extends MemberFunction{
     constructor(name:string, 
                 returnVal:string, 
                 args:string,       
-                isConst: boolean) {
-                    super(name,returnVal,args,isConst);
+                isConst: boolean,
+                classNameGen:ClassNameGenerator) {
+                    super(name,returnVal,args,isConst,classNameGen);
                 }
 
     serialize(mode:SerializableMode) {
@@ -78,11 +97,11 @@ export class PureVirtualMemberFunction  extends MemberFunction{
         switch (mode) {
             
             case SerializableMode.InterfaceHeader:
-                serial = "virtual " + super.getHeading() + " =0;";
+                serial = "virtual " + super.getHeading(mode) + " =0;";
                 break;
 
             case SerializableMode.ImplHeader:
-                serial = super.getHeading() + " override;";
+                serial = super.getHeading(mode) + " override;";
                 break;
 
             case SerializableMode.ImplSource:

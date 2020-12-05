@@ -60,39 +60,39 @@ suite('Parser GeneralClasses Tests', () => {
 		done();
 	});
 
-	// test('ParseNestedClassesWithoutMemberFunctions', (done) => {
-	// 	// TODO fails as not implemented yet
-	// 	let testContent = 
-	// 	`class MyClass {       // The class
-	// 		int myNum;        // Attribute (int variable)
-	// 		string myString;  // Attribute (string variable)		
-	// 		class NestedClass {       // The class
-	// 			int myNum;        // Attribute (int variable)
-	// 			string myString;  // Attribute (string variable)
-	// 	  	};
-	// 	  };
-	// 	`
-	// 	;
-	// 	let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+	test('ParseNestedClassesWithoutMemberFunctions', (done) => {
+		// TODO fails as not implemented yet
+		let testContent = 
+		`class MyClass {       // The class
+			int myNum;        // Attribute (int variable)
+			string myString;  // Attribute (string variable)		
+			class NestedClass {       // The class
+				int myNum;        // Attribute (int variable)
+				string myString;  // Attribute (string variable)
+		  	};
+		  };
+		`
+		;
+		let classes:IClass[] = Parser.parseGeneralClasses(testContent);
 
-	// 	assert.strictEqual(classes.length,1);
-	// 	assert.strictEqual(classes[0].name,"MyClass");
-	// 	assert.strictEqual(classes[0].publicFunctions.length,0);
-	// 	assert.strictEqual(classes[0].privateFunctions.length,0);
-	// 	assert.strictEqual(classes[0].protectedFunctions.length,0);
-	// 	assert.strictEqual(classes[0].inheritance.length,0);
-	// 	assert.strictEqual(classes[0].nestedClasses.length,1);
+		assert.strictEqual(classes.length,1);
+		assert.strictEqual(classes[0].name,"MyClass");
+		assert.strictEqual(classes[0].publicFunctions.length,0);
+		assert.strictEqual(classes[0].privateFunctions.length,0);
+		assert.strictEqual(classes[0].protectedFunctions.length,0);
+		assert.strictEqual(classes[0].inheritance.length,0);
+		assert.strictEqual(classes[0].nestedClasses.length,1);
 
-	// 	let nestedClass:IClass = classes[0].nestedClasses[0];
-	// 	assert.strictEqual(nestedClass.name,"NestedClass");
-	// 	assert.strictEqual(nestedClass.publicFunctions.length,0);
-	// 	assert.strictEqual(nestedClass.privateFunctions.length,0);
-	// 	assert.strictEqual(nestedClass.protectedFunctions.length,0);
-	// 	assert.strictEqual(nestedClass.inheritance.length,0);
-	// 	assert.strictEqual(nestedClass.nestedClasses.length,0);
+		let nestedClass:IClass = classes[0].nestedClasses[0];
+		assert.strictEqual(nestedClass.name,"NestedClass");
+		assert.strictEqual(nestedClass.publicFunctions.length,0);
+		assert.strictEqual(nestedClass.privateFunctions.length,0);
+		assert.strictEqual(nestedClass.protectedFunctions.length,0);
+		assert.strictEqual(nestedClass.inheritance.length,0);
+		assert.strictEqual(nestedClass.nestedClasses.length,0);
 
-	// 	done();
-	// });
+		done();
+	});
 
 	test('ParseClassWithImplicitPrivateMemberFunctions', (done) => {
 		let testContent = 
@@ -136,36 +136,6 @@ suite('Parser GeneralClasses Tests', () => {
 		assert.strictEqual(classes[0].privateFunctions.length,5);
 		assert.strictEqual(classes[0].protectedFunctions.length,0);
 		assert.strictEqual(classes[0].inheritance.length,0);
-
-
-		//TODO move this to function parser test!
-		let privateFunc:MemberFunction = classes[0].privateFunctions[0] as MemberFunction;		
-		assert.strictEqual(privateFunc.name,"fncName");
-		assert.strictEqual(privateFunc.args, "void* buf,\n\t\t\t\tsize_t size\n\t\t\t\t");
-		assert.strictEqual(privateFunc.returnVal, "int");
-		assert.strictEqual(privateFunc.isConst, false);
-		privateFunc = classes[0].privateFunctions[1]  as MemberFunction;		
-		assert.strictEqual(privateFunc.name,"fncName2");
-		assert.strictEqual(privateFunc.args, "");
-		assert.strictEqual(privateFunc.returnVal, "const    int");
-		assert.strictEqual(privateFunc.isConst, false);
-		privateFunc = classes[0].privateFunctions[2]  as MemberFunction;		
-		assert.strictEqual(privateFunc.name,"fncName3");
-		assert.strictEqual(privateFunc.args, "");
-		assert.strictEqual(privateFunc.returnVal, "const int");
-		assert.strictEqual(privateFunc.isConst, true);
-		privateFunc = classes[0].privateFunctions[3]  as MemberFunction;		
-		assert.strictEqual(privateFunc.name,"fncName4");
-		assert.strictEqual(privateFunc.args, "");
-		assert.strictEqual(privateFunc.returnVal, "void");
-		assert.strictEqual(privateFunc.isConst, false);
-		privateFunc = classes[0].privateFunctions[4]  as MemberFunction;		
-		assert.strictEqual(privateFunc.name,"fncName5");
-		assert.strictEqual(privateFunc.args, "");
-		assert.strictEqual(privateFunc.returnVal, "void");
-		assert.strictEqual(privateFunc.isConst, false);
-
-		// TODO check if pure, virtual etc
 
 		done();
 	});

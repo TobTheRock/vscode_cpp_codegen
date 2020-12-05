@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import {Parser} from '../../Parser';
 import {IFunction} from '../../cpptypes';
 
-suite('Parser Functions Tests', () => {
+suite('Parser Standalone Functions Tests', () => {
 	// vscode.window.showInformationMessage('Start all tests.');
 
 	test('ParseStandloneFunction', (done) => {
