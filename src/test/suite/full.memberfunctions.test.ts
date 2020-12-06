@@ -5,30 +5,13 @@ import { Done, describe, it } from 'mocha';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
+import { callItAsync } from "./utils";
+
 import {Parser} from '../../Parser';
 import {IClass, IFunction, MemberFunction, SerializableMode} from '../../cpptypes';
 import { ClassNameGenerator } from '../../io';
 
 const argData = ["", "int test", "int test1, const Class* test2, void* test3", "int \ttest1,\t\n const\n Class* test2\n, void* test3\n\t"];
-
-function callItAsync<T>(desc:string, data:Array<T>, callback:Function) {
-    data.forEach(function (val) {
-        it(renderTemplate(desc, val), function (done) {
-            callback(done, val);
-        });
-    });
-}
-
-/*
- * Add value to description 
- */
-function renderTemplate(template:string, value:any) {
-    try {
-        return eval('`' + template + '`;');
-    } catch (err) {
-        return template;
-    }
-}
 
 
 suite('Full Member Function Tests', () => {
