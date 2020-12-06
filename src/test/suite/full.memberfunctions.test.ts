@@ -105,7 +105,7 @@ suite('Full Member Function Tests', () => {
 
 		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'std::pair<int, void*> fncName ('+arg+');');
 		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'std::pair<int, void*> TestClass::fncName ('+arg+') {\n' +
-		'const int* returnValue;\n return returnValue;\n}');
+		'std::pair<int, void*> returnValue;\n return returnValue;\n}');
 
 		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
 		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');

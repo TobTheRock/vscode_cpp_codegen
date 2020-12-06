@@ -1,8 +1,16 @@
 import * as cpptypes from "./cpptypes";
-import * as io from "./io"
+import * as io from "./io";
 
 // TODO Error handling: do try catch in parser or move it to a higher level (prefered so we can catch errors in deserialze functions)?
 
+function joinStringsWithFiller(strings:string[], filler:string):string {
+    let joinedStrings = '';
+    for (let index = 0; index < strings.length-1; index++) {
+        joinedStrings += strings[index] + filler;
+    }
+
+    return joinedStrings + strings[strings.length-1];
+}
 class NamespaceMatch {
     constructor(regexMatchArr:RegExpExecArray) {
         if (regexMatchArr.length-1 !== NamespaceMatch.NOF_GROUPMATCHES) {
@@ -103,21 +111,21 @@ class MemberFunctionMatch {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
         else if (regexMatchArr[2] === undefined) {
-            throw new Error("ParserError: No function return type, this should not happen!");               
-        }
-
-        else if (regexMatchArr[3] === undefined) {
             throw new Error("ParserError: No function name, this should not happen!");               
         }
 
-        this.virtualMatch = (regexMatchArr[1]) ? true : false;
-        this.returnValMatch = regexMatchArr[2];
-        this.nameMatch = regexMatchArr[3];
+        let virtualMatcher = new RegExp (MemberFunctionMatch.virtualSubMatchRegex);
+        let match = virtualMatcher.exec(regexMatchArr[1]);
+        if (!match || !match[2]) {
+            throw new Error("ParserError: No function return type, this should not happen!");               
+        }
+        this.virtualMatch = (match[1]) ? true : false;
+        this.returnValMatch = match[2];
 
-        this.argsMatch = (regexMatchArr[4]) ? regexMatchArr[4] : "";
-
-        this.constMatch = (regexMatchArr[5]) ? true : false;
-        this.pureMatch = (regexMatchArr[6]) ? true : false;
+        this.nameMatch = regexMatchArr[2];
+        this.argsMatch = (regexMatchArr[3]) ? regexMatchArr[3] : "";
+        this.constMatch = (regexMatchArr[4]) ? true : false;
+        this.pureMatch = (regexMatchArr[5]) ? true : false;
 
         if (!this.virtualMatch && this.pureMatch) {
            throw new Error("ParserError: Invalid specifier combination: '=0' missing virtual for function: " + this.nameMatch);
@@ -126,10 +134,17 @@ class MemberFunctionMatch {
 
     }
 
-    // TODO static, split up regex to make it more readable
-    // TODO what if the return value contains white space, e.g. std::pair<int, void*> 
-    static readonly REGEX_STR:string = '(virtual)?\\s*((?:const\\s+)?\\S+)\\s+(\\S+)\\s*\\(([\\s\\S]*?)\\)\\s*(const)?\\s*(=\\s*0)?\\s*;';
-    static readonly NOF_GROUPMATCHES = 6;
+    // TODO override
+    private static readonly mayHaveVirtualRegex:string = '(virtual)?';
+    private static readonly returnValRegex:string = '(\\S+[\\s\\S]*?)';
+    private static readonly funcNameRegex:string = '(\\S+)';
+    private static readonly funcArgsRegex:string = '\\(([\\s\\S]*?)\\)';
+    private static readonly mayHaveConstSpecifierRegex:string = '(const)?';
+    private static readonly mayBePure:string = '(=\\s*0)?';
+    private static readonly virtualSubMatchRegex:string = joinStringsWithFiller([MemberFunctionMatch.mayHaveVirtualRegex, MemberFunctionMatch.returnValRegex + '$'], '\\s*');
+    static readonly REGEX_STR:string = joinStringsWithFiller([MemberFunctionMatch.returnValRegex+'\\s', MemberFunctionMatch.funcNameRegex,
+         MemberFunctionMatch.funcArgsRegex, MemberFunctionMatch.mayHaveConstSpecifierRegex, MemberFunctionMatch.mayBePure, ';'], '\\s*');
+    static readonly NOF_GROUPMATCHES = 5;
 
     readonly virtualMatch:boolean;
     readonly returnValMatch:string;
