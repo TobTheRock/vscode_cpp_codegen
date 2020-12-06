@@ -159,7 +159,36 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, false);
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'virtual int fncName ('+arg+');');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'int fncName ('+arg+') override;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'int TestClass::fncName ('+arg+') {\n' +
+		'int returnValue;\n return returnValue;\n}');
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), 'virtual int fncName ('+arg+') =0;');
+
+
+
+		done();
+		});
+	});
+
+	describe('ParseAndSerializeSingleVirtualOverride', function() {
+		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
+		let testContent =  "int fncName("+arg+")  override;";
+		const testClassName = "TestClass";
+		const classNameGen = new ClassNameGenerator(testClassName, false);
+
+		let parsedFunctions = Parser.parseClassMemberFunctions(testContent, classNameGen);
+		assert.strictEqual(parsedFunctions.length, 1);
+
+		let memberFnct:MemberFunction = parsedFunctions[0] as MemberFunction;	
+		assert.strictEqual(memberFnct.name,"fncName");
+		assert.strictEqual(memberFnct.args, arg);
+		assert.strictEqual(memberFnct.returnVal, "int");
+		assert.strictEqual(memberFnct.isConst, false);
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'int fncName ('+arg+') override;');
 		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'int TestClass::fncName ('+arg+') {\n' +
 		'int returnValue;\n return returnValue;\n}');
 
@@ -188,7 +217,7 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, true);
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'virtual int fncName ('+arg+') const;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'int fncName ('+arg+') const override;');
 		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'int TestClass::fncName ('+arg+') const {\n' +
 		'int returnValue;\n return returnValue;\n}');
 
@@ -320,7 +349,7 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.args, arg);
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, false);
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'virtual int fncName5 ('+arg+');');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'int fncName5 ('+arg+') override;');
 		assert.strictEqual(memberFnct.serialize(SerializableMode.Source),  'int ITestClass::fncName5 ('+arg+') {\n' +
 		'int returnValue;\n return returnValue;\n}');
 		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');

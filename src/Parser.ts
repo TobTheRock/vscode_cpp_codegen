@@ -125,8 +125,9 @@ class MemberFunctionMatch {
         this.nameMatch = regexMatchArr[2];
         this.argsMatch = (regexMatchArr[3]) ? regexMatchArr[3] : "";
         this.constMatch = (regexMatchArr[4]) ? true : false;
-        this.pureMatch = (regexMatchArr[5]) ? true : false;
 
+        this.virtualMatch = (this.virtualMatch) || ((regexMatchArr[5]) ? true : false);
+        this.pureMatch = (regexMatchArr[6]) ? true : false;
         if (!this.virtualMatch && this.pureMatch) {
            throw new Error("ParserError: Invalid specifier combination: '=0' missing virtual for function: " + this.nameMatch);
            return;
@@ -140,11 +141,12 @@ class MemberFunctionMatch {
     private static readonly funcNameRegex:string = '(\\S+)';
     private static readonly funcArgsRegex:string = '\\(([\\s\\S]*?)\\)';
     private static readonly mayHaveConstSpecifierRegex:string = '(const)?';
+    private static readonly mayHaveOverrideRegex:string = '(override)?';
     private static readonly mayBePure:string = '(=\\s*0)?';
     private static readonly virtualSubMatchRegex:string = joinStringsWithFiller([MemberFunctionMatch.mayHaveVirtualRegex, MemberFunctionMatch.returnValRegex + '$'], '\\s*');
     static readonly REGEX_STR:string = joinStringsWithFiller([MemberFunctionMatch.returnValRegex+'\\s', MemberFunctionMatch.funcNameRegex,
-         MemberFunctionMatch.funcArgsRegex, MemberFunctionMatch.mayHaveConstSpecifierRegex, MemberFunctionMatch.mayBePure, ';'], '\\s*');
-    static readonly NOF_GROUPMATCHES = 5;
+         MemberFunctionMatch.funcArgsRegex, MemberFunctionMatch.mayHaveConstSpecifierRegex, MemberFunctionMatch.mayHaveOverrideRegex, MemberFunctionMatch.mayBePure, ';'], '\\s*');
+    static readonly NOF_GROUPMATCHES = 6;
 
     readonly virtualMatch:boolean;
     readonly returnValMatch:string;

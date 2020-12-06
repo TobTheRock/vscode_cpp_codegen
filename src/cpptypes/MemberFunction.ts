@@ -69,7 +69,7 @@ export class VirtualMemberFunction extends MemberFunction {
         switch (mode) {
             //TODO use override?
             case SerializableMode.Header:
-                serial = "virtual " + super.getHeading(mode) + ";";
+                serial = super.getHeading(mode) + " override;";
                 break;
             
             case SerializableMode.InterfaceHeader:
