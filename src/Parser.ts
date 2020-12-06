@@ -98,7 +98,7 @@ class ClassProtectedScopeMatch {
         this.scopeContent = (regexMatchArr[1]) ? regexMatchArr[1] : "";
     }
 
-    static readonly REGEX_STR:string = "protected:((?!private:)(?!public:)[\\s\\S]*)";
+    static readonly REGEX_STR:string = "protected:((?:(?!private:)(?!public:)[\\s\\S])*)";
     static readonly NOF_GROUPMATCHES = 1;
 
     readonly scopeContent:string;
@@ -113,7 +113,7 @@ class ClassPublicScopeMatch {
         this.scopeContent = (regexMatchArr[1]) ? regexMatchArr[1] : "";
     }
 
-    static readonly REGEX_STR:string = "public:((?!private:)(?!protected:)[\\s\\S]*)";
+    static readonly REGEX_STR:string = "public:((?:(?!private:)(?!protected:)[\\s\\S])*)";
     static readonly NOF_GROUPMATCHES = 1;
 
     readonly scopeContent:string;

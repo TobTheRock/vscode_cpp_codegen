@@ -200,4 +200,35 @@ suite('Parser GeneralClasses Tests', () => {
 			done();
 		});
 	});
+
+	describe('ParseClassWithVariousMemberFunctions', function() {
+		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:FunctionTestData) {
+			let testContent = 
+			`class MyClass {
+			private:
+				${functionTestData.content}
+			public:
+				${functionTestData.content}
+			protected:
+				${functionTestData.content}
+			private:
+				${functionTestData.content}
+			public:
+				${functionTestData.content}
+			protected:
+				${functionTestData.content}
+			};
+			`;
+			let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+
+			assert.strictEqual(classes.length,1);
+			assert.strictEqual(classes[0].name,"MyClass");
+			assert.strictEqual(classes[0].publicFunctions.length,2*functionTestData.nFunctions);
+			assert.strictEqual(classes[0].privateFunctions.length,2*functionTestData.nFunctions);
+			assert.strictEqual(classes[0].protectedFunctions.length,2*functionTestData.nFunctions);
+			assert.strictEqual(classes[0].inheritance.length,0);
+
+			done();
+		});
+	});
 });
