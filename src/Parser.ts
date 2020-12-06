@@ -88,7 +88,21 @@ class ClassMatch {
     readonly nameMatch:string;
     readonly bodyMatch:string;
 }
+class ClassProtectedScopeMatch {
 
+    constructor(regexMatchArr:RegExpExecArray) {
+        if (regexMatchArr.length-1 !== ClassProtectedScopeMatch.NOF_GROUPMATCHES) {
+            throw new Error("ParserError: Unexpected number of matches!");  
+        }
+
+        this.scopeContent = (regexMatchArr[1]) ? regexMatchArr[1] : "";
+    }
+
+    static readonly REGEX_STR:string = "protected:((?!private:)(?!public:)[\\s\\S]*)";
+    static readonly NOF_GROUPMATCHES = 1;
+
+    readonly scopeContent:string;
+}
 class ClassPublicScopeMatch {
 
     constructor(regexMatchArr:RegExpExecArray) {
@@ -99,7 +113,7 @@ class ClassPublicScopeMatch {
         this.scopeContent = (regexMatchArr[1]) ? regexMatchArr[1] : "";
     }
 
-    static readonly REGEX_STR:string = "public:((?!private:|protected)[\\s\\S])*";
+    static readonly REGEX_STR:string = "public:((?!private:)(?!protected:)[\\s\\S]*)";
     static readonly NOF_GROUPMATCHES = 1;
 
     readonly scopeContent:string;
@@ -135,7 +149,6 @@ class MemberFunctionMatch {
 
     }
 
-    // TODO override
     private static readonly mayHaveVirtualRegex:string = '(virtual)?';
     private static readonly returnValRegex:string = '(\\S+[\\s\\S]*?)';
     private static readonly funcNameRegex:string = '(\\S+)';
@@ -177,6 +190,19 @@ export abstract class Parser {
 
 
         return publicScope;
+    }
+
+    static parseClassProtectedScope(content:string ): string {
+        let protectedScope = "";
+        Parser.findAllRegexMatches(ClassProtectedScopeMatch.REGEX_STR, content,
+            (rawMatch) => {
+                let match = new ClassProtectedScopeMatch(rawMatch);
+                protectedScope += match.scopeContent;
+            }
+            );
+
+
+        return protectedScope;
     }
 
     static parseClassMemberFunctions(content: string, classNameGen:io.ClassNameGenerator): cpptypes.IFunction[] {

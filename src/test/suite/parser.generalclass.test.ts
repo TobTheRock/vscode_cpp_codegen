@@ -3,9 +3,33 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
+import { Done, describe} from 'mocha';
 // import * as myExtension from '../../extension';
 import {Parser} from '../../Parser';
 import {IClass, IFunction, MemberFunction} from '../../cpptypes';
+import { callItAsync } from "./utils";
+
+const argData = ["", "int test", "int test1, const Class* test2, void* test3", "int \ttest1,\t\n const\n Class* test2"];
+class FunctionTestData {
+	constructor(public content:string, public nFunctions:number){};
+
+	public toString() {
+		return this.content;		
+	}
+}
+const functionData:FunctionTestData[] = function () {
+	let funcTemp:FunctionTestData[] = [];
+	for (const arg of argData) {
+		funcTemp.push(new FunctionTestData('void fncName (${arg});', 1));
+		funcTemp.push(new FunctionTestData(`int fncName(${arg});
+		const    int fncName2(${arg});
+		const int fncName3(${arg}) const;
+		virtual void fncName(${arg});
+		virtual void fncName2(${arg}) = 0;`,5));
+	};
+
+	return funcTemp;
+}();
 
 suite('Parser GeneralClasses Tests', () => {
 	// vscode.window.showInformationMessage('Start all tests.');
@@ -94,49 +118,86 @@ suite('Parser GeneralClasses Tests', () => {
 		done();
 	});
 
-	test('ParseClassWithImplicitPrivateMemberFunctions', (done) => {
-		let testContent = 
-		`class MyClass {
-			void fncName (int argument,
-				std::shared_ptr<XYZ> argument2);
-		  };
-		`
-		;
-		let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+	describe('ParseClassWithImplicitPrivateMemberFunctions', function() {
+		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:FunctionTestData) {
+			let testContent = 
+			`class MyClass {
+				${functionTestData.content}
+			};
+			`;
+			let classes:IClass[] = Parser.parseGeneralClasses(testContent);
 
-		assert.strictEqual(classes.length,1);
-		assert.strictEqual(classes[0].name,"MyClass");
-		assert.strictEqual(classes[0].publicFunctions.length,0);
-		assert.strictEqual(classes[0].privateFunctions.length,1);
-		assert.strictEqual(classes[0].protectedFunctions.length,0);
-		assert.strictEqual(classes[0].inheritance.length,0);
+			assert.strictEqual(classes.length,1);
+			assert.strictEqual(classes[0].name,"MyClass");
+			assert.strictEqual(classes[0].publicFunctions.length,0);
+			assert.strictEqual(classes[0].privateFunctions.length,functionTestData.nFunctions);
+			assert.strictEqual(classes[0].protectedFunctions.length,0);
+			assert.strictEqual(classes[0].inheritance.length,0);
 
-		done();
+			done();
+		});
 	});
 
+	describe('ParseClassWithExplicitPrivateMemberFunctions', function() {
+		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:FunctionTestData) {
+			let testContent = 
+			`class MyClass {
+			private:
+				${functionTestData.content}
+			};
+			`;
+			let classes:IClass[] = Parser.parseGeneralClasses(testContent);
 
-	test('ParseClassWithImplicitPrivateMemberFunctionVariatons', (done) => {
-		let testContent = 
-		`class MyClass {
-			int fncName(void* buf,
-				size_t size
-				);
-				const    int fncName2();
-				const int fncName3() const;
-				virtual void fncName();
-				virtual void fncName2() = 0;
-		  };
-		`
-		;
-		let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+			assert.strictEqual(classes.length,1);
+			assert.strictEqual(classes[0].name,"MyClass");
+			assert.strictEqual(classes[0].publicFunctions.length,0);
+			assert.strictEqual(classes[0].privateFunctions.length,functionTestData.nFunctions);
+			assert.strictEqual(classes[0].protectedFunctions.length,0);
+			assert.strictEqual(classes[0].inheritance.length,0);
 
-		assert.strictEqual(classes.length,1);
-		assert.strictEqual(classes[0].name,"MyClass");
-		assert.strictEqual(classes[0].publicFunctions.length,0);
-		assert.strictEqual(classes[0].privateFunctions.length,5);
-		assert.strictEqual(classes[0].protectedFunctions.length,0);
-		assert.strictEqual(classes[0].inheritance.length,0);
+			done();
+		});
+	});
 
-		done();
+	describe('ParseClassWithPublicMemberFunctions', function() {
+		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:FunctionTestData) {
+			let testContent = 
+			`class MyClass {
+			public:
+				${functionTestData.content}
+			};
+			`;
+			let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+
+			assert.strictEqual(classes.length,1);
+			assert.strictEqual(classes[0].name,"MyClass");
+			assert.strictEqual(classes[0].publicFunctions.length,functionTestData.nFunctions);
+			assert.strictEqual(classes[0].privateFunctions.length,0);
+			assert.strictEqual(classes[0].protectedFunctions.length,0);
+			assert.strictEqual(classes[0].inheritance.length,0);
+
+			done();
+		});
+	});
+
+	describe('ParseClassWithProtectedMemberFunctions', function() {
+		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:FunctionTestData) {
+			let testContent = 
+			`class MyClass {
+			protected:
+				${functionTestData.content}
+			};
+			`;
+			let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+
+			assert.strictEqual(classes.length,1);
+			assert.strictEqual(classes[0].name,"MyClass");
+			assert.strictEqual(classes[0].publicFunctions.length,0);
+			assert.strictEqual(classes[0].privateFunctions.length,0);
+			assert.strictEqual(classes[0].protectedFunctions.length,functionTestData.nFunctions);
+			assert.strictEqual(classes[0].inheritance.length,0);
+
+			done();
+		});
 	});
 });

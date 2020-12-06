@@ -11,12 +11,16 @@ export class GeneralClass implements IClass {
 
 
     deserialize (content: string) {
-        //TODO Member functions etc
         const classNameGen:ClassNameGenerator = new ClassNameGenerator(this.name, false); // TODO interface handling!
-        let privateContent:string = Parser.parseClassPrivateScope(content);
+
+        const privateContent:string = Parser.parseClassPrivateScope(content);
         this.privateFunctions = Parser.parseClassMemberFunctions(privateContent, classNameGen);
 
+        const publicContent:string = Parser.parseClassPublicScope(content);
+        this.publicFunctions = Parser.parseClassMemberFunctions(publicContent, classNameGen);
 
+        const protectedContent:string = Parser.parseClassProtectedScope(content);
+        this.protectedFunctions = Parser.parseClassMemberFunctions(protectedContent, classNameGen);
     }
 
 
