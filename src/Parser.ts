@@ -127,6 +127,7 @@ class MemberFunctionMatch {
     }
 
     // TODO static, split up regex to make it more readable
+    // TODO what if the return value contains white space, e.g. std::pair<int, void*> 
     static readonly REGEX_STR:string = '(virtual)?\\s*((?:const\\s+)?\\S+)\\s+(\\S+)\\s*\\(([\\s\\S]*?)\\)\\s*(const)?\\s*(=\\s*0)?\\s*;';
     static readonly NOF_GROUPMATCHES = 6;
 
