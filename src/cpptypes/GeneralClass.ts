@@ -11,7 +11,9 @@ export class GeneralClass implements IClass {
 
 
     deserialize (content: string) {
-        const classNameGen:ClassNameGenerator = new ClassNameGenerator(this.name, false); // TODO interface handling!
+        const classNameGen: ClassNameGenerator = new ClassNameGenerator(this.name, false); // TODO interface handling!
+        
+        this.nestedClasses = this.nestedClasses.concat(Parser.parseGeneralClasses(content));
 
         const privateContent:string = Parser.parseClassPrivateScope(content);
         this.privateFunctions = Parser.parseClassMemberFunctions(privateContent, classNameGen);

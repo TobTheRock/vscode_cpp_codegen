@@ -60,9 +60,9 @@ suite('Parser GeneralClasses Tests', () => {
 			int myNum;        // Attribute (int variable)
 			string myString;  // Attribute (string variable)
 		  };
-		class MyClass2 {       // The class
-			int myNum;        // Attribute (int variable)
-			string myString;  // Attribute (string variable)
+		class MyClass2 {       // The 2nd class
+			int myNum;        // Attribute 2 (int variable)
+			string myString;  // Attribute 2(string variable)
 		  };
 		`
 		;

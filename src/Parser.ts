@@ -80,9 +80,19 @@ class ClassMatch {
     }
 
     // TODO: Inheritance
-    private static readonly classBeginRegex:string = 'class\\s+([\\S]+)\\s*{';
-    private static readonly classNonNestedBodyRegex:string = '((?!class\\s+[\\S]+\\s*{)[\\s\\S]*?)}\\s*;';
-    static readonly REGEX_STR:string = ClassMatch.classBeginRegex + ClassMatch.classNonNestedBodyRegex;
+
+    private static readonly ClassSpecifierRegex: string = "class\\s";
+    private static readonly ClassNameRegex: string = "([\\S]+)";
+    private static readonly ClassBodyRegex: string = "{([\\s\\S]*)}";
+    private static readonly ClassEndRegex: string = ";";
+    private static readonly NextClassRegex: string = "[\\s\\S]*?(?=class)";
+    
+    // private static readonly classBeginRegex:string = 'class\\s+([\\S]+)\\s*{';
+    // private static readonly classNonNestedBodyRegex:string = '((?!class\\s+[\\S]+\\s*{)[\\s\\S]*?)}\\s*;';
+    static readonly SINGLE_REGEX_STR: string = joinStringsWithFiller(
+        [ClassMatch.ClassSpecifierRegex, ClassMatch.ClassNameRegex, ClassMatch.ClassBodyRegex, ClassMatch.ClassEndRegex], "\\s*");
+    static readonly MULTI_REGEX_STR: string = joinStringsWithFiller(
+        [ClassMatch.SINGLE_REGEX_STR, ClassMatch.NextClassRegex], "[\\s\\S]*?")
     static readonly NOF_GROUPMATCHES = 2;
 
     readonly nameMatch:string;
@@ -277,28 +287,30 @@ export abstract class Parser {
     }
     
     static parseGeneralClasses(content:string):cpptypes.IClass[] {
-        let classes:cpptypes.IClass[] = [];
+        let classes: cpptypes.IClass[] = [];
+        let contentWithSingleClass: string = content;
+        
+        let genereateNewClass = (rawMatch: RegExpExecArray) => {
+            let match = new ClassMatch(rawMatch);
+            //TODO interface detection search for virtual[/s/S]*=[\s]*0;
+            let newClass = new cpptypes.GeneralClass(match.nameMatch);
+            newClass.deserialize(match.bodyMatch);
+            return newClass;
+            }
 
         Parser.findAllRegexMatches(
-            ClassMatch.REGEX_STR,
+            ClassMatch.MULTI_REGEX_STR,
             content,
             (rawMatch) => {
-                let match = new ClassMatch(rawMatch);
-
-                //TODO interface detection search for virtual[/s/S]*=[\s]*0;
-                // TODO catch error on higher level
-                let newClass = new cpptypes.GeneralClass(match.nameMatch);
-                try {
-                    newClass.deserialize(match.bodyMatch);
-                    classes.push(newClass);
-                } catch (error) {
-                    console.log(error, "Failed to parse class contents, skipping!");
-                }
-
-                //TODO nested classes -> rm from string and search again ? -> Howto add them to belonging class?
-                // OR find until next class (greedy body search)
-                // then find last class in file by different regex
-                // finally parse the body recursevly
+                classes.push(genereateNewClass(rawMatch))
+                contentWithSingleClass = contentWithSingleClass.replace(rawMatch[0], "");
+            }
+        );
+        Parser.findAllRegexMatches(
+            ClassMatch.SINGLE_REGEX_STR,
+            contentWithSingleClass,
+            (rawMatch) => {
+                classes.push(genereateNewClass(rawMatch))
             }
         );
 
