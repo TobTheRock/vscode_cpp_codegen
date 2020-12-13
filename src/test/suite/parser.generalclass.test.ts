@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { Done, describe} from 'mocha';
 // import * as myExtension from '../../extension';
 import {Parser} from '../../Parser';
-import {IClass, IFunction, MemberFunction} from '../../cpptypes';
+import {IClass, ClassInterface, ClassImpl} from '../../cpptypes';
 import { callItAsync } from "./utils";
 
 const argData = ["", "int test", "int test1, const Class* test2, void* test3", "int \ttest1,\t\n const\n Class* test2"];
@@ -42,7 +42,7 @@ suite('Parser GeneralClasses Tests', () => {
 		  };
 		`
 		;
-		let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+		let classes:IClass[] = Parser.parseClasses(testContent);
 
 		assert.strictEqual(classes.length,1);
 		assert.strictEqual(classes[0].name,"MyClass");
@@ -50,8 +50,32 @@ suite('Parser GeneralClasses Tests', () => {
 		assert.strictEqual(classes[0].privateFunctions.length,0);
 		assert.strictEqual(classes[0].protectedFunctions.length,0);
 		assert.strictEqual(classes[0].inheritance.length,0);
+		assert.ok(classes[0] instanceof ClassImpl);
 		done();
 	});
+
+	test('ParseInterface', (done) => {
+		// TODO fails as not implemented yet
+		let testContent = 
+		`class MyClass {       // The class
+			virtual const int* pureFnct = 0  ;
+		  };
+		`
+		;
+		let classes:IClass[] = Parser.parseClasses(testContent);
+
+		assert.strictEqual(classes.length,1);
+		assert.strictEqual(classes[0].name,"MyClass");
+		assert.strictEqual(classes[0].publicFunctions.length,0);
+		assert.strictEqual(classes[0].privateFunctions.length,0);
+		assert.strictEqual(classes[0].protectedFunctions.length,0);
+		assert.strictEqual(classes[0].inheritance.length,0);
+		assert.strictEqual(classes[0].nestedClasses.length, 0);
+		assert.ok(classes[0] instanceof ClassInterface);
+
+		done();
+	});
+
 
 
 	test('ParseMultipleClassesWithoutMemberFunctions', (done) => {
@@ -66,7 +90,7 @@ suite('Parser GeneralClasses Tests', () => {
 		  };
 		`
 		;
-		let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+		let classes:IClass[] = Parser.parseClasses(testContent);
 
 		assert.strictEqual(classes.length,2);
 		assert.strictEqual(classes[0].name,"MyClass");
@@ -97,7 +121,7 @@ suite('Parser GeneralClasses Tests', () => {
 		  };
 		`
 		;
-		let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+		let classes:IClass[] = Parser.parseClasses(testContent);
 
 		assert.strictEqual(classes.length,1);
 		assert.strictEqual(classes[0].name,"MyClass");
@@ -125,7 +149,7 @@ suite('Parser GeneralClasses Tests', () => {
 				${functionTestData.content}
 			};
 			`;
-			let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+			let classes:IClass[] = Parser.parseClasses(testContent);
 
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
@@ -146,7 +170,7 @@ suite('Parser GeneralClasses Tests', () => {
 				${functionTestData.content}
 			};
 			`;
-			let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+			let classes:IClass[] = Parser.parseClasses(testContent);
 
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
@@ -167,7 +191,7 @@ suite('Parser GeneralClasses Tests', () => {
 				${functionTestData.content}
 			};
 			`;
-			let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+			let classes:IClass[] = Parser.parseClasses(testContent);
 
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
@@ -188,7 +212,7 @@ suite('Parser GeneralClasses Tests', () => {
 				${functionTestData.content}
 			};
 			`;
-			let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+			let classes:IClass[] = Parser.parseClasses(testContent);
 
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
@@ -219,7 +243,7 @@ suite('Parser GeneralClasses Tests', () => {
 				${functionTestData.content}
 			};
 			`;
-			let classes:IClass[] = Parser.parseGeneralClasses(testContent);
+			let classes:IClass[] = Parser.parseClasses(testContent);
 
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");

@@ -75,28 +75,27 @@ class ClassMatch {
         }
 
         this.nameMatch = regexMatchArr[1];
-
         this.bodyMatch = (regexMatchArr[2]) ? regexMatchArr[2] : "";
+        this.isInterface = ClassMatch.pureVirtualMemberRegexMatcher.test(this.bodyMatch);
     }
 
     // TODO: Inheritance
-
-    private static readonly ClassSpecifierRegex: string = "class\\s";
-    private static readonly ClassNameRegex: string = "([\\S]+)";
-    private static readonly ClassBodyRegex: string = "{([\\s\\S]*)}";
-    private static readonly ClassEndRegex: string = ";";
-    private static readonly NextClassRegex: string = "[\\s\\S]*?(?=class)";
+    private static readonly classSpecifierRegex: string = "class\\s";
+    private static readonly classNameRegex: string = "([\\S]+)";
+    private static readonly classBodyRegex: string = "{([\\s\\S]*)}";
+    private static readonly classEndRegex: string = ";";
+    private static readonly nextClassRegex: string = "[\\s\\S]*?(?=class)";
+    private static readonly pureVirtualMemberRegexMatcher =  /virtual[\s\S]*?=[\s]*0[\s]*;/g;
     
-    // private static readonly classBeginRegex:string = 'class\\s+([\\S]+)\\s*{';
-    // private static readonly classNonNestedBodyRegex:string = '((?!class\\s+[\\S]+\\s*{)[\\s\\S]*?)}\\s*;';
     static readonly SINGLE_REGEX_STR: string = joinStringsWithFiller(
-        [ClassMatch.ClassSpecifierRegex, ClassMatch.ClassNameRegex, ClassMatch.ClassBodyRegex, ClassMatch.ClassEndRegex], "\\s*");
+        [ClassMatch.classSpecifierRegex, ClassMatch.classNameRegex, ClassMatch.classBodyRegex, ClassMatch.classEndRegex], "\\s*");
     static readonly MULTI_REGEX_STR: string = joinStringsWithFiller(
-        [ClassMatch.SINGLE_REGEX_STR, ClassMatch.NextClassRegex], "[\\s\\S]*?")
+        [ClassMatch.SINGLE_REGEX_STR, ClassMatch.nextClassRegex], "[\\s\\S]*?");
     static readonly NOF_GROUPMATCHES = 2;
 
     readonly nameMatch:string;
-    readonly bodyMatch:string;
+    readonly bodyMatch: string;
+    readonly isInterface: boolean;
 }
 class ClassProtectedScopeMatch {
 
@@ -286,23 +285,22 @@ export abstract class Parser {
         return standaloneFunctions;
     }
     
-    static parseGeneralClasses(content:string):cpptypes.IClass[] {
+    static parseClasses(content:string):cpptypes.IClass[] {
         let classes: cpptypes.IClass[] = [];
         let contentWithSingleClass: string = content;
         
-        let genereateNewClass = (rawMatch: RegExpExecArray) => {
+        let generateNewClass = (rawMatch: RegExpExecArray) => {
             let match = new ClassMatch(rawMatch);
-            //TODO interface detection search for virtual[/s/S]*=[\s]*0;
-            let newClass = new cpptypes.GeneralClass(match.nameMatch);
+            let newClass = match.isInterface? new cpptypes.ClassInterface(match.nameMatch) : new cpptypes.ClassImpl(match.nameMatch);
             newClass.deserialize(match.bodyMatch);
             return newClass;
-            }
+        };
 
         Parser.findAllRegexMatches(
             ClassMatch.MULTI_REGEX_STR,
             content,
             (rawMatch) => {
-                classes.push(genereateNewClass(rawMatch))
+                classes.push(generateNewClass(rawMatch))
                 contentWithSingleClass = contentWithSingleClass.replace(rawMatch[0], "");
             }
         );
@@ -310,7 +308,7 @@ export abstract class Parser {
             ClassMatch.SINGLE_REGEX_STR,
             contentWithSingleClass,
             (rawMatch) => {
-                classes.push(genereateNewClass(rawMatch))
+                classes.push(generateNewClass(rawMatch))
             }
         );
 
