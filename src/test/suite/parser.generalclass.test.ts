@@ -9,19 +9,21 @@ import {Parser} from '../../Parser';
 import {IClass, ClassInterface, ClassImpl} from '../../cpptypes';
 import { callItAsync } from "./utils";
 
+
 const argData = ["", "int test", "int test1, const Class* test2, void* test3", "int \ttest1,\t\n const\n Class* test2"];
-class FunctionTestData {
-	constructor(public content:string, public nFunctions:number){};
+class TestData {
+	constructor(public content:string, public nDates:number){};
 
 	public toString() {
 		return this.content;		
 	}
 }
-const functionData:FunctionTestData[] = function () {
-	let funcTemp:FunctionTestData[] = [];
+
+const functionData:TestData[] = function () {
+	let funcTemp:TestData[] = [];
 	for (const arg of argData) {
-		funcTemp.push(new FunctionTestData('void fncName (${arg});', 1));
-		funcTemp.push(new FunctionTestData(`int fncName(${arg});
+		funcTemp.push(new TestData('void fncName (${arg});', 1));
+		funcTemp.push(new TestData(`int fncName(${arg});
 		const    int fncName2(${arg});
 		const int fncName3(${arg}) const;
 		virtual void fncName(${arg});
@@ -31,8 +33,11 @@ const functionData:FunctionTestData[] = function () {
 	return funcTemp;
 }();
 
+
+const inheritData = [new TestData(":public IInterface",1), 
+new TestData(" :\tpublic IInterface, private IInterface2", 2), new TestData(": public IInterface,\n\t\t private IInterface2 \n, protected IInterface3 \n\n", 3)];
+
 suite('Parser GeneralClasses Tests', () => {
-	// vscode.window.showInformationMessage('Start all tests.');
 
 	test('ParseClassWithoutMemberFunctions', (done) => {
 		let testContent = 
@@ -55,7 +60,6 @@ suite('Parser GeneralClasses Tests', () => {
 	});
 
 	test('ParseInterface', (done) => {
-		// TODO fails as not implemented yet
 		let testContent = 
 		`class MyClass {       // The class
 			virtual const int* pureFnct = 0  ;
@@ -76,7 +80,26 @@ suite('Parser GeneralClasses Tests', () => {
 		done();
 	});
 
+	describe('ParseInheritance', function() {
+		callItAsync("With inheritance ${value}", inheritData, function (done:Done, inheritData:TestData) {
+		let testContent = 
+		`class MyClass ${inheritData.content}  {  // The class
+		  };
+		`
+		;
+		let classes:IClass[] = Parser.parseClasses(testContent);
 
+		assert.strictEqual(classes.length,1);
+		assert.strictEqual(classes[0].name,"MyClass");
+		assert.strictEqual(classes[0].publicFunctions.length,0);
+		assert.strictEqual(classes[0].privateFunctions.length,0);
+		assert.strictEqual(classes[0].protectedFunctions.length,0);
+		assert.strictEqual(classes[0].inheritance.length,inheritData.nDates);
+		assert.strictEqual(classes[0].nestedClasses.length, 0);
+
+		done();
+		});
+	});
 
 	test('ParseMultipleClassesWithoutMemberFunctions', (done) => {
 		let testContent = 
@@ -109,7 +132,6 @@ suite('Parser GeneralClasses Tests', () => {
 	});
 
 	test('ParseNestedClassesWithoutMemberFunctions', (done) => {
-		// TODO fails as not implemented yet
 		let testContent = 
 		`class MyClass {       // The class
 			int myNum;        // Attribute (int variable)
@@ -143,7 +165,7 @@ suite('Parser GeneralClasses Tests', () => {
 	});
 
 	describe('ParseClassWithImplicitPrivateMemberFunctions', function() {
-		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:FunctionTestData) {
+		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:TestData) {
 			let testContent = 
 			`class MyClass {
 				${functionTestData.content}
@@ -154,7 +176,7 @@ suite('Parser GeneralClasses Tests', () => {
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
 			assert.strictEqual(classes[0].publicFunctions.length,0);
-			assert.strictEqual(classes[0].privateFunctions.length,functionTestData.nFunctions);
+			assert.strictEqual(classes[0].privateFunctions.length,functionTestData.nDates);
 			assert.strictEqual(classes[0].protectedFunctions.length,0);
 			assert.strictEqual(classes[0].inheritance.length,0);
 
@@ -163,7 +185,7 @@ suite('Parser GeneralClasses Tests', () => {
 	});
 
 	describe('ParseClassWithExplicitPrivateMemberFunctions', function() {
-		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:FunctionTestData) {
+		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:TestData) {
 			let testContent = 
 			`class MyClass {
 			private:
@@ -175,7 +197,7 @@ suite('Parser GeneralClasses Tests', () => {
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
 			assert.strictEqual(classes[0].publicFunctions.length,0);
-			assert.strictEqual(classes[0].privateFunctions.length,functionTestData.nFunctions);
+			assert.strictEqual(classes[0].privateFunctions.length,functionTestData.nDates);
 			assert.strictEqual(classes[0].protectedFunctions.length,0);
 			assert.strictEqual(classes[0].inheritance.length,0);
 
@@ -184,7 +206,7 @@ suite('Parser GeneralClasses Tests', () => {
 	});
 
 	describe('ParseClassWithPublicMemberFunctions', function() {
-		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:FunctionTestData) {
+		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:TestData) {
 			let testContent = 
 			`class MyClass {
 			public:
@@ -195,7 +217,7 @@ suite('Parser GeneralClasses Tests', () => {
 
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
-			assert.strictEqual(classes[0].publicFunctions.length,functionTestData.nFunctions);
+			assert.strictEqual(classes[0].publicFunctions.length,functionTestData.nDates);
 			assert.strictEqual(classes[0].privateFunctions.length,0);
 			assert.strictEqual(classes[0].protectedFunctions.length,0);
 			assert.strictEqual(classes[0].inheritance.length,0);
@@ -205,20 +227,20 @@ suite('Parser GeneralClasses Tests', () => {
 	});
 
 	describe('ParseClassWithProtectedMemberFunctions', function() {
-		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:FunctionTestData) {
+		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:TestData) {
 			let testContent = 
 			`class MyClass {
 			protected:
 				${functionTestData.content}
 			};
-			`;
+			`; 
 			let classes:IClass[] = Parser.parseClasses(testContent);
 
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
 			assert.strictEqual(classes[0].publicFunctions.length,0);
 			assert.strictEqual(classes[0].privateFunctions.length,0);
-			assert.strictEqual(classes[0].protectedFunctions.length,functionTestData.nFunctions);
+			assert.strictEqual(classes[0].protectedFunctions.length,functionTestData.nDates);
 			assert.strictEqual(classes[0].inheritance.length,0);
 
 			done();
@@ -226,7 +248,7 @@ suite('Parser GeneralClasses Tests', () => {
 	});
 
 	describe('ParseClassWithVariousMemberFunctions', function() {
-		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:FunctionTestData) {
+		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:TestData) {
 			let testContent = 
 			`class MyClass {
 			private:
@@ -247,9 +269,9 @@ suite('Parser GeneralClasses Tests', () => {
 
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
-			assert.strictEqual(classes[0].publicFunctions.length,2*functionTestData.nFunctions);
-			assert.strictEqual(classes[0].privateFunctions.length,2*functionTestData.nFunctions);
-			assert.strictEqual(classes[0].protectedFunctions.length,2*functionTestData.nFunctions);
+			assert.strictEqual(classes[0].publicFunctions.length,2*functionTestData.nDates);
+			assert.strictEqual(classes[0].privateFunctions.length,2*functionTestData.nDates);
+			assert.strictEqual(classes[0].protectedFunctions.length,2*functionTestData.nDates);
 			assert.strictEqual(classes[0].inheritance.length,0);
 
 			done();

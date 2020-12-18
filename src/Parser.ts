@@ -67,33 +67,33 @@ class ClassMatch {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
         else if (regexMatchArr[1] === undefined) {
-            throw new Error("ParserError: No function return type, this should not happen!");               
-        }
-
-        else if (regexMatchArr[2] === undefined) {
-            throw new Error("ParserError: No function name, this should not happen!");               
+            throw new Error("ParserError: No class name, this should not happen!");               
         }
 
         this.nameMatch = regexMatchArr[1];
-        this.bodyMatch = (regexMatchArr[2]) ? regexMatchArr[2] : "";
+        this.inheritanceMatch = (regexMatchArr[2]) ? regexMatchArr[2].split(",") : [];
+        this.bodyMatch = (regexMatchArr[3]) ? regexMatchArr[3] : "";
         this.isInterface = ClassMatch.pureVirtualMemberRegexMatcher.test(this.bodyMatch);
     }
 
     // TODO: Inheritance
     private static readonly classSpecifierRegex: string = "class\\s";
     private static readonly classNameRegex: string = "([\\S]+)";
+    private static readonly inheritanceRegex: string = "(?::\\s*([\\S\\s]+))?";
     private static readonly classBodyRegex: string = "{([\\s\\S]*)}";
     private static readonly classEndRegex: string = ";";
     private static readonly nextClassRegex: string = "[\\s\\S]*?(?=class)";
     private static readonly pureVirtualMemberRegexMatcher =  /virtual[\s\S]*?=[\s]*0[\s]*;/g;
     
     static readonly SINGLE_REGEX_STR: string = joinStringsWithFiller(
-        [ClassMatch.classSpecifierRegex, ClassMatch.classNameRegex, ClassMatch.classBodyRegex, ClassMatch.classEndRegex], "\\s*");
+        [ClassMatch.classSpecifierRegex, ClassMatch.classNameRegex, ClassMatch.inheritanceRegex,
+         ClassMatch.classBodyRegex, ClassMatch.classEndRegex], "\\s*");
     static readonly MULTI_REGEX_STR: string = joinStringsWithFiller(
         [ClassMatch.SINGLE_REGEX_STR, ClassMatch.nextClassRegex], "[\\s\\S]*?");
-    static readonly NOF_GROUPMATCHES = 2;
+    static readonly NOF_GROUPMATCHES = 3;
 
     readonly nameMatch:string;
+    readonly inheritanceMatch: string[];
     readonly bodyMatch: string;
     readonly isInterface: boolean;
 }
@@ -291,7 +291,7 @@ export abstract class Parser {
         
         let generateNewClass = (rawMatch: RegExpExecArray) => {
             let match = new ClassMatch(rawMatch);
-            let newClass = match.isInterface? new cpptypes.ClassInterface(match.nameMatch) : new cpptypes.ClassImpl(match.nameMatch);
+            let newClass = match.isInterface? new cpptypes.ClassInterface(match.nameMatch, match.inheritanceMatch) : new cpptypes.ClassImpl(match.nameMatch, match.inheritanceMatch);
             newClass.deserialize(match.bodyMatch);
             return newClass;
         };

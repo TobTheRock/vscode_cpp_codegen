@@ -4,7 +4,8 @@ import { ClassNameGenerator } from "../io";
 
 class ClassBase implements IClass {
     constructor(    
-        public readonly name:string) {
+        public readonly name:string,
+        public readonly inheritance:string[]) {
         
     }
 
@@ -28,7 +29,6 @@ class ClassBase implements IClass {
 
     protected classNameGen: ClassNameGenerator = new ClassNameGenerator(this.name, false);
 
-    inheritance: string[] = []; // TODO
     publicFunctions:IFunction[] = [];
     privateFunctions:IFunction[] = [];
     nestedClasses: IClass[] = [];
