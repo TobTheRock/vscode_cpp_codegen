@@ -6,16 +6,17 @@ import * as vscode from 'vscode';
 // import * as myExtension from '../../extension';
 import {Parser} from '../../Parser';
 import {IFunction} from '../../cpptypes';
+import { DeseralizationData } from '../../io';
 
 suite('Parser Standalone Functions Tests', () => {
 	// vscode.window.showInformationMessage('Start all tests.');
 
 	test('ParseStandloneFunction', (done) => {
-		let testContent = 
+		const testContent = new DeseralizationData( 
 		`
 void fncName (int argument);
 		`
-		;
+		);
 		let functions:IFunction[] = Parser.parseStandaloneFunctiones(testContent);
 
 		assert.strictEqual(functions.length,1);
@@ -26,12 +27,12 @@ void fncName (int argument);
 	});
 
 	test('ParseStandloneFunctionMultiline', (done) => {
-		let testContent = 
+		const testContent = new DeseralizationData( 
 		`
 void fncName (int argument,
 	std::shared_ptr<XYZ> argument2);
 		`
-		;
+		);
 		let functions:IFunction[] = Parser.parseStandaloneFunctiones(testContent);
 
 		assert.strictEqual(functions.length,1);
@@ -42,13 +43,13 @@ void fncName (int argument,
 	});
 
 	test('ParseMultipleStandaloneFunctions', (done) => {
-		let testContent = 
+		const testContent = new DeseralizationData( 
 		`
 void fncName ();
 std::shared_ptr<XYZ> fncName2 (int args2,
 	void* arg3);
 		`
-		;
+		);
 		let functions:IFunction[] = Parser.parseStandaloneFunctiones(testContent);
 
 		assert.strictEqual(functions.length,2);
@@ -62,12 +63,12 @@ std::shared_ptr<XYZ> fncName2 (int args2,
 	});
 
 	test('ParseStandloneFunctionsWithConstReturn', (done) => {
-		let testContent = 
+		const testContent = new DeseralizationData( 
 		`
 const XYZ* fncName (int arg1,
 	void* arg2);
 		`
-		;
+		);
 		let functions:IFunction[] = Parser.parseStandaloneFunctiones(testContent);
 
 		assert.strictEqual(functions.length,1);

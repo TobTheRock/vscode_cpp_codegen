@@ -1,10 +1,6 @@
 import {FileBase} from "./FileBase";
 import * as cpptypes from "../cpptypes";
-import {ISerializable, IDeserializable, SerializableMode} from "../io/ISerial";
-
-export {SerializableMode as SerializableMode};
-
-
+import {ISerializable, IDeserializable, SerializableMode, DeseralizationData} from "../io";
 
 import * as path from 'path';
 import { inherits } from "util";
@@ -32,7 +28,7 @@ export class CppHeaderFile extends FileBase implements ISerializable, IDeseriali
         return false;  
     }
 
-    deserialize (fileContent:string)
+    deserialize (fileContent:DeseralizationData)
     {
         //Parser find name space
     }

@@ -9,6 +9,7 @@ import {Parser} from '../../Parser';
 import {IClass, ClassInterface, ClassImpl} from '../../cpptypes';
 import { callItAsync } from "./utils";
 
+import { DeseralizationData } from '../../io';
 
 const argData = ["", "int test", "int test1, const Class* test2, void* test3", "int \ttest1,\t\n const\n Class* test2"];
 class TestData {
@@ -40,13 +41,13 @@ new TestData(" :\tpublic IInterface, private IInterface2", 2), new TestData(": p
 suite('Parser GeneralClasses Tests', () => {
 
 	test('ParseClassWithoutMemberFunctions', (done) => {
-		let testContent = 
+		const testContent = new DeseralizationData(
 		`class MyClass {       // The class
 			int myNum;        // Attribute (int variable)
 			string myString;  // Attribute (string variable)
 		  };
 		`
-		;
+		);
 		let classes:IClass[] = Parser.parseClasses(testContent);
 
 		assert.strictEqual(classes.length,1);
@@ -60,12 +61,12 @@ suite('Parser GeneralClasses Tests', () => {
 	});
 
 	test('ParseInterface', (done) => {
-		let testContent = 
+		const testContent = new DeseralizationData(
 		`class MyClass {       // The class
 			virtual const int* pureFnct = 0  ;
 		  };
 		`
-		;
+		);
 		let classes:IClass[] = Parser.parseClasses(testContent);
 
 		assert.strictEqual(classes.length,1);
@@ -82,11 +83,11 @@ suite('Parser GeneralClasses Tests', () => {
 
 	describe('ParseInheritance', function() {
 		callItAsync("With inheritance ${value}", inheritData, function (done:Done, inheritData:TestData) {
-		let testContent = 
+		const testContent = new DeseralizationData(
 		`class MyClass ${inheritData.content}  {  // The class
 		  };
 		`
-		;
+		);
 		let classes:IClass[] = Parser.parseClasses(testContent);
 
 		assert.strictEqual(classes.length,1);
@@ -102,7 +103,7 @@ suite('Parser GeneralClasses Tests', () => {
 	});
 
 	test('ParseMultipleClassesWithoutMemberFunctions', (done) => {
-		let testContent = 
+		const testContent = new DeseralizationData(
 		`class MyClass {       // The class
 			int myNum;        // Attribute (int variable)
 			string myString;  // Attribute (string variable)
@@ -112,7 +113,7 @@ suite('Parser GeneralClasses Tests', () => {
 			string myString;  // Attribute 2(string variable)
 		  };
 		`
-		;
+		);
 		let classes:IClass[] = Parser.parseClasses(testContent);
 
 		assert.strictEqual(classes.length,2);
@@ -132,7 +133,7 @@ suite('Parser GeneralClasses Tests', () => {
 	});
 
 	test('ParseNestedClassesWithoutMemberFunctions', (done) => {
-		let testContent = 
+		const testContent = new DeseralizationData(
 		`class MyClass {       // The class
 			int myNum;        // Attribute (int variable)
 			string myString;  // Attribute (string variable)		
@@ -142,7 +143,7 @@ suite('Parser GeneralClasses Tests', () => {
 		  	};
 		  };
 		`
-		;
+		);
 		let classes:IClass[] = Parser.parseClasses(testContent);
 
 		assert.strictEqual(classes.length,1);
@@ -166,11 +167,11 @@ suite('Parser GeneralClasses Tests', () => {
 
 	describe('ParseClassWithImplicitPrivateMemberFunctions', function() {
 		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:TestData) {
-			let testContent = 
+			const testContent = new DeseralizationData(
 			`class MyClass {
 				${functionTestData.content}
 			};
-			`;
+			`);
 			let classes:IClass[] = Parser.parseClasses(testContent);
 
 			assert.strictEqual(classes.length,1);
@@ -186,12 +187,12 @@ suite('Parser GeneralClasses Tests', () => {
 
 	describe('ParseClassWithExplicitPrivateMemberFunctions', function() {
 		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:TestData) {
-			let testContent = 
+			const testContent = new DeseralizationData(
 			`class MyClass {
 			private:
 				${functionTestData.content}
 			};
-			`;
+			`);
 			let classes:IClass[] = Parser.parseClasses(testContent);
 
 			assert.strictEqual(classes.length,1);
@@ -207,12 +208,12 @@ suite('Parser GeneralClasses Tests', () => {
 
 	describe('ParseClassWithPublicMemberFunctions', function() {
 		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:TestData) {
-			let testContent = 
+			const testContent = new DeseralizationData(
 			`class MyClass {
 			public:
 				${functionTestData.content}
 			};
-			`;
+			`);
 			let classes:IClass[] = Parser.parseClasses(testContent);
 
 			assert.strictEqual(classes.length,1);
@@ -228,12 +229,12 @@ suite('Parser GeneralClasses Tests', () => {
 
 	describe('ParseClassWithProtectedMemberFunctions', function() {
 		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:TestData) {
-			let testContent = 
+			const testContent = new DeseralizationData(
 			`class MyClass {
 			protected:
 				${functionTestData.content}
 			};
-			`; 
+			`); 
 			let classes:IClass[] = Parser.parseClasses(testContent);
 
 			assert.strictEqual(classes.length,1);
@@ -249,7 +250,7 @@ suite('Parser GeneralClasses Tests', () => {
 
 	describe('ParseClassWithVariousMemberFunctions', function() {
 		callItAsync("With functions ${value}", functionData, function (done:Done, functionTestData:TestData) {
-			let testContent = 
+			const testContent = new DeseralizationData(
 			`class MyClass {
 			private:
 				${functionTestData.content}
@@ -264,7 +265,7 @@ suite('Parser GeneralClasses Tests', () => {
 			protected:
 				${functionTestData.content}
 			};
-			`;
+			`);
 			let classes:IClass[] = Parser.parseClasses(testContent);
 
 			assert.strictEqual(classes.length,1);

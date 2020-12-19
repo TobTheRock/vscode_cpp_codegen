@@ -12,7 +12,12 @@ export interface ISerializable
     serialize: (mode:SerializableMode) => string;
 }
 
+export class DeseralizationData 
+{
+    constructor(public readonly originalContent:string) {this.remainingContent = originalContent};
+    remainingContent:string;
+}
 export interface IDeserializable
 {
-    deserialize: (content:string) => void;
+    deserialize: (data:DeseralizationData) => void;
 }
