@@ -1,11 +1,15 @@
 import {FileBase} from "./FileBase";
-import {INamespace} from "../cpptypes";
+import * as cpptypes from "../cpptypes";
+import {ISerializable, IDeserializable, SerializableMode} from "../io/ISerial";
+
+export {SerializableMode as SerializableMode};
+
 
 
 import * as path from 'path';
 import { inherits } from "util";
 
-export class CppHeaderFile extends FileBase
+export class CppHeaderFile extends FileBase implements ISerializable, IDeserializable
 {
     constructor(filePath: string)
     {
@@ -32,5 +36,11 @@ export class CppHeaderFile extends FileBase
     {
         //Parser find name space
     }
-    private _namespaces: INamespace[]; 
+
+    serialize (mode: SerializableMode)
+    {
+        return "";
+    }
+
+    private _namespaces: cpptypes.INamespace[]; 
 } 

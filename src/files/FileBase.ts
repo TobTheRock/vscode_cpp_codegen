@@ -1,6 +1,5 @@
 
 import * as path from 'path';
-
 export class FileBase
 {
     public constructor(filePath:string)

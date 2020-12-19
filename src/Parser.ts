@@ -22,15 +22,22 @@ class NamespaceMatch {
 
         this.nameMatch = regexMatchArr[1];
 
-        this.namespaceMatch = (regexMatchArr[2]) ? regexMatchArr[2] : "";
-        this.contentMatch = (regexMatchArr[3]) ? regexMatchArr[3] : "";
+        this.contentMatch = (regexMatchArr[2]) ? regexMatchArr[2] : "";
     }
 
-    // static readonly REGEX_STR:string = 'namespace ([^\\s]*)\\s*{([\\s\\S]*namespace [^\\s]*\\s*{[\\s\\S]*})*((?!namespace)[\\s\\S]*)}';
+    private static readonly namespaceSpecifierRegex: string = "namespace\\s";
+    private static readonly namespaceNameRegex: string = "([\\S]+)";
+    private static readonly namespaceBodyRegex: string = "{([\\s\\S]*)}";
+    private static readonly nextNamespaceRegex: string = "(?=namespace)";
+    
+    static readonly SINGLE_REGEX_STR: string = joinStringsWithFiller(
+        [NamespaceMatch.namespaceSpecifierRegex, NamespaceMatch.namespaceNameRegex, NamespaceMatch.namespaceBodyRegex], "\\s*");
+    static readonly MULTI_REGEX_STR: string = joinStringsWithFiller(
+        [NamespaceMatch.SINGLE_REGEX_STR, NamespaceMatch.nextNamespaceRegex], "[\\s\\S]*?");
+    static readonly NOF_GROUPMATCHES = 2;
+
     static readonly REGEX_STR:string = 'namespace (\\S*)\\s*{([\\s\\S]*namespace \\S*\\s*{[\\s\\S]*})*((?:(?!namespace)[\\s\\S])*)}';
-    static readonly NOF_GROUPMATCHES = 3;
     readonly nameMatch:string;
-    readonly namespaceMatch:string;
     readonly contentMatch:string;
 }
 
@@ -76,13 +83,12 @@ class ClassMatch {
         this.isInterface = ClassMatch.pureVirtualMemberRegexMatcher.test(this.bodyMatch);
     }
 
-    // TODO: Inheritance
     private static readonly classSpecifierRegex: string = "class\\s";
     private static readonly classNameRegex: string = "([\\S]+)";
     private static readonly inheritanceRegex: string = "(?::\\s*([\\S\\s]+))?";
     private static readonly classBodyRegex: string = "{([\\s\\S]*)}";
     private static readonly classEndRegex: string = ";";
-    private static readonly nextClassRegex: string = "[\\s\\S]*?(?=class)";
+    private static readonly nextClassRegex: string = "(?=class)";
     private static readonly pureVirtualMemberRegexMatcher =  /virtual[\s\S]*?=[\s]*0[\s]*;/g;
     
     static readonly SINGLE_REGEX_STR: string = joinStringsWithFiller(
@@ -245,26 +251,37 @@ export abstract class Parser {
 
     static parseNamespaces(content:string): cpptypes.INamespace[]  {
         let namespaces:cpptypes.INamespace[] = [];
+        let contentWithSingleNamespace = content;
+
+        let generateNewNamespace = (rawMatch: RegExpExecArray) => {
+            let match = new NamespaceMatch(rawMatch);
+            let newNamespace = new cpptypes.Namespace(match.nameMatch);
+            newNamespace.deserialize(match.contentMatch);
+            return newNamespace;
+        };
 
         Parser.findAllRegexMatches(
-            NamespaceMatch.REGEX_STR,
+            NamespaceMatch.MULTI_REGEX_STR,
             content,
             (rawMatch) => {
-                let match = new NamespaceMatch (rawMatch);
-
-                //TODO avoid recursion?
-                let subNamespaces:cpptypes.INamespace[] = Parser.parseNamespaces(match.namespaceMatch);
-                let newNamespace =new cpptypes.Namespace(match.nameMatch, subNamespaces);
-                // TODO move error catching to a higher level
-                try {
-                    newNamespace.deserialize(match.contentMatch);
-                    namespaces.push(newNamespace);
-                } catch (error) {
-                    console.log(error, "Failed to parse namespace contents, skipping!"); // TODO API error? e.g showErrorMessage
-                }
+                namespaces.push(generateNewNamespace(rawMatch))
+                contentWithSingleNamespace = contentWithSingleNamespace.replace(rawMatch[0], "");
             }
         );
-        
+        Parser.findAllRegexMatches(
+            NamespaceMatch.SINGLE_REGEX_STR,
+            contentWithSingleNamespace,
+            (rawMatch) => {
+                namespaces.push(generateNewNamespace(rawMatch))
+            }
+        );
+
+        // if (!namespaces.length) {
+        //     let newNamespace = new cpptypes.NoneNamespace();
+        //     newNamespace.deserialize(content);
+        //     namespaces.push(newNamespace);
+        // }
+
         return namespaces;
     }
 
