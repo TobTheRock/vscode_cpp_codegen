@@ -163,6 +163,52 @@ suite('Parser GeneralClasses Tests', () => {
 		assert.strictEqual(nestedClass.nestedClasses.length,0);
 
 		done();
+	});	
+	
+	
+	test('ParseNestedAndMultipleClassesWithoutMemberFunctions', (done) => {
+		const testContent = new DeseralizationData(
+		`class MyClass {       // The class
+			int myNum;        // Attribute (int variable)
+			string myString;  // Attribute (string variable)		
+			class NestedClass {       // The class
+				int myNum;        // Attribute (int variable)
+				string myString;  // Attribute (string variable)
+		  	};
+		  };		
+		  
+		  class MyClass2 {       // The 2nd class
+			int myNum;        // Attribute 2 (int variable)
+			string myString;  // Attribute 2(string variable)
+		  };
+		`
+		);
+		let classes:IClass[] = Parser.parseClasses(testContent);
+
+		assert.strictEqual(classes.length,2);
+		assert.strictEqual(classes[0].name,"MyClass");
+		assert.strictEqual(classes[0].publicFunctions.length,0);
+		assert.strictEqual(classes[0].privateFunctions.length,0);
+		assert.strictEqual(classes[0].protectedFunctions.length,0);
+		assert.strictEqual(classes[0].inheritance.length,0);
+		assert.strictEqual(classes[0].nestedClasses.length,1);
+
+		let nestedClass:IClass = classes[0].nestedClasses[0];
+		assert.strictEqual(nestedClass.name,"NestedClass");
+		assert.strictEqual(nestedClass.publicFunctions.length,0);
+		assert.strictEqual(nestedClass.privateFunctions.length,0);
+		assert.strictEqual(nestedClass.protectedFunctions.length,0);
+		assert.strictEqual(nestedClass.inheritance.length,0);
+		assert.strictEqual(nestedClass.nestedClasses.length,0);
+
+		assert.strictEqual(classes[1].name,"MyClass2");
+		assert.strictEqual(classes[1].publicFunctions.length,0);
+		assert.strictEqual(classes[1].privateFunctions.length,0);
+		assert.strictEqual(classes[1].protectedFunctions.length,0);
+		assert.strictEqual(classes[1].inheritance.length,0);
+		assert.strictEqual(classes[1].nestedClasses.length,0);
+
+		done();
 	});
 
 	describe('ParseClassWithImplicitPrivateMemberFunctions', function() {
