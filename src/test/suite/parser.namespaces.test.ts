@@ -112,8 +112,8 @@ suite('Parser Namespace Tests', () => {
 			let namespace3 = namespace2.subnamespaces[0];
 			assert.strictEqual(namespace3.name,"namespaceName3");
 			assert.strictEqual(namespace3.classes.length, data.nClasses);
-			assert.strictEqual(namespace3.subnamespaces.length, data.nFunc);
-			assert.strictEqual(namespace3.functions.length, 0);
+			assert.strictEqual(namespace3.subnamespaces.length, 0);
+			assert.strictEqual(namespace3.functions.length, data.nFunc);
 			done();
 		});
 	});
