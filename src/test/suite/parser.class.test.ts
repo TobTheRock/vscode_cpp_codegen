@@ -104,7 +104,7 @@ suite('Parser GeneralClasses Tests', () => {
 
 	test('ParseMultipleClassesWithoutMemberFunctions', (done) => {
 		const testContent = new DeseralizationData(
-		`class MyClass {       // The class
+		`class MyClass1 {       // The class
 			int myNum;        // Attribute (int variable)
 			string myString;  // Attribute (string variable)
 		  };
@@ -112,23 +112,24 @@ suite('Parser GeneralClasses Tests', () => {
 			int myNum;        // Attribute 2 (int variable)
 			string myString;  // Attribute 2(string variable)
 		  };
+		class MyClass3 {       // The 2nd class
+			int myNum;        // Attribute 2 (int variable)
+			string myString;  // Attribute 2(string variable)
+		};
 		`
 		);
 		let classes:IClass[] = Parser.parseClasses(testContent);
 
-		assert.strictEqual(classes.length,2);
-		assert.strictEqual(classes[0].name,"MyClass");
-		assert.strictEqual(classes[0].publicFunctions.length,0);
-		assert.strictEqual(classes[0].privateFunctions.length,0);
-		assert.strictEqual(classes[0].protectedFunctions.length,0);
-		assert.strictEqual(classes[0].inheritance.length,0);
-		assert.strictEqual(classes[0].nestedClasses.length,0);
-		assert.strictEqual(classes[1].name,"MyClass2");
-		assert.strictEqual(classes[1].publicFunctions.length,0);
-		assert.strictEqual(classes[1].privateFunctions.length,0);
-		assert.strictEqual(classes[1].protectedFunctions.length,0);
-		assert.strictEqual(classes[1].inheritance.length,0);
-		assert.strictEqual(classes[1].nestedClasses.length,0);
+		assert.strictEqual(classes.length,3);
+		for (let index = 1; index < 4; index++) {
+			assert.strictEqual(classes[index-1].name,"MyClass"+index);
+			assert.strictEqual(classes[index-1].publicFunctions.length,0);
+			assert.strictEqual(classes[index-1].privateFunctions.length,0);
+			assert.strictEqual(classes[index-1].protectedFunctions.length,0);
+			assert.strictEqual(classes[index-1].inheritance.length,0);
+			assert.strictEqual(classes[index-1].nestedClasses.length,0);
+			
+		}
 		done();
 	});
 

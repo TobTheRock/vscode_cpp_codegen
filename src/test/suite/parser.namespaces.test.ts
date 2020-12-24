@@ -34,7 +34,7 @@ suite('Parser Namespace Tests', () => {
 
 	describe('ParseSingleNamespace', function() {
 		callItAsync("With content ${value}", namespacesData, function (done:Done, data:TestData) {
-			const testString = new DeseralizationData( 
+			const testData = new DeseralizationData( 
 			`
 				namespace namespaceName
 				{
@@ -42,7 +42,7 @@ suite('Parser Namespace Tests', () => {
 				}
 			`
 			);
-			let namespaces:INamespace[] = Parser.parseNamespaces(testString);
+			let namespaces:INamespace[] = Parser.parseNamespaces(testData);
 
 			assert.strictEqual(namespaces.length,1);
 			assert.strictEqual(namespaces[0].name,"namespaceName");
@@ -57,7 +57,7 @@ suite('Parser Namespace Tests', () => {
 
 	describe('ParseMultipleNamespaces', function() {
 		callItAsync("With content ${value}", namespacesData, function (done:Done, data:TestData) {
-			const testString = new DeseralizationData( 
+			const testData = new DeseralizationData( 
 			`
 				namespace namespaceName{${data.content}}			
 				namespace namespaceName2{
@@ -65,7 +65,7 @@ suite('Parser Namespace Tests', () => {
 				}
 			`
 			);
-			let namespaces:INamespace[] = Parser.parseNamespaces(testString);
+			let namespaces:INamespace[] = Parser.parseNamespaces(testData);
 
 			assert.strictEqual(namespaces.length,2);
 			assert.strictEqual(namespaces[0].name,"namespaceName");
@@ -82,7 +82,7 @@ suite('Parser Namespace Tests', () => {
 
 	describe('ParseMultipleNestedNamespaces', function() {
 		callItAsync("With content ${value}", namespacesData, function (done:Done, data:TestData) {
-			const testString = new DeseralizationData( 
+			const testData = new DeseralizationData( 
 			`
 				namespace namespaceName
 				{
@@ -95,7 +95,7 @@ suite('Parser Namespace Tests', () => {
 				}
 				}
 			`);
-			let namespaces:INamespace[] = Parser.parseNamespaces(testString);
+			let namespaces:INamespace[] = Parser.parseNamespaces(testData);
 
 			assert.strictEqual(namespaces.length,1);
 			assert.strictEqual(namespaces[0].name,"namespaceName");
@@ -120,7 +120,7 @@ suite('Parser Namespace Tests', () => {
 
 	describe('ParseNestedMultipleNamespaces', function() {
 		callItAsync("With content ${value}", namespacesData, function (done:Done, data:TestData) {
-			const testString = new DeseralizationData( 
+			const testData = new DeseralizationData( 
 			`
 				namespace namespaceName
 				{
@@ -132,8 +132,9 @@ suite('Parser Namespace Tests', () => {
 				{
 					${data.content}
 				}
+				}
 			`);
-			let namespaces:INamespace[] = Parser.parseNamespaces(testString);
+			let namespaces:INamespace[] = Parser.parseNamespaces(testData);
 
 			assert.strictEqual(namespaces.length,1);
 			assert.strictEqual(namespaces[0].name,"namespaceName");

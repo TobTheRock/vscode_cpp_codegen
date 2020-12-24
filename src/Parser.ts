@@ -12,6 +12,10 @@ function joinStringsWithFiller(strings:string[], filler:string):string {
     return joinedStrings + strings[strings.length-1];
 }
 
+function joinStringsWithWhiteSpace(strings:string[]):string {
+    return joinStringsWithFiller(strings, "\\s*");
+}
+
 class RawMatch {
     constructor(public fullMatch:string, public captures:string[]) {
         
@@ -37,8 +41,8 @@ class NamespaceMatch {
     private static readonly namespaceBodyRegex: string = "{([\\s\\S]*)}";
     private static readonly nextNamespaceRegex: string = "(?=namespace)";
     
-    static readonly SINGLE_REGEX_STR: string = joinStringsWithFiller(
-        [NamespaceMatch.namespaceSpecifierRegex, NamespaceMatch.namespaceNameRegex, NamespaceMatch.namespaceBodyRegex], "\\s*");
+    static readonly SINGLE_REGEX_STR: string = joinStringsWithWhiteSpace(
+        [NamespaceMatch.namespaceSpecifierRegex, NamespaceMatch.namespaceNameRegex, NamespaceMatch.namespaceBodyRegex]);
     static readonly MULTI_REGEX_STR: string = joinStringsWithFiller(
         [NamespaceMatch.SINGLE_REGEX_STR, NamespaceMatch.nextNamespaceRegex], "[\\s\\S]*?");
     static readonly NOF_GROUPMATCHES = 2;
@@ -95,12 +99,12 @@ class ClassMatch {
     private static readonly inheritanceRegex: string = "(?::\\s*([\\S\\s]+))?";
     private static readonly classBodyRegex: string = "{([\\s\\S]*)}";
     private static readonly classEndRegex: string = ";";
-    private static readonly nextClassRegex: string = "(?=class)";
+    private static readonly nextClassRegex: string = "(?="+ClassMatch.classSpecifierRegex+"\\s*[\\S]+)";
     private static readonly pureVirtualMemberRegexMatcher =  /virtual[\s\S]*?=[\s]*0[\s]*;/g;
     
-    static readonly SINGLE_REGEX_STR: string = joinStringsWithFiller(
+    static readonly SINGLE_REGEX_STR: string = joinStringsWithWhiteSpace(
         [ClassMatch.classSpecifierRegex, ClassMatch.classNameRegex, ClassMatch.inheritanceRegex,
-         ClassMatch.classBodyRegex, ClassMatch.classEndRegex], "\\s*");
+         ClassMatch.classBodyRegex, ClassMatch.classEndRegex]);
     static readonly MULTI_REGEX_STR: string = joinStringsWithFiller(
         [ClassMatch.SINGLE_REGEX_STR, ClassMatch.nextClassRegex], "[\\s\\S]*?");
     static readonly NOF_GROUPMATCHES = 3;
@@ -178,9 +182,9 @@ class MemberFunctionMatch {
     private static readonly mayHaveConstSpecifierRegex:string = '(const)?';
     private static readonly mayHaveOverrideRegex:string = '(override)?';
     private static readonly mayBePure:string = '(=\\s*0)?';
-    private static readonly virtualSubMatchRegex:string = joinStringsWithFiller([MemberFunctionMatch.mayHaveVirtualRegex, MemberFunctionMatch.returnValRegex + '$'], '\\s*');
-    static readonly REGEX_STR:string = joinStringsWithFiller([MemberFunctionMatch.returnValRegex+'\\s', MemberFunctionMatch.funcNameRegex,
-         MemberFunctionMatch.funcArgsRegex, MemberFunctionMatch.mayHaveConstSpecifierRegex, MemberFunctionMatch.mayHaveOverrideRegex, MemberFunctionMatch.mayBePure, ';'], '\\s*');
+    private static readonly virtualSubMatchRegex:string = joinStringsWithWhiteSpace([MemberFunctionMatch.mayHaveVirtualRegex, MemberFunctionMatch.returnValRegex + '$']);
+    static readonly REGEX_STR:string = joinStringsWithWhiteSpace([MemberFunctionMatch.returnValRegex+'\\s', MemberFunctionMatch.funcNameRegex,
+         MemberFunctionMatch.funcArgsRegex, MemberFunctionMatch.mayHaveConstSpecifierRegex, MemberFunctionMatch.mayHaveOverrideRegex, MemberFunctionMatch.mayBePure, ';']);
     static readonly NOF_GROUPMATCHES = 6;
 
     readonly virtualMatch:boolean;
@@ -280,12 +284,6 @@ export abstract class Parser {
                 namespaces.push(generateNewNamespace(rawMatch))
             }
         );
-
-        // if (!namespaces.length) {
-        //     let newNamespace = new cpptypes.NoneNamespace();
-        //     newNamespace.deserialize(data);
-        //     namespaces.push(newNamespace);
-        // }
 
         return namespaces;
     }
