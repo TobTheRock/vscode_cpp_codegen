@@ -97,16 +97,14 @@ class ClassMatch {
     private static readonly classSpecifierRegex: string = "class\\s";
     private static readonly classNameRegex: string = "([\\S]+)";
     private static readonly inheritanceRegex: string = "(?::\\s*([\\S\\s]+))?";
-    private static readonly classBodyRegex: string = "{([\\s\\S]*)}";
+    private static readonly noNestedClassRegex: string = "(?!"+ClassMatch.classSpecifierRegex+"\\s*[\\S]+\\s*{)";
+    private static readonly classBodyRegex: string = "{((?:"+ClassMatch.noNestedClassRegex+"[\\s\\S])*)}";
     private static readonly classEndRegex: string = ";";
-    private static readonly nextClassRegex: string = "(?="+ClassMatch.classSpecifierRegex+"\\s*[\\S]+)";
     private static readonly pureVirtualMemberRegexMatcher =  /virtual[\s\S]*?=[\s]*0[\s]*;/g;
     
-    static readonly SINGLE_REGEX_STR: string = joinStringsWithWhiteSpace(
+    static readonly REGEX_STR: string = joinStringsWithWhiteSpace(
         [ClassMatch.classSpecifierRegex, ClassMatch.classNameRegex, ClassMatch.inheritanceRegex,
          ClassMatch.classBodyRegex, ClassMatch.classEndRegex]);
-    static readonly MULTI_REGEX_STR: string = joinStringsWithFiller(
-        [ClassMatch.SINGLE_REGEX_STR, ClassMatch.nextClassRegex], "[\\s\\S]*?");
     static readonly NOF_GROUPMATCHES = 3;
 
     readonly nameMatch:string;
@@ -317,20 +315,12 @@ export abstract class Parser {
         };
 
         Parser.findAllAndRemoveRegexMatches(
-            ClassMatch.MULTI_REGEX_STR,
+            ClassMatch.REGEX_STR,
             data,
             (rawMatch) => {
-                classes.push(generateNewClass(rawMatch));
+                classes.push(generateNewClass(rawMatch)); 
             }
         );
-        Parser.findAllAndRemoveRegexMatches(
-            ClassMatch.SINGLE_REGEX_STR,
-            data,
-            (rawMatch) => {
-                classes.push(generateNewClass(rawMatch));
-            }
-        );
-
         return classes;
     }
     
