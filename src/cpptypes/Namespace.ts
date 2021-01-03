@@ -1,21 +1,30 @@
 import { IClass, IFunction, INamespace, SerializableMode} from "./TypeInterfaces";
 import {Parser} from "../Parser";
-import {DeseralizationData} from "../io";
-export class Namespace implements INamespace {
+import {TextFragment, TextScope} from "../io";
+export class Namespace  extends TextScope implements INamespace {
     
-    constructor(name:string, subnamespaces:INamespace[] = []) {
+    constructor(name:string, scope:TextScope) {
+
+        super(scope.scopeStart, scope.scopeEnd);
         this.name = name;
         this.classes = [];
         this.functions = [];
-        this.subnamespaces = subnamespaces;
+        this.subnamespaces = [];
+    }
+
+    tryAddNestedNamespace(possibleNestedNamespace: INamespace): boolean {
+        if (this.fullyContains(possibleNestedNamespace)) {
+            this.subnamespaces.push(possibleNestedNamespace);
+            return true;
+        }
+        return false;
     }
 
     serialize (mode:SerializableMode) {
         return "";
     }
 
-    deserialize (data: DeseralizationData) {
-        this.subnamespaces = Parser.parseNamespaces(data);
+    deserialize (data: TextFragment) {
         this.classes = Parser.parseClasses(data);
         this.functions = Parser.parseStandaloneFunctiones(data);
     }
@@ -26,20 +35,25 @@ export class Namespace implements INamespace {
     subnamespaces:INamespace[];
 }
 
-export class NoneNamespace implements INamespace {
+export class NoneNamespace extends TextScope implements INamespace {
     
-    constructor() {
+    constructor(scope:TextScope) {
+        super(scope.scopeStart, scope.scopeEnd);
         this.name = "";
         this.classes = [];
         this.functions = [];
         this.subnamespaces = [];
     }
 
+    tryAddNestedNamespace(possibleNestedNamespace: INamespace): boolean {
+        return false;
+    }
+
     serialize (mode:SerializableMode) {
         return "";
     }
 
-    deserialize (data: DeseralizationData) {
+    deserialize (data: TextFragment) {
         this.classes = Parser.parseClasses(data);
         this.functions = Parser.parseStandaloneFunctiones(data);
     }

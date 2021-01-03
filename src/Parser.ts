@@ -1,5 +1,6 @@
 import * as cpptypes from "./cpptypes";
 import * as io from "./io";
+import { TextBlock } from "./io";
 
 // TODO Error handling: do try catch in parser or move it to a higher level (prefered so we can catch errors in deserialze functions)?
 
@@ -15,60 +16,50 @@ function joinStringsWithFiller(strings:string[], filler:string):string {
 function joinStringsWithWhiteSpace(strings:string[]):string {
     return joinStringsWithFiller(strings, "\\s*");
 }
-
-class RawMatch {
-    constructor(public fullMatch:string, public captures:string[]) {
-        
-    }
-}
-
 class NamespaceMatch {
-    constructor(rawMatch:RawMatch) {
-        if (rawMatch.captures.length !== NamespaceMatch.NOF_GROUPMATCHES) {
+    constructor(regexMatch:io.TextRegexMatch) {
+        if (regexMatch.groupMatches.length !== NamespaceMatch.NOF_GROUPMATCHES) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
-        else if (rawMatch.captures[0] === undefined) {
+        else if (regexMatch.groupMatches[0] === undefined) {
             throw new Error("ParserError: No namespace name, this should not happen!");               
         }
 
-        this.nameMatch = rawMatch.captures[0];
+        this.nameMatch = regexMatch.groupMatches[0];
 
-        this.contentMatch = (rawMatch.captures[1]) ? rawMatch.captures[1] : "";
+        this.bodyMatch = regexMatch.getGroupMatchTextBlock(1);
     }
 
     private static readonly namespaceSpecifierRegex: string = "namespace\\s";
     private static readonly namespaceNameRegex: string = "([\\S]+)";
-    private static readonly namespaceBodyRegex: string = "{([\\s\\S]*)}";
-    private static readonly nextNamespaceRegex: string = "(?=namespace)";
+    private static readonly noNestedNamespaceRegex: string = "(?!"+NamespaceMatch.namespaceSpecifierRegex+"\\s*[\\S]+\\s*{)";
+    private static readonly namespaceBodyRegex: string = "{((?:"+NamespaceMatch.noNestedNamespaceRegex+"[\\s\\S])*?)}(?![\\s]*;)";
     
-    static readonly SINGLE_REGEX_STR: string = joinStringsWithWhiteSpace(
+    static readonly REGEX_STR: string = joinStringsWithWhiteSpace(
         [NamespaceMatch.namespaceSpecifierRegex, NamespaceMatch.namespaceNameRegex, NamespaceMatch.namespaceBodyRegex]);
-    static readonly MULTI_REGEX_STR: string = joinStringsWithFiller(
-        [NamespaceMatch.SINGLE_REGEX_STR, NamespaceMatch.nextNamespaceRegex], "[\\s\\S]*?");
     static readonly NOF_GROUPMATCHES = 2;
 
-    static readonly REGEX_STR:string = 'namespace (\\S*)\\s*{([\\s\\S]*namespace \\S*\\s*{[\\s\\S]*})*((?:(?!namespace)[\\s\\S])*)}';
     readonly nameMatch:string;
-    readonly contentMatch:string;
+    readonly bodyMatch:io.TextBlock|undefined;
 }
 
 class StandaloneFunctionMatch {
-    constructor(rawMatch:RawMatch) {
-        if (rawMatch.captures.length !== StandaloneFunctionMatch.NOF_GROUPMATCHES) {
+    constructor(regexMatch:io.TextRegexMatch) {
+        if (regexMatch.groupMatches.length !== StandaloneFunctionMatch.NOF_GROUPMATCHES) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
-        else if (rawMatch.captures[0] === undefined) {
+        else if (regexMatch.groupMatches[0] === undefined) {
             throw new Error("ParserError: No function return type, this should not happen!");               
         }
 
-        else if (rawMatch.captures[1] === undefined) {
+        else if (regexMatch.groupMatches[1] === undefined) {
             throw new Error("ParserError: No function name, this should not happen!");               
         }
 
-        this.returnValMatch = rawMatch.captures[0];
-        this.nameMatch = rawMatch.captures[1];
+        this.returnValMatch = regexMatch.groupMatches[0];
+        this.nameMatch = regexMatch.groupMatches[1];
 
-        this.argsMatch = (rawMatch.captures[2]) ? rawMatch.captures[2] : "";
+        this.argsMatch = (regexMatch.groupMatches[2]) ? regexMatch.groupMatches[2] : "";
     }
 
     static readonly REGEX_STR:string = '((?:const )?\\S*)\\s*(\\S*)\\s*\\(([\\s\\S]*?)\\)\\s*;';
@@ -80,25 +71,29 @@ class StandaloneFunctionMatch {
 }
 
 class ClassMatch {
-    constructor(rawMatch:RawMatch) {
-        if (rawMatch.captures.length !== ClassMatch.NOF_GROUPMATCHES) {
+    constructor(regexMatch:io.TextRegexMatch) {
+        if (regexMatch.groupMatches.length !== ClassMatch.NOF_GROUPMATCHES) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
-        else if (rawMatch.captures[0] === undefined) {
+        else if (regexMatch.groupMatches[0] === undefined) {
             throw new Error("ParserError: No class name, this should not happen!");               
         }
 
-        this.nameMatch = rawMatch.captures[0];
-        this.inheritanceMatch = (rawMatch.captures[1]) ? rawMatch.captures[1].split(",") : [];
-        this.bodyMatch = (rawMatch.captures[2]) ? rawMatch.captures[2] : "";
-        this.isInterface = ClassMatch.pureVirtualMemberRegexMatcher.test(this.bodyMatch);
+        this.nameMatch = regexMatch.groupMatches[0];
+        this.inheritanceMatch = (regexMatch.groupMatches[1]) ? regexMatch.groupMatches[1].split(",") : [];
+        this.bodyMatch = regexMatch.getGroupMatchTextBlock(2);
+        if (this.bodyMatch) {
+            this.isInterface = ClassMatch.pureVirtualMemberRegexMatcher.test(this.bodyMatch.content);
+        } else {
+            this.isInterface = false;
+        }
     }
 
     private static readonly classSpecifierRegex: string = "class\\s";
     private static readonly classNameRegex: string = "([\\S]+)";
     private static readonly inheritanceRegex: string = "(?::\\s*([\\S\\s]+))?";
     private static readonly noNestedClassRegex: string = "(?!"+ClassMatch.classSpecifierRegex+"\\s*[\\S]+\\s*{)";
-    private static readonly classBodyRegex: string = "{((?:"+ClassMatch.noNestedClassRegex+"[\\s\\S])*)}";
+    private static readonly classBodyRegex: string = "{((?:"+ClassMatch.noNestedClassRegex+"[\\s\\S])*?)}";
     private static readonly classEndRegex: string = ";";
     private static readonly pureVirtualMemberRegexMatcher =  /virtual[\s\S]*?=[\s]*0[\s]*;/g;
     
@@ -109,17 +104,17 @@ class ClassMatch {
 
     readonly nameMatch:string;
     readonly inheritanceMatch: string[];
-    readonly bodyMatch: string;
+    readonly bodyMatch: TextBlock|undefined;
     readonly isInterface: boolean;
 }
 class ClassProtectedScopeMatch {
 
-    constructor(rawMatch:RawMatch) {
-        if (rawMatch.captures.length !== ClassProtectedScopeMatch.NOF_GROUPMATCHES) {
+    constructor(regexMatch:io.TextRegexMatch) {
+        if (regexMatch.groupMatches.length !== ClassProtectedScopeMatch.NOF_GROUPMATCHES) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
 
-        this.scopeContent = (rawMatch.captures[0]) ? rawMatch.captures[0] : "";
+        this.scopeContent = (regexMatch.groupMatches[0]) ? regexMatch.groupMatches[0] : "";
     }
 
     static readonly REGEX_STR:string = "protected:((?:(?!private:)(?!public:)[\\s\\S])*)";
@@ -129,43 +124,43 @@ class ClassProtectedScopeMatch {
 }
 class ClassPublicScopeMatch {
 
-    constructor(rawMatch:RawMatch) {
-        if (rawMatch.captures.length !== ClassPublicScopeMatch.NOF_GROUPMATCHES) {
+    constructor(regexMatch:io.TextRegexMatch) {
+        if (regexMatch.groupMatches.length !== ClassPublicScopeMatch.NOF_GROUPMATCHES) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
 
-        this.scopeContent = (rawMatch.captures[0]) ? rawMatch.captures[0] : "";
+        this.scopeContent = regexMatch.getGroupMatchTextBlock(0);
     }
 
     static readonly REGEX_STR:string = "public:((?:(?!private:)(?!protected:)[\\s\\S])*)";
     static readonly NOF_GROUPMATCHES = 1;
 
-    readonly scopeContent:string;
+    readonly scopeContent:io.TextBlock|undefined;
 }
 
 class MemberFunctionMatch {
-    constructor(rawMatch:RawMatch) {
-        if (rawMatch.captures.length !== MemberFunctionMatch.NOF_GROUPMATCHES) {
+    constructor(regexMatch:io.TextRegexMatch) {
+        if (regexMatch.groupMatches.length !== MemberFunctionMatch.NOF_GROUPMATCHES) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
-        else if (rawMatch.captures[1] === undefined) {
+        else if (regexMatch.groupMatches[1] === undefined) {
             throw new Error("ParserError: No function name, this should not happen!");               
         }
 
         let virtualMatcher = new RegExp (MemberFunctionMatch.virtualSubMatchRegex);
-        let match = virtualMatcher.exec(rawMatch.captures[0]);
+        let match = virtualMatcher.exec(regexMatch.groupMatches[0]);
         if (!match || !match[2]) {
             throw new Error("ParserError: No function return type, this should not happen!");               
         }
         this.virtualMatch = (match[1]) ? true : false;
         this.returnValMatch = match[2];
 
-        this.nameMatch = rawMatch.captures[1];
-        this.argsMatch = (rawMatch.captures[2]) ? rawMatch.captures[2] : "";
-        this.constMatch = (rawMatch.captures[3]) ? true : false;
+        this.nameMatch = regexMatch.groupMatches[1];
+        this.argsMatch = (regexMatch.groupMatches[2]) ? regexMatch.groupMatches[2] : "";
+        this.constMatch = (regexMatch.groupMatches[3]) ? true : false;
 
-        this.virtualMatch = (this.virtualMatch) || ((rawMatch.captures[4]) ? true : false);
-        this.pureMatch = (rawMatch.captures[5]) ? true : false;
+        this.virtualMatch = (this.virtualMatch) || ((regexMatch.groupMatches[4]) ? true : false);
+        this.pureMatch = (regexMatch.groupMatches[5]) ? true : false;
         if (!this.virtualMatch && this.pureMatch) {
            throw new Error("ParserError: Invalid specifier combination: '=0' missing virtual for function: " + this.nameMatch);
            return;
@@ -197,42 +192,47 @@ class MemberFunctionMatch {
 
 export abstract class Parser {
 
-    static parseClassPrivateScope(data:io.DeseralizationData): io.DeseralizationData {
-        let publicOrPrivateRegexMatcher:RegExp = /(?:public:|protected:)((?!private:)[\s\S])*/g;
-        let privateScope = data.remainingContent.replace(publicOrPrivateRegexMatcher, "");
-        return new io.DeseralizationData(privateScope);
+    static parseClassPrivateScope(data:io.TextFragment): io.TextFragment {
+        let publicOrPrivateRegex= "(?:public:|protected:)((?!private:)[\\s\\S])*";
+        const privateFragment = new io.TextFragment();
+        data.removeNotMatching(publicOrPrivateRegex).forEach(
+            (regexMatch) => {
+                privateFragment.push(new io.TextBlock(regexMatch.fullMatch, regexMatch.scopeStart));
+            });
+        return privateFragment;
     }
 
-    static parseClassPublicScope(data:io.DeseralizationData): io.DeseralizationData {
-        let publicScope = "";
-        Parser.findAllAndRemoveRegexMatches(ClassPublicScopeMatch.REGEX_STR, data,
-            (rawMatch) => {
-                let match = new ClassPublicScopeMatch(rawMatch);
-                publicScope += match.scopeContent;
-            }
-            );
+    static parseClassPublicScope(data:io.TextFragment): io.TextFragment {
+        const publicFragment = new io.TextFragment();
+        data.removeMatching(ClassPublicScopeMatch.REGEX_STR).forEach(
+            (regexMatch) => {
+                let match = new ClassPublicScopeMatch(regexMatch);
+                if (match.scopeContent) {
+                    publicFragment.push(match.scopeContent);
+                }
+            });
 
-
-        return new io.DeseralizationData(publicScope);
+        return publicFragment;
     }
 
-    static parseClassProtectedScope(data:io.DeseralizationData): io.DeseralizationData {
-        let protectedScope = "";
-        Parser.findAllAndRemoveRegexMatches(ClassProtectedScopeMatch.REGEX_STR, data,
-            (rawMatch) => {
-                let match = new ClassProtectedScopeMatch(rawMatch);
-                protectedScope += match.scopeContent;
-            }
-            );
+    static parseClassProtectedScope(data:io.TextFragment): io.TextFragment {
+        const protectedFragment = new io.TextFragment();
+        data.removeMatching(ClassProtectedScopeMatch.REGEX_STR).forEach(
+            (regexMatch) => {
+                let match = new ClassPublicScopeMatch(regexMatch);
+                if (match.scopeContent) {
+                    protectedFragment.push(match.scopeContent);
+                }
+            });
 
-        return new io.DeseralizationData(protectedScope);
+        return protectedFragment;
     }
 
-    static parseClassMemberFunctions(data: io.DeseralizationData, classNameGen:io.ClassNameGenerator): cpptypes.IFunction[] {
+    static parseClassMemberFunctions(data: io.TextFragment, classNameGen:io.ClassNameGenerator): cpptypes.IFunction[] {
         let memberFunctions:cpptypes.IFunction[] = [];
-        Parser.findAllAndRemoveRegexMatches(MemberFunctionMatch.REGEX_STR, data,
-            (rawMatch) => {
-                let match = new MemberFunctionMatch(rawMatch);        
+        data.removeMatching(MemberFunctionMatch.REGEX_STR).forEach(            
+            (regexMatch) => {
+                let match = new MemberFunctionMatch(regexMatch);        
 
                 let newFunc:cpptypes.IFunction;
                 if (match.virtualMatch) {
@@ -251,49 +251,56 @@ export abstract class Parser {
                 }
 
                 memberFunctions.push(newFunc);
-            }
-            );
+            });
 
         return memberFunctions;
     }
 
-    static parseNamespaces(data:io.DeseralizationData): cpptypes.INamespace[]  {
+    static parseNamespaces(data:io.TextFragment): cpptypes.INamespace[]  {
         let namespaces:cpptypes.INamespace[] = [];
 
-        let generateNewNamespace = (rawMatch: RawMatch) => {
-            let match = new NamespaceMatch(rawMatch);
-            let newNamespace = new cpptypes.Namespace(match.nameMatch);
-            let newData = new io.DeseralizationData(match.contentMatch);
-            newNamespace.deserialize(newData);
-            return newNamespace;
-        };
-
-        Parser.findAllAndRemoveRegexMatches(
-            NamespaceMatch.MULTI_REGEX_STR,
-            data,
-            (rawMatch) => {
-                namespaces.push(generateNewNamespace(rawMatch));
+        let matchesFound = true;
+        while (matchesFound) {
+            let newNamespaces: cpptypes.INamespace[] = [];
+            matchesFound = false;
+            data.removeMatching(NamespaceMatch.REGEX_STR).forEach(
+                (regexMatch) => {           
+                    let match = new NamespaceMatch(regexMatch);
+                    let newNamespace = new cpptypes.Namespace(match.nameMatch, regexMatch);
+                    if (match.bodyMatch) {
+                        let newData = new io.TextFragment();
+                        newData.push(match.bodyMatch);
+                        newNamespace.deserialize(newData);
+                    }
+                    newNamespaces.push(newNamespace); 
+                    matchesFound = true;
+                }
+            );
+            
+            if (matchesFound) {
+                newNamespaces.forEach(
+                    (newNamespace) => {
+                        for (let index = namespaces.length-1; index >= 0 ; index--) {
+                            const possibleNestedNamespace = namespaces[index];
+                            if (newNamespace.tryAddNestedNamespace(possibleNestedNamespace)) {
+                                namespaces.splice(index,1);
+                            }
+                        }
+                        namespaces.push(newNamespace);
+                    }
+                );
             }
-        );
-        Parser.findAllAndRemoveRegexMatches(
-            NamespaceMatch.SINGLE_REGEX_STR,
-            data,
-            (rawMatch) => {
-                namespaces.push(generateNewNamespace(rawMatch))
-            }
-        );
+        }
 
         return namespaces;
     }
 
-    static parseStandaloneFunctiones(data:io.DeseralizationData): cpptypes.IFunction[] {
+    static parseStandaloneFunctiones(data:io.TextFragment): cpptypes.IFunction[] {
         let standaloneFunctions:cpptypes.IFunction[] = [];
 
-        Parser.findAllAndRemoveRegexMatches(
-            StandaloneFunctionMatch.REGEX_STR,
-            data,
-            (rawMatch) => {
-                let match = new StandaloneFunctionMatch(rawMatch);
+        data.removeMatching(StandaloneFunctionMatch.REGEX_STR).forEach(
+            (regexMatch) => {
+                let match = new StandaloneFunctionMatch(regexMatch);
                 standaloneFunctions.push(new cpptypes.StandaloneFunction(match.nameMatch, 
                     match.returnValMatch, 
                     match.argsMatch));
@@ -303,50 +310,42 @@ export abstract class Parser {
         return standaloneFunctions;
     }
     
-    static parseClasses(data:io.DeseralizationData):cpptypes.IClass[] {
+    static parseClasses(data:io.TextFragment):cpptypes.IClass[] {
         let classes: cpptypes.IClass[] = [];
-        
-        let generateNewClass = (rawMatch: RawMatch) => {
-            let match = new ClassMatch(rawMatch);
-            let newClass = match.isInterface? new cpptypes.ClassInterface(match.nameMatch, match.inheritanceMatch) : new cpptypes.ClassImpl(match.nameMatch, match.inheritanceMatch);
-            let newData = new io.DeseralizationData(match.bodyMatch);
-            newClass.deserialize(newData);
-            return newClass;
-        };
 
-        Parser.findAllAndRemoveRegexMatches(
-            ClassMatch.REGEX_STR,
-            data,
-            (rawMatch) => {
-                classes.push(generateNewClass(rawMatch)); 
+        let matchesFound = true;
+        while (matchesFound) {
+            let newClasses: cpptypes.IClass[] = [];
+            matchesFound = false;
+            data.removeMatching(ClassMatch.REGEX_STR).forEach(
+                (regexMatch) => {           
+                    let match = new ClassMatch(regexMatch);
+                    let newClass = match.isInterface? new cpptypes.ClassInterface(regexMatch, match.nameMatch, match.inheritanceMatch) : new cpptypes.ClassImpl(regexMatch, match.nameMatch, match.inheritanceMatch);
+                    if (match.bodyMatch) {
+                        let newData = new io.TextFragment();
+                        newData.push(match.bodyMatch);
+                        newClass.deserialize(newData);
+                    }
+                    newClasses.push(newClass); 
+                    matchesFound = true;
+                }
+            );
+            
+            if (matchesFound) {
+                newClasses.forEach(
+                    (newClass) => {
+                        for (let index = classes.length-1; index >= 0 ; index--) {
+                            const possibleNestedClass = classes[index];
+                            if (newClass.tryAddNestedClass(possibleNestedClass)) {
+                                classes.splice(index,1);
+                            }
+                        }
+                        classes.push(newClass);
+                    }
+                );
             }
-        );
+        }
+
         return classes;
     }
-    
-    private static findAllAndRemoveRegexMatches(regex:string, 
-            data:io.DeseralizationData, 
-            onMatch: (rawMatch:RawMatch) => void) {
-            if (!data.remainingContent) {
-                return;
-            }
-
-            const regexMatcher = new RegExp(regex, 'g');  
-            const matchAndReplace = (fullMatch:string,  ...args: any[]) => {
-                const rawMatch = new RawMatch(fullMatch, args.slice(0,-2)); //captures[]..., offset, fullString
-                onMatch(rawMatch);
-                return "";
-            };
-
-            data.remainingContent = data.remainingContent.replace(regexMatcher, matchAndReplace);
-
-            // while ((rawMatch = regexMatcher.exec(contentCopy)) !== null) 
-            // {
-            //     if (rawMatch.index === regexMatcher.lastIndex) {
-            //         regexMatcher.lastIndex++;
-            //     }
-            //     onMatch(rawMatch);
-            //     data.remainingContent = data.remainingContent.replace(rawMatch[0], "");
-            // }
-        }
 }

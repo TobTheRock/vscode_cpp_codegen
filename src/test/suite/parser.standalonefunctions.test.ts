@@ -6,13 +6,13 @@ import * as vscode from 'vscode';
 // import * as myExtension from '../../extension';
 import {Parser} from '../../Parser';
 import {IFunction} from '../../cpptypes';
-import { DeseralizationData } from '../../io';
+import { TextFragment } from '../../io';
 
 suite('Parser Standalone Functions Tests', () => {
 	// vscode.window.showInformationMessage('Start all tests.');
 
 	test('ParseStandloneFunction', (done) => {
-		const testContent = new DeseralizationData( 
+		const testContent = new TextFragment( 
 		`
 void fncName (int argument);
 		`
@@ -27,7 +27,7 @@ void fncName (int argument);
 	});
 
 	test('ParseStandloneFunctionMultiline', (done) => {
-		const testContent = new DeseralizationData( 
+		const testContent = new TextFragment( 
 		`
 void fncName (int argument,
 	std::shared_ptr<XYZ> argument2);
@@ -43,7 +43,7 @@ void fncName (int argument,
 	});
 
 	test('ParseMultipleStandaloneFunctions', (done) => {
-		const testContent = new DeseralizationData( 
+		const testContent = new TextFragment( 
 		`
 void fncName ();
 std::shared_ptr<XYZ> fncName2 (int args2,
@@ -63,7 +63,7 @@ std::shared_ptr<XYZ> fncName2 (int args2,
 	});
 
 	test('ParseStandloneFunctionsWithConstReturn', (done) => {
-		const testContent = new DeseralizationData( 
+		const testContent = new TextFragment( 
 		`
 const XYZ* fncName (int arg1,
 	void* arg2);

@@ -1,4 +1,4 @@
-import {ISerializable, IDeserializable, SerializableMode} from "../io/ISerial";
+import {ISerializable, IDeserializable, SerializableMode, TextScope} from "../io";
 
 export {SerializableMode as SerializableMode};
 
@@ -8,7 +8,8 @@ export interface IFunction extends ISerializable {
     readonly args: string;
 }
 
-export interface IClass extends ISerializable,IDeserializable {
+export interface IClass extends ISerializable,IDeserializable,TextScope {
+    tryAddNestedClass(possibleNestedClass: IClass):boolean;
     readonly name: string;
     readonly publicFunctions: IFunction[];
     readonly privateFunctions: IFunction[];
@@ -19,7 +20,8 @@ export interface IClass extends ISerializable,IDeserializable {
     //TODO constructor destructor, data members? (at least public/protected ones)
 }
 
-export interface INamespace extends ISerializable,IDeserializable {
+export interface INamespace extends ISerializable,IDeserializable,TextScope {
+    tryAddNestedNamespace(possibleNestedClass: INamespace):boolean;
     readonly name:string;
     readonly classes:IClass[]; 
     readonly functions:IFunction[];
