@@ -1,6 +1,6 @@
 import { IClass, IFunction, INamespace, SerializableMode} from "./TypeInterfaces";
 import {Parser} from "../Parser";
-import {TextFragment, TextScope} from "../io";
+import {TextFragment, TextScope, serializeArray} from "../io";
 export class Namespace  extends TextScope implements INamespace {
     
     constructor(name:string, scope:TextScope) {
@@ -50,7 +50,10 @@ export class NoneNamespace extends TextScope implements INamespace {
     }
 
     serialize (mode:SerializableMode) {
-        return "";
+        let serial = serializeArray(this.functions, mode);
+        serial += serializeArray(this.classes, mode);
+
+        return serial;
     }
 
     deserialize (data: TextFragment) {

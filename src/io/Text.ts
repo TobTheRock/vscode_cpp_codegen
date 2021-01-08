@@ -279,4 +279,8 @@ export class TextFragment {
     push(...blocks:TextBlock[]) {
         this.blocks.push(...blocks);
     }
+
+    reset() {
+        this.blocks.length = 0;
+    }
 }

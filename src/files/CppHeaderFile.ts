@@ -1,42 +1,44 @@
 import {FileBase} from "./FileBase";
 import * as cpptypes from "../cpptypes";
-import {ISerializable, IDeserializable, SerializableMode, TextFragment} from "../io";
+import * as io from "../io";
+import {Parser} from "../Parser";
 
 import * as path from 'path';
 import { inherits } from "util";
 
-export class CppHeaderFile extends FileBase implements ISerializable, IDeserializable
+export class CppHeaderFile extends FileBase implements io.ISerializable, io.IDeserializable
 {
     constructor(filePath: string)
     {
         super(filePath);
         this._namespaces = [];
-        // if (!CppHeaderFile.isHeader(filePath))
-        // {
-        //     console.log("ERROR: file", filePath,  "has invalid type");
-        //     return;
-        // }
     }
 
     static isHeader(filePath: string)
     {
         let dotPos = filePath.lastIndexOf('.');
         let ext = filePath.substr(dotPos);
-        if (ext.includes('h') || ext.includes('hpp')) {
+        if (ext.includes('h') || ext.includes('hpp')) { // TODO make configurable
             return true;
         }
         return false;  
     }
 
-    deserialize (fileContent:TextFragment)
+    deserialize (fileContent:io.TextFragment)
     {
-        //Parser find name space
+        this._namespaces.push(...Parser.parseNamespaces(fileContent));
+        this._namespaces.push(...Parser.parseNoneNamespaces(fileContent));
     }
 
-    serialize (mode: SerializableMode)
+    serialize (mode: io.SerializableMode)
     {
-        return "";
+        // TODO file header => Config
+        let serial = "";
+        this._namespaces.forEach(namespace => {
+            serial += namespace.serialize(mode);
+        });
+        return serial;
     }
 
-    private _namespaces: cpptypes.INamespace[]; 
+    private readonly _namespaces: cpptypes.INamespace[]; 
 } 

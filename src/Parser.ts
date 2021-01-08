@@ -1,4 +1,5 @@
 import * as cpptypes from "./cpptypes";
+import { NoneNamespace } from "./cpptypes";
 import * as io from "./io";
 import { TextBlock } from "./io";
 
@@ -293,6 +294,23 @@ export abstract class Parser {
         }
 
         return namespaces;
+    }    
+    
+    static parseNoneNamespaces(data:io.TextFragment): cpptypes.INamespace[]  { 
+        const noneNamespaces:cpptypes.INamespace[] = [];
+
+        data.blocks.forEach(block => {
+            const newnNoneNamespace = new cpptypes.NoneNamespace(block);
+            let newData = new io.TextFragment();
+            newData.push(block);
+            newnNoneNamespace.deserialize(newData);
+            noneNamespaces.push(newnNoneNamespace);
+
+        });
+
+        data.reset();
+
+        return noneNamespaces;
     }
 
     static parseStandaloneFunctiones(data:io.TextFragment): cpptypes.IFunction[] {
@@ -320,7 +338,7 @@ export abstract class Parser {
             data.removeMatching(ClassMatch.REGEX_STR).forEach(
                 (regexMatch) => {           
                     let match = new ClassMatch(regexMatch);
-                    let newClass = match.isInterface? new cpptypes.ClassInterface(regexMatch, match.nameMatch, match.inheritanceMatch) : new cpptypes.ClassImpl(regexMatch, match.nameMatch, match.inheritanceMatch);
+                    let newClass = match.isInterface? new cpptypes.ClassInterface(regexMatch, match.nameMatch, match.inheritanceMatch) : new cpptypes.ClassBase(regexMatch, match.nameMatch, match.inheritanceMatch);
                     if (match.bodyMatch) {
                         let newData = new io.TextFragment();
                         newData.push(match.bodyMatch);

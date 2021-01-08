@@ -1,3 +1,4 @@
+import { serialize } from "v8";
 import { TextFragment } from "./Text";
 export enum SerializableMode {
     Header,                 // matching header file (respective to current file, which is a Source) 
@@ -7,10 +8,20 @@ export enum SerializableMode {
     InterfaceHeader,        // interface header file (respective to current file, which has a class with  virtual functions => pure virtual ones are generated)
 } 
 
+
 export interface ISerializable
 {
     serialize: (mode:SerializableMode) => string;
 }
+
+export function serializeArray(serializableArray: Array<ISerializable>, mode:SerializableMode) {
+    let result = "";
+    serializableArray.forEach(serializable => {
+        result = serializable.serialize(mode);
+    });
+    return result;
+} 
+
 export interface IDeserializable
 {
     deserialize: (data:TextFragment) => void;
