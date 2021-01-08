@@ -220,10 +220,33 @@ class IndexCalculatorHelper {
 
 export class TextFragment {
     readonly blocks:TextBlock[] = [];
-    constructor(content:string = "") {
+
+    static createFromString(content:string = ""):TextFragment {
+        const blocks:TextBlock[] = [];
         if (content.length) {
-            this.blocks = [new TextBlock(content)];            
+            blocks.push(new TextBlock(content));            
         }
+        return new TextFragment(blocks);
+    }
+
+    static createFromTextBlock(...blocks:(TextBlock|undefined)[]):TextFragment {
+        const definedBlocks:TextBlock[] = [];
+
+        blocks.forEach( block => {
+            if(block) {
+                definedBlocks.push(block);
+            }
+        });
+
+        return new TextFragment(definedBlocks);
+    }    
+    
+    static createEmpty():TextFragment {
+        return new TextFragment();
+    }
+
+    private constructor(blocks:TextBlock[] = []) {
+        this.blocks = blocks;
     }
 
     private matchImpl(regex:string, inverse:boolean) {

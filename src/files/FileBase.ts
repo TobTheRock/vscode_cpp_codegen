@@ -9,6 +9,11 @@ export class FileBase
         this.ext = filePath.split('.').slice(-1)[0];
     }
 
+    static isFileType(filePath: string)
+    {
+        return false;  
+    }
+
     protected directory:string;
     protected basename:string;
     protected ext:string;

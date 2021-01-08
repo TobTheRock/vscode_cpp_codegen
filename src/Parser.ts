@@ -195,7 +195,7 @@ export abstract class Parser {
 
     static parseClassPrivateScope(data:io.TextFragment): io.TextFragment {
         let publicOrPrivateRegex= "(?:public:|protected:)((?!private:)[\\s\\S])*";
-        const privateFragment = new io.TextFragment();
+        const privateFragment = io.TextFragment.createEmpty();
         data.removeNotMatching(publicOrPrivateRegex).forEach(
             (regexMatch) => {
                 privateFragment.push(new io.TextBlock(regexMatch.fullMatch, regexMatch.scopeStart));
@@ -204,7 +204,7 @@ export abstract class Parser {
     }
 
     static parseClassPublicScope(data:io.TextFragment): io.TextFragment {
-        const publicFragment = new io.TextFragment();
+        const publicFragment = io.TextFragment.createEmpty();
         data.removeMatching(ClassPublicScopeMatch.REGEX_STR).forEach(
             (regexMatch) => {
                 let match = new ClassPublicScopeMatch(regexMatch);
@@ -217,7 +217,7 @@ export abstract class Parser {
     }
 
     static parseClassProtectedScope(data:io.TextFragment): io.TextFragment {
-        const protectedFragment = new io.TextFragment();
+        const protectedFragment = io.TextFragment.createEmpty();
         data.removeMatching(ClassProtectedScopeMatch.REGEX_STR).forEach(
             (regexMatch) => {
                 let match = new ClassPublicScopeMatch(regexMatch);
@@ -266,13 +266,11 @@ export abstract class Parser {
             matchesFound = false;
             data.removeMatching(NamespaceMatch.REGEX_STR).forEach(
                 (regexMatch) => {           
-                    let match = new NamespaceMatch(regexMatch);
-                    let newNamespace = new cpptypes.Namespace(match.nameMatch, regexMatch);
-                    if (match.bodyMatch) {
-                        let newData = new io.TextFragment();
-                        newData.push(match.bodyMatch);
-                        newNamespace.deserialize(newData);
-                    }
+                    const match = new NamespaceMatch(regexMatch);
+                    const newNamespace = new cpptypes.Namespace(match.nameMatch, regexMatch);
+                    const newData = io.TextFragment.createFromTextBlock(match.bodyMatch);
+
+                    newNamespace.deserialize(newData);
                     newNamespaces.push(newNamespace); 
                     matchesFound = true;
                 }
@@ -301,7 +299,7 @@ export abstract class Parser {
 
         data.blocks.forEach(block => {
             const newnNoneNamespace = new cpptypes.NoneNamespace(block);
-            let newData = new io.TextFragment();
+            const newData = io.TextFragment.createEmpty();
             newData.push(block);
             newnNoneNamespace.deserialize(newData);
             noneNamespaces.push(newnNoneNamespace);
@@ -337,13 +335,11 @@ export abstract class Parser {
             matchesFound = false;
             data.removeMatching(ClassMatch.REGEX_STR).forEach(
                 (regexMatch) => {           
-                    let match = new ClassMatch(regexMatch);
-                    let newClass = match.isInterface? new cpptypes.ClassInterface(regexMatch, match.nameMatch, match.inheritanceMatch) : new cpptypes.ClassBase(regexMatch, match.nameMatch, match.inheritanceMatch);
-                    if (match.bodyMatch) {
-                        let newData = new io.TextFragment();
-                        newData.push(match.bodyMatch);
-                        newClass.deserialize(newData);
-                    }
+                    const match = new ClassMatch(regexMatch);
+                    const newClass = match.isInterface? new cpptypes.ClassInterface(regexMatch, match.nameMatch, match.inheritanceMatch) : new cpptypes.ClassBase(regexMatch, match.nameMatch, match.inheritanceMatch);
+                    const newData = io.TextFragment.createFromTextBlock(match.bodyMatch);
+                    
+                    newClass.deserialize(newData);
                     newClasses.push(newClass); 
                     matchesFound = true;
                 }

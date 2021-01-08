@@ -14,7 +14,7 @@ export class CppHeaderFile extends FileBase implements io.ISerializable, io.IDes
         this._namespaces = [];
     }
 
-    static isHeader(filePath: string)
+    static isFileType(filePath: string)
     {
         let dotPos = filePath.lastIndexOf('.');
         let ext = filePath.substr(dotPos);

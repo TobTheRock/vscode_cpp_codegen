@@ -211,7 +211,7 @@ suite('Text Utility Tests', () => {
 		for (let i = 0; i < iter; i++) {
 			testContent += spaceStr+regex;
 		}
-		const textFrag = new io.TextFragment(testContent);
+		const textFrag = io.TextFragment.createFromString(testContent);
 
 		const matches = textFrag.removeMatching(regex);
 		assert.strictEqual(matches.length,iter);
@@ -228,7 +228,7 @@ suite('Text Utility Tests', () => {
 		for (let i = 0; i < iter; i++) {
 			testContent += spaceStr+regex;
 		}
-		const textFrag = new io.TextFragment(testContent);
+		const textFrag = io.TextFragment.createFromString(testContent);
 
 		const matches = textFrag.removeNotMatching(regex);
 		assert.strictEqual(matches.length,iter);
@@ -241,7 +241,7 @@ suite('Text Utility Tests', () => {
 		const testContent = "a{{}}b";
 		const regex = "{}";
 
-		const textFrag = new io.TextFragment(testContent);
+		const textFrag = io.TextFragment.createFromString(testContent);
 
 		let matches = textFrag.removeMatching(regex);
 		assert.strictEqual(matches.length,1);

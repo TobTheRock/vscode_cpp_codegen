@@ -18,7 +18,7 @@ suite('Full Member Function Tests', () => {
 
 	describe('ParseAndSerializeSingle', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
-		const testContent = new TextFragment('int fncName('+arg+');');
+		const testContent = TextFragment.createFromString('int fncName('+arg+');');
 		const testClassName = "TestClass";
 		const classNameGen = new ClassNameGenerator(testClassName, false);
 
@@ -45,7 +45,7 @@ suite('Full Member Function Tests', () => {
 
 	describe('ParseAndSerializeSingleWithConstReturn', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
-		const testContent = new TextFragment( "const int* fncName("+arg+");");
+		const testContent = TextFragment.createFromString( "const int* fncName("+arg+");");
 		const testClassName = "TestClass";
 		const classNameGen = new ClassNameGenerator(testClassName, false);
 
@@ -73,7 +73,7 @@ suite('Full Member Function Tests', () => {
 	
 	describe('ParseAndSerializeSingleWithWhitespaceInReturn', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
-		const testContent = new TextFragment( "std::pair<int, void*> fncName("+arg+");");
+		const testContent = TextFragment.createFromString( "std::pair<int, void*> fncName("+arg+");");
 		const testClassName = "TestClass";
 		const classNameGen = new ClassNameGenerator(testClassName, false);
 
@@ -101,7 +101,7 @@ suite('Full Member Function Tests', () => {
 
 	describe('ParseAndSerializeSingleConst', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
-		const testContent = new TextFragment( "int fncName("+arg+") const;");
+		const testContent = TextFragment.createFromString( "int fncName("+arg+") const;");
 		const testClassName = "TestClass";
 		const classNameGen = new ClassNameGenerator(testClassName, false);
 
@@ -129,7 +129,7 @@ suite('Full Member Function Tests', () => {
 
 	describe('ParseAndSerializeSingleVirtual', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
-		const testContent = new TextFragment( "virtual int fncName("+arg+")  ;");
+		const testContent = TextFragment.createFromString( "virtual int fncName("+arg+")  ;");
 		const testClassName = "TestClass";
 		const classNameGen = new ClassNameGenerator(testClassName, false);
 
@@ -158,7 +158,7 @@ suite('Full Member Function Tests', () => {
 
 	describe('ParseAndSerializeSingleVirtualOverride', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
-		const testContent = new TextFragment( "int fncName("+arg+")  override;");
+		const testContent = TextFragment.createFromString( "int fncName("+arg+")  override;");
 		const testClassName = "TestClass";
 		const classNameGen = new ClassNameGenerator(testClassName, false);
 
@@ -187,7 +187,7 @@ suite('Full Member Function Tests', () => {
 
 	describe('ParseAndSerializeSingleVirtualConst', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
-		const testContent = new TextFragment( "virtual int fncName("+arg+")   const;");
+		const testContent = TextFragment.createFromString( "virtual int fncName("+arg+")   const;");
 		const testClassName = "TestClass";
 		const classNameGen = new ClassNameGenerator(testClassName, false);
 
@@ -214,7 +214,7 @@ suite('Full Member Function Tests', () => {
 
 	describe('ParseAndSerializeSinglePureVirtual', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
-		const testContent = new TextFragment( "virtual int fncName("+arg+") =0;");
+		const testContent = TextFragment.createFromString( "virtual int fncName("+arg+") =0;");
 		const testClassName = "ITestClass";
 		const classNameGen = new ClassNameGenerator(testClassName, true);
 
@@ -241,7 +241,7 @@ suite('Full Member Function Tests', () => {
 
 	describe('ParseAndSerializeSinglePureVirtualConst', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
-		const testContent = new TextFragment( "virtual int fncName("+arg+")   const = 0;");
+		const testContent = TextFragment.createFromString( "virtual int fncName("+arg+")   const = 0;");
 				const testClassName = "ITestClass";
 		const classNameGen = new ClassNameGenerator(testClassName, true);
 
@@ -268,7 +268,7 @@ suite('Full Member Function Tests', () => {
 		
 	describe('ParseMultipleMixedType', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {		
-		const testContent = new TextFragment(`
+		const testContent = TextFragment.createFromString(`
 		virtual int fncName(${arg})   const = 0;
 		virtual int fncName2(${arg}) =0;
 		std::shared_ptr<Test> fncName3(${arg});
