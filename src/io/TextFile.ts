@@ -40,6 +40,7 @@ export class TextFile
                 fs.writeFileSync(outputFilepath, outputContent, 'utf-8');
             }
             else {
+                //TODO vscode.commands.executeCommand vscode.diff
                 vscode.window.showWarningMessage("Merging files is not implemented yet"); //TODO implement me
                 throw Error("");
             }
