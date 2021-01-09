@@ -2,7 +2,7 @@ import {ISerializable, IDeserializable, SerializableMode, TextScope} from "../io
 
 export {SerializableMode as SerializableMode};
 
-export interface IFunction extends ISerializable {
+export interface IFunction extends ISerializable { // Todo inherit from TextScope
     readonly name: string;
     readonly returnVal: string;
     readonly args: string;
@@ -26,4 +26,7 @@ export interface INamespace extends ISerializable,IDeserializable,TextScope {
     readonly classes:IClass[]; 
     readonly functions:IFunction[];
     readonly subnamespaces:INamespace[];
+}
+
+export interface IFile extends ISerializable,IDeserializable {
 }

@@ -1,5 +1,5 @@
 {
-	"name": "ugen-cpp",
+	"name": "codegen-cpp",
 	"displayName": "Universal Generator for C++",
 	"description": "Generator stuff from C++ headers etc",
 	"version": "0.0.1",
@@ -10,14 +10,15 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:ugen-cpp.helloWorld"
+		"onCommand:codegen-cpp.cppSourceFromHeader"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "ugen-cpp.helloWorld",
-				"title": "Hello World"
+				"command": "codegen-cpp.cppSourceFromHeader",
+				"title": "Generate C++ source file from current header",
+				"when": "editorLangId == cpp"
 			}
 		]
 	},

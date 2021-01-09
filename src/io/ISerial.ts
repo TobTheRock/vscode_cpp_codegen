@@ -17,7 +17,7 @@ export interface ISerializable
 export function serializeArray(serializableArray: Array<ISerializable>, mode:SerializableMode) {
     let result = "";
     serializableArray.forEach(serializable => {
-        result = serializable.serialize(mode);
+        result += serializable.serialize(mode);
     });
     return result;
 } 
