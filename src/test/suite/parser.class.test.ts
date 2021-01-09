@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { Done, describe} from 'mocha';
 // import * as myExtension from '../../extension';
 import {Parser} from '../../Parser';
-import {IClass, ClassInterface, ClassBase} from '../../cpptypes';
+import {IClass, ClassInterface, ClassBase} from '../../cpp';
 import { callItAsync } from "./utils";
 
 import { TextFragment } from '../../io';

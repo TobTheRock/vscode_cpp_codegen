@@ -5,7 +5,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 // import * as myExtension from '../../extension';
 import {Parser} from '../../Parser';
-import {IFunction} from '../../cpptypes';
+import {IFunction} from '../../cpp';
 import * as io from   '../../io';
 
 suite('Text Utility Tests', () => {

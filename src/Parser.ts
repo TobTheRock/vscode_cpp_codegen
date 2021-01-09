@@ -1,5 +1,4 @@
-import * as cpptypes from "./cpptypes";
-import { NoneNamespace } from "./cpptypes";
+import * as cpp from "./cpp";
 import * as io from "./io";
 import { TextBlock } from "./io";
 
@@ -229,25 +228,25 @@ export abstract class Parser {
         return protectedFragment;
     }
 
-    static parseClassMemberFunctions(data: io.TextFragment, classNameGen:io.ClassNameGenerator): cpptypes.IFunction[] {
-        let memberFunctions:cpptypes.IFunction[] = [];
+    static parseClassMemberFunctions(data: io.TextFragment, classNameGen:io.ClassNameGenerator): cpp.IFunction[] {
+        let memberFunctions:cpp.IFunction[] = [];
         data.removeMatching(MemberFunctionMatch.REGEX_STR).forEach(            
             (regexMatch) => {
                 let match = new MemberFunctionMatch(regexMatch);        
 
-                let newFunc:cpptypes.IFunction;
+                let newFunc:cpp.IFunction;
                 if (match.virtualMatch) {
                     if (match.pureMatch) {
-                        newFunc = new cpptypes.PureVirtualMemberFunction(match.nameMatch, match.returnValMatch,
+                        newFunc = new cpp.PureVirtualMemberFunction(match.nameMatch, match.returnValMatch,
                              match.argsMatch, match.constMatch, classNameGen);
                     }
                     else {
-                        newFunc = new cpptypes.VirtualMemberFunction(match.nameMatch, match.returnValMatch,
+                        newFunc = new cpp.VirtualMemberFunction(match.nameMatch, match.returnValMatch,
                              match.argsMatch, match.constMatch, classNameGen);
                     }
                 }
                 else {
-                    newFunc = new cpptypes.MemberFunction(match.nameMatch, match.returnValMatch,
+                    newFunc = new cpp.MemberFunction(match.nameMatch, match.returnValMatch,
                         match.argsMatch, match.constMatch, classNameGen);
                 }
 
@@ -257,17 +256,17 @@ export abstract class Parser {
         return memberFunctions;
     }
 
-    static parseNamespaces(data:io.TextFragment): cpptypes.INamespace[]  {
-        let namespaces:cpptypes.INamespace[] = [];
+    static parseNamespaces(data:io.TextFragment): cpp.INamespace[]  {
+        let namespaces:cpp.INamespace[] = [];
 
         let matchesFound = true;
         while (matchesFound) {
-            let newNamespaces: cpptypes.INamespace[] = [];
+            let newNamespaces: cpp.INamespace[] = [];
             matchesFound = false;
             data.removeMatching(NamespaceMatch.REGEX_STR).forEach(
                 (regexMatch) => {           
                     const match = new NamespaceMatch(regexMatch);
-                    const newNamespace = new cpptypes.Namespace(match.nameMatch, regexMatch);
+                    const newNamespace = new cpp.Namespace(match.nameMatch, regexMatch);
                     const newData = io.TextFragment.createFromTextBlock(match.bodyMatch);
 
                     newNamespace.deserialize(newData);
@@ -294,11 +293,11 @@ export abstract class Parser {
         return namespaces;
     }    
     
-    static parseNoneNamespaces(data:io.TextFragment): cpptypes.INamespace[]  { 
-        const noneNamespaces:cpptypes.INamespace[] = [];
+    static parseNoneNamespaces(data:io.TextFragment): cpp.INamespace[]  { 
+        const noneNamespaces:cpp.INamespace[] = [];
 
         data.blocks.forEach(block => {
-            const newnNoneNamespace = new cpptypes.NoneNamespace(block);
+            const newnNoneNamespace = new cpp.NoneNamespace(block);
             const newData = io.TextFragment.createEmpty();
             newData.push(block);
             newnNoneNamespace.deserialize(newData);
@@ -311,13 +310,13 @@ export abstract class Parser {
         return noneNamespaces;
     }
 
-    static parseStandaloneFunctiones(data:io.TextFragment): cpptypes.IFunction[] {
-        let standaloneFunctions:cpptypes.IFunction[] = [];
+    static parseStandaloneFunctiones(data:io.TextFragment): cpp.IFunction[] {
+        let standaloneFunctions:cpp.IFunction[] = [];
 
         data.removeMatching(StandaloneFunctionMatch.REGEX_STR).forEach(
             (regexMatch) => {
                 let match = new StandaloneFunctionMatch(regexMatch);
-                standaloneFunctions.push(new cpptypes.StandaloneFunction(match.nameMatch, 
+                standaloneFunctions.push(new cpp.StandaloneFunction(match.nameMatch, 
                     match.returnValMatch, 
                     match.argsMatch));
             }
@@ -326,17 +325,17 @@ export abstract class Parser {
         return standaloneFunctions;
     }
     
-    static parseClasses(data:io.TextFragment):cpptypes.IClass[] {
-        let classes: cpptypes.IClass[] = [];
+    static parseClasses(data:io.TextFragment):cpp.IClass[] {
+        let classes: cpp.IClass[] = [];
 
         let matchesFound = true;
         while (matchesFound) {
-            let newClasses: cpptypes.IClass[] = [];
+            let newClasses: cpp.IClass[] = [];
             matchesFound = false;
             data.removeMatching(ClassMatch.REGEX_STR).forEach(
                 (regexMatch) => {           
                     const match = new ClassMatch(regexMatch);
-                    const newClass = match.isInterface? new cpptypes.ClassInterface(regexMatch, match.nameMatch, match.inheritanceMatch) : new cpptypes.ClassBase(regexMatch, match.nameMatch, match.inheritanceMatch);
+                    const newClass = match.isInterface? new cpp.ClassInterface(regexMatch, match.nameMatch, match.inheritanceMatch) : new cpp.ClassBase(regexMatch, match.nameMatch, match.inheritanceMatch);
                     const newData = io.TextFragment.createFromTextBlock(match.bodyMatch);
                     
                     newClass.deserialize(newData);

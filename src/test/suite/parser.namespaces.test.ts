@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import { Done, describe} from 'mocha';
 // import * as myExtension from '../../extension';
 import {Parser} from '../../Parser';
-import {INamespace, Namespace} from '../../cpptypes';
+import {INamespace, Namespace} from '../../cpp';
 import {TextFragment} from '../../io';
 import { callItAsync } from "./utils";
 class TestData {
