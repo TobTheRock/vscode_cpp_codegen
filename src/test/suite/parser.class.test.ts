@@ -23,7 +23,7 @@ class TestData {
 const functionData:TestData[] = function () {
 	let funcTemp:TestData[] = [];
 	for (const arg of argData) {
-		funcTemp.push(new TestData('void fncName (${arg});', 1));
+		funcTemp.push(new TestData(`void fncName (${arg});`, 1));
 		funcTemp.push(new TestData(`int fncName(${arg});
 		const    int fncName2(${arg});
 		const int fncName3(${arg}) const;
@@ -32,6 +32,16 @@ const functionData:TestData[] = function () {
 	};
 
 	return funcTemp;
+}();
+
+const ctorData:TestData[] = function () {
+	let ctorTmp:TestData[] = [];
+	for (const arg of argData) {
+		ctorTmp.push(new TestData(`MyClass ( ${arg} );`, 1));
+		arg;
+	};
+
+	return ctorTmp;
 }();
 
 
@@ -335,4 +345,74 @@ suite('Parser GeneralClasses Tests', () => {
 			done();
 		});
 	});
+
+	describe('ParseClassWithConstructors', function() {
+		callItAsync("With constructors ${value}", ctorData, function (done:Done, functionTestData:TestData) {
+			const testContent = TextFragment.createFromString(
+			`class MyClass {
+			//implicit private
+				${functionTestData.content}
+			public:
+				${functionTestData.content}
+			protected:
+				${functionTestData.content}
+			private:
+				${functionTestData.content}
+			};
+			`);
+			let classes:IClass[] = Parser.parseClasses(testContent);
+
+			assert.strictEqual(classes.length,1);
+			assert.strictEqual(classes[0].name,"MyClass");
+			assert.strictEqual(classes[0].privateScope.constructors.length,2);
+			assert.strictEqual(classes[0].publicScope.constructors.length,1);
+			assert.strictEqual(classes[0].protectedScope.constructors.length,1);
+			assert.strictEqual(classes[0].inheritance.length,0);
+
+			done();
+		});
+	});
+
+	test('ParseClassWithDestructor', (done) => {
+		const testContent = TextFragment.createFromString(
+			`class MyClass {
+		//implicit private
+			~MyClass ();
+		};
+		`);
+		let classes: IClass[] = Parser.parseClasses(testContent);
+
+		assert.strictEqual(classes.length, 1);
+		assert.strictEqual(classes[0].name, "MyClass");
+		assertClassScopeEmpty(classes[0].publicScope);
+		assertClassScopeEmpty(classes[0].privateScope);
+		assertClassScopeEmpty(classes[0].protectedScope);
+		assert.strictEqual(classes[0].inheritance.length, 0);
+		assert.notStrictEqual(classes[0].destructor, undefined);
+		assert.strictEqual(classes[0].destructor?.virtual, false);
+
+		done();
+	});
+	
+	test('ParseClassWithVirtualDestructor', (done) => {
+		const testContent = TextFragment.createFromString(
+		`class MyClass {
+		//implicit private
+			virtual ~MyClass ();
+		};
+		`);
+		let classes:IClass[] = Parser.parseClasses(testContent);
+
+		assert.strictEqual(classes.length,1);
+		assert.strictEqual(classes[0].name,"MyClass");
+		assertClassScopeEmpty(classes[0].publicScope);
+		assertClassScopeEmpty(classes[0].privateScope);
+		assertClassScopeEmpty(classes[0].protectedScope);
+		assert.strictEqual(classes[0].inheritance.length, 0);
+		assert.notStrictEqual(classes[0].destructor, undefined);
+		assert.strictEqual(classes[0].destructor?.virtual, true);
+
+		done();		
+	});
+
 });

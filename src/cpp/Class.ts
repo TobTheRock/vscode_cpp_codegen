@@ -149,10 +149,15 @@ export class ClassBase  extends TextScope implements IClass {
     }
 
     deserialize (data: TextFragment) {
+        const dtors = Parser.parseClassDestructors(data, this.name, this.classNameGen);
+        if (dtors.length > 1) {
+            throw new Error("Class " + this.name + " has multiple deconstructors!");
+        } else if (dtors.length === 1) {
+            this.destructor = dtors[0];
+        }
         this.publicScope.deserialize(data);
         this.privateScope.deserialize(data);
         this.protectedScope.deserialize(data);
-        // this.destructor = Parser.de
     }
 
     serialize (mode:SerializableMode) {   
@@ -200,7 +205,7 @@ export class ClassBase  extends TextScope implements IClass {
     readonly publicScope : IClassScope = new ClassScope(ClassScopeType.public, this.name, this.classNameGen);
     readonly privateScope : IClassScope = new ClassScope(ClassScopeType.private, this.name, this.classNameGen);
     readonly protectedScope: IClassScope = new ClassScope(ClassScopeType.protected, this.name, this.classNameGen);
-    readonly destructor: IDestructor|undefined;
+    destructor: IDestructor|undefined;
 }
 
 

@@ -1,4 +1,5 @@
 import * as cpp from "./cpp";
+import { ClassDestructor } from "./cpp";
 import * as io from "./io";
 import { TextBlock } from "./io";
 
@@ -149,11 +150,11 @@ class ClassConstructorMatch {
     }
 
     static getRegexStr(classname: string) {
-        return joinStringsWithWhiteSpace(classname, this.argRegex);        
+        return joinStringsWithWhiteSpace("[^~]"+classname, this.argRegex, ";");        
     }
 
     static readonly NOF_GROUPMATCHES = 1;
-    private static readonly argRegex:string = "(\\(([\\s\\S]*))\\)";
+    private static readonly argRegex:string = "\\(([\\s\\S]*?)\\)";
 
 
     readonly argsMatch:string;
@@ -170,7 +171,7 @@ class ClassDestructorMatch {
     }
 
     static getRegexStr(classname: string) {
-        return joinStringsWithWhiteSpace(this.mayHaveVirtualRegex, classname);        
+        return joinStringsWithWhiteSpace(this.mayHaveVirtualRegex, "~" + classname, "\\([\\s\\S]*\\)", ";");        
     }
     private static readonly mayHaveVirtualRegex:string = '(virtual)?';
 
@@ -270,6 +271,16 @@ export abstract class Parser {
                 ctors.push(new cpp.ClassConstructor(match.argsMatch, classNameGen));
             });
         return ctors;
+    }
+    
+    static parseClassDestructors(data: io.TextFragment, className: string, classNameGen: io.ClassNameGenerator): cpp.ClassDestructor[] {
+        let deconstructors: cpp.ClassDestructor[] = [];
+        data.removeMatching(ClassDestructorMatch.getRegexStr(className)).forEach(
+            (regexMatch) => {
+                let match = new ClassDestructorMatch(regexMatch);
+                deconstructors.push(new cpp.ClassDestructor(match.isVirtual, classNameGen));
+            });
+        return deconstructors;
     }
 
     static parseClassMemberFunctions(data: io.TextFragment, classNameGen:io.ClassNameGenerator): cpp.IFunction[] {
