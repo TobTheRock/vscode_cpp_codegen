@@ -13,7 +13,7 @@ function joinStringsWithFiller(strings:string[], filler:string):string {
     return joinedStrings + strings[strings.length-1];
 }
 
-function joinStringsWithWhiteSpace(strings:string[]):string {
+function joinStringsWithWhiteSpace(...strings:string[]):string {
     return joinStringsWithFiller(strings, "\\s*");
 }
 class NamespaceMatch {
@@ -36,7 +36,7 @@ class NamespaceMatch {
     private static readonly namespaceBodyRegex: string = "{((?:"+NamespaceMatch.noNestedNamespaceRegex+"[\\s\\S])*?)}(?![\\s]*;)";
     
     static readonly REGEX_STR: string = joinStringsWithWhiteSpace(
-        [NamespaceMatch.namespaceSpecifierRegex, NamespaceMatch.namespaceNameRegex, NamespaceMatch.namespaceBodyRegex]);
+        NamespaceMatch.namespaceSpecifierRegex, NamespaceMatch.namespaceNameRegex, NamespaceMatch.namespaceBodyRegex);
     static readonly NOF_GROUPMATCHES = 2;
 
     readonly nameMatch:string;
@@ -98,8 +98,8 @@ class ClassMatch {
     private static readonly pureVirtualMemberRegexMatcher =  /virtual[\s\S]*?=[\s]*0[\s]*;/g;
     
     static readonly REGEX_STR: string = joinStringsWithWhiteSpace(
-        [ClassMatch.classSpecifierRegex, ClassMatch.classNameRegex, ClassMatch.inheritanceRegex,
-         ClassMatch.classBodyRegex, ClassMatch.classEndRegex]);
+        ClassMatch.classSpecifierRegex, ClassMatch.classNameRegex, ClassMatch.inheritanceRegex,
+         ClassMatch.classBodyRegex, ClassMatch.classEndRegex);
     static readonly NOF_GROUPMATCHES = 3;
 
     readonly nameMatch:string;
@@ -136,6 +136,47 @@ class ClassPublicScopeMatch {
     static readonly NOF_GROUPMATCHES = 1;
 
     readonly scopeContent:io.TextBlock|undefined;
+}
+
+class ClassConstructorMatch {
+
+    constructor(regexMatch:io.TextRegexMatch) {
+        if (regexMatch.groupMatches.length !== ClassPublicScopeMatch.NOF_GROUPMATCHES) {
+            throw new Error("ParserError: Unexpected number of matches!");  
+        }
+
+        this.argsMatch = (regexMatch.groupMatches[0]) ? regexMatch.groupMatches[0] : "";
+    }
+
+    static getRegexStr(classname: string) {
+        return joinStringsWithWhiteSpace(classname, this.argRegex);        
+    }
+
+    static readonly NOF_GROUPMATCHES = 1;
+    private static readonly argRegex:string = "(\\(([\\s\\S]*))\\)";
+
+
+    readonly argsMatch:string;
+}
+
+class ClassDestructorMatch {
+
+    constructor(regexMatch:io.TextRegexMatch) {
+        if (regexMatch.groupMatches.length !== ClassPublicScopeMatch.NOF_GROUPMATCHES) {
+            throw new Error("ParserError: Unexpected number of matches!");  
+        }
+
+        this.isVirtual = regexMatch.groupMatches[0]?.length > 0; 
+    }
+
+    static getRegexStr(classname: string) {
+        return joinStringsWithWhiteSpace(this.mayHaveVirtualRegex, classname);        
+    }
+    private static readonly mayHaveVirtualRegex:string = '(virtual)?';
+
+    static readonly NOF_GROUPMATCHES = 1;
+
+    readonly isVirtual:boolean;
 }
 
 class MemberFunctionMatch {
@@ -175,9 +216,9 @@ class MemberFunctionMatch {
     private static readonly mayHaveConstSpecifierRegex:string = '(const)?';
     private static readonly mayHaveOverrideRegex:string = '(override)?';
     private static readonly mayBePure:string = '(=\\s*0)?';
-    private static readonly virtualSubMatchRegex:string = joinStringsWithWhiteSpace([MemberFunctionMatch.mayHaveVirtualRegex, MemberFunctionMatch.returnValRegex + '$']);
-    static readonly REGEX_STR:string = joinStringsWithWhiteSpace([MemberFunctionMatch.returnValRegex+'\\s', MemberFunctionMatch.funcNameRegex,
-         MemberFunctionMatch.funcArgsRegex, MemberFunctionMatch.mayHaveConstSpecifierRegex, MemberFunctionMatch.mayHaveOverrideRegex, MemberFunctionMatch.mayBePure, ';']);
+    private static readonly virtualSubMatchRegex:string = joinStringsWithWhiteSpace(MemberFunctionMatch.mayHaveVirtualRegex, MemberFunctionMatch.returnValRegex + '$');
+    static readonly REGEX_STR:string = joinStringsWithWhiteSpace(MemberFunctionMatch.returnValRegex+'\\s', MemberFunctionMatch.funcNameRegex,
+         MemberFunctionMatch.funcArgsRegex, MemberFunctionMatch.mayHaveConstSpecifierRegex, MemberFunctionMatch.mayHaveOverrideRegex, MemberFunctionMatch.mayBePure, ';');
     static readonly NOF_GROUPMATCHES = 6;
 
     readonly virtualMatch:boolean;
@@ -187,8 +228,6 @@ class MemberFunctionMatch {
     readonly constMatch:boolean;
     readonly pureMatch:boolean;
 }
-
-
 
 export abstract class Parser {
 
@@ -226,6 +265,16 @@ export abstract class Parser {
             });
 
         return protectedFragment;
+    }
+    
+    static parseClassConstructor(data: io.TextFragment, className: string, classNameGen: io.ClassNameGenerator): cpp.ClassConstructor[] {
+        let ctors: cpp.ClassConstructor[] = [];
+        data.removeMatching(ClassConstructorMatch.getRegexStr(className)).forEach(
+            (regexMatch) => {
+                let match = new ClassConstructorMatch(regexMatch);
+                ctors.push(new cpp.ClassConstructor(match.argsMatch, classNameGen));
+            });
+        return ctors;
     }
 
     static parseClassMemberFunctions(data: io.TextFragment, classNameGen:io.ClassNameGenerator): cpp.IFunction[] {

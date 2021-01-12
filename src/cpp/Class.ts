@@ -1,35 +1,89 @@
-import { IClass, IFunction, SerializableMode } from "./TypeInterfaces";
+import { IClass, IFunction, IConstructor, IDestructor, IClassScope, SerializableMode } from "./TypeInterfaces";
 import {Parser} from "../Parser";
 import { ClassNameGenerator, TextFragment, TextScope, serializeArray } from "../io";
 
-export class ClassBase  extends TextScope implements IClass {
-    constructor(
-        scope:TextScope,
-        public readonly name:string,
-        public readonly inheritance:string[]) {
-        super(scope.scopeStart, scope.scopeEnd)
-;    }
 
-    tryAddNestedClass(possibleNestedClass: IClass) {
-        if (this.fullyContains(possibleNestedClass)) {
-            this.nestedClasses.push(possibleNestedClass);
-            return true;
+export class ClassConstructor implements IConstructor {
+    constructor(public readonly args:string,
+                private readonly classNameGen:ClassNameGenerator) {}
+    serialize (mode: SerializableMode): string {
+
+        let serial = "";
+        switch (mode) {
+            case SerializableMode.Header:
+            case SerializableMode.ImplHeader:
+                serial = this.classNameGen.createName(mode) +
+                    "(" + this.args + ");";
+                break;
+            
+            case SerializableMode.Source:
+            case SerializableMode.ImplSource:
+                serial = this.classNameGen.createName(mode) +
+                    "(" + this.args + ") {\n}";
+                break;
+            case SerializableMode.InterfaceHeader:
+                break;
         }
-        return false;
+        return serial;
     }
+} 
+
+export class ClassDestructor  implements IDestructor {
+    constructor(public readonly virtual:boolean,
+                private readonly classNameGen:ClassNameGenerator) {}
+    serialize (mode: SerializableMode): string {
+
+        let serial = "";
+        switch (mode) {
+            case SerializableMode.Header:
+            case SerializableMode.InterfaceHeader:
+                serial += this.virtual ? "virtual " : "";
+                serial += "~" + this.classNameGen.createName(mode) +
+                    "();";
+                break;
+            case SerializableMode.ImplHeader:
+                serial = "~" + this.classNameGen.createName(mode) + " ();";
+                serial += this.virtual ? "override " : "";
+                break;
+            
+            case SerializableMode.Source:
+            case SerializableMode.ImplSource:
+                serial = "~" + this.classNameGen.createName(mode) +
+                    "() {\n}";
+                break;
+        }
+        return serial;
+    }
+} 
+
+enum ClassScopeType {
+    private,
+    public,
+    protected
+}
+class ClassScope implements IClassScope {
+
+    constructor(public readonly type: ClassScopeType,
+        private readonly className: string,
+        private readonly classNameGen: ClassNameGenerator) {}
 
     deserialize (data: TextFragment) {
-        
-        this.nestedClasses = [];
-
-        const privateContent:TextFragment = Parser.parseClassPrivateScope(data);
-        this.privateFunctions = Parser.parseClassMemberFunctions(privateContent, this.classNameGen);
-
-        const publicContent:TextFragment = Parser.parseClassPublicScope(data);
-        this.publicFunctions = Parser.parseClassMemberFunctions(publicContent, this.classNameGen);
-
-        const protectedContent:TextFragment = Parser.parseClassProtectedScope(data);
-        this.protectedFunctions = Parser.parseClassMemberFunctions(protectedContent, this.classNameGen);
+        let content: TextFragment;
+        switch (this.type) {
+            case ClassScopeType.protected:
+                content = Parser.parseClassProtectedScope(data);
+                break;
+            case ClassScopeType.public:
+                content = Parser.parseClassPublicScope(data);
+                break;
+            case ClassScopeType.private:
+            default:
+                content = Parser.parseClassPrivateScope(data);
+                break;
+        }
+        this.scopes.push(...content.blocks);
+        this.constructors.push(...Parser.parseClassConstructor(content, this.className, this.classNameGen));
+        this.memberFunctions.push(...Parser.parseClassMemberFunctions(content, this.classNameGen));
     }
 
     serialize (mode:SerializableMode) {   
@@ -38,32 +92,89 @@ export class ClassBase  extends TextScope implements IClass {
             case SerializableMode.Header:
             case SerializableMode.InterfaceHeader:
             case SerializableMode.ImplHeader:
-                serial = this.getHeaderSerialStart(mode);
-                serial += "\tpublic:\n";
-                serial += serializeArray(this.publicFunctions, mode);
-    
-                serial += "\tprotected:\n";
-                serial += serializeArray(this.protectedFunctions, mode);
-                
-                serial += "\tprivate:\n";
-                serial += serializeArray(this.privateFunctions, mode);
-                serial += serializeArray(this.nestedClasses, mode);//TODO those can also be public/private
-    
-                serial += "};";
-    
+                switch (this.type) {
+                    case ClassScopeType.protected:
+                        serial += "\tprotected:\n";
+                        break;
+                    case ClassScopeType.public:
+                        serial += "\tpublic:\n";
+                        break;
+                    case ClassScopeType.private:
+                    default:
+                        serial += "\tprivate:\n";
+                        break;
+                }
                 break;
-            
             case SerializableMode.Source:
             case SerializableMode.ImplSource:    
-            serial += serializeArray(this.publicFunctions, mode);
-            serial += serializeArray(this.protectedFunctions, mode);
-            serial += serializeArray(this.privateFunctions, mode);
-            break;
-            
             default:
                 break;
         }
+
+        serial += serializeArray(this.constructors, mode);
+        serial += serializeArray(this.nestedClasses, mode);
+        serial += serializeArray(this.memberFunctions, mode);
     
+        return serial;
+    }
+
+    readonly memberFunctions: IFunction[] = [];
+    readonly nestedClasses: IClass[] = [];
+    readonly constructors: IConstructor[] = [];
+    readonly scopes: TextScope[] = [];
+}
+
+export class ClassBase  extends TextScope implements IClass {
+    constructor(
+        scope:TextScope,
+        public readonly name:string,
+        public readonly inheritance:string[]) {
+        super(scope.scopeStart, scope.scopeEnd);
+    }
+
+    tryAddNestedClass(possibleNestedClass: IClass) {
+        if (!this.fullyContains(possibleNestedClass)) {
+            return false;
+        }
+        else if (this.publicScope.scopes.some(scope => (scope.fullyContains(possibleNestedClass)))) {
+            this.publicScope.nestedClasses.push(possibleNestedClass);
+        }
+        else if (this.protectedScope.scopes.some(scope => (scope.fullyContains(possibleNestedClass)))) {
+            this.protectedScope.nestedClasses.push(possibleNestedClass);
+        }
+        else {
+            this.privateScope.nestedClasses.push(possibleNestedClass);
+        }
+        return true;
+    }
+
+    deserialize (data: TextFragment) {
+        this.publicScope.deserialize(data);
+        this.privateScope.deserialize(data);
+        this.protectedScope.deserialize(data);
+        // this.destructor = Parser.de
+    }
+
+    serialize (mode:SerializableMode) {   
+        let serial = "";
+        let suffix = "";
+        switch (mode) {
+            case SerializableMode.Header:
+            case SerializableMode.InterfaceHeader:
+            case SerializableMode.ImplHeader:
+                serial += this.getHeaderSerialStart(mode);
+                suffix = "};";  
+                break;
+            case SerializableMode.Source:
+            case SerializableMode.ImplSource:    
+            default:
+                break;
+        }
+        serial += this.publicScope.serialize(mode);
+        serial += this.protectedScope.serialize(mode);
+        serial += this.privateScope.serialize(mode);
+        serial += this.destructor?.serialize(mode);
+        serial += suffix;
         return serial;
     }
 
@@ -86,10 +197,10 @@ export class ClassBase  extends TextScope implements IClass {
 
     protected classNameGen: ClassNameGenerator = new ClassNameGenerator(this.name, false);
 
-    publicFunctions:IFunction[] = [];
-    privateFunctions:IFunction[] = [];
-    nestedClasses: IClass[] = [];   //TODO those can also be public/private
-    protectedFunctions:IFunction[] = [];
+    readonly publicScope : IClassScope = new ClassScope(ClassScopeType.public, this.name, this.classNameGen);
+    readonly privateScope : IClassScope = new ClassScope(ClassScopeType.private, this.name, this.classNameGen);
+    readonly protectedScope: IClassScope = new ClassScope(ClassScopeType.protected, this.name, this.classNameGen);
+    readonly destructor: IDestructor|undefined;
 }
 
 

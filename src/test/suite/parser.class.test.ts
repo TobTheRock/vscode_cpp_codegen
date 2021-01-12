@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { Done, describe} from 'mocha';
 // import * as myExtension from '../../extension';
 import {Parser} from '../../Parser';
-import {IClass, ClassInterface, ClassBase} from '../../cpp';
+import {IClass, ClassInterface, ClassBase, IClassScope} from '../../cpp';
 import { callItAsync } from "./utils";
 
 import { TextFragment } from '../../io';
@@ -28,7 +28,7 @@ const functionData:TestData[] = function () {
 		const    int fncName2(${arg});
 		const int fncName3(${arg}) const;
 		virtual void fncName(${arg});
-		virtual void fncName2(${arg}) = 0;`,5));
+		virtual void fncName2(${arg}) = 0;`, 5));
 	};
 
 	return funcTemp;
@@ -37,6 +37,12 @@ const functionData:TestData[] = function () {
 
 const inheritData = [new TestData(":public IInterface",1), 
 new TestData(" :\tpublic IInterface, private IInterface2", 2), new TestData(": public IInterface,\n\t\t private IInterface2 \n, protected IInterface3 \n\n", 3)];
+
+function assertClassScopeEmpty(classScope:IClassScope) {	
+	assert.strictEqual(classScope.memberFunctions.length,0);
+	assert.strictEqual(classScope.constructors.length,0);
+	assert.strictEqual(classScope.nestedClasses.length, 0);
+}
 
 suite('Parser GeneralClasses Tests', () => {
 
@@ -51,10 +57,11 @@ suite('Parser GeneralClasses Tests', () => {
 		let classes:IClass[] = Parser.parseClasses(testContent);
 
 		assert.strictEqual(classes.length,1);
-		assert.strictEqual(classes[0].name,"MyClass");
-		assert.strictEqual(classes[0].publicFunctions.length,0);
-		assert.strictEqual(classes[0].privateFunctions.length,0);
-		assert.strictEqual(classes[0].protectedFunctions.length,0);
+		assert.strictEqual(classes[0].name, "MyClass");
+		assertClassScopeEmpty(classes[0].publicScope);
+		assertClassScopeEmpty(classes[0].privateScope);
+		assertClassScopeEmpty(classes[0].protectedScope);
+		assert.strictEqual(classes[0].destructor,undefined);
 		assert.strictEqual(classes[0].inheritance.length,0);
 		assert.ok(classes[0] instanceof ClassBase);
 		done();
@@ -63,7 +70,7 @@ suite('Parser GeneralClasses Tests', () => {
 	test('ParseInterface', (done) => {
 		const testContent = TextFragment.createFromString(
 		`class MyClass {       // The class
-			virtual const int* pureFnct = 0  ;
+			virtual const int* pureFnct() = 0  ;
 		  };
 		`
 		);
@@ -71,11 +78,14 @@ suite('Parser GeneralClasses Tests', () => {
 
 		assert.strictEqual(classes.length,1);
 		assert.strictEqual(classes[0].name,"MyClass");
-		assert.strictEqual(classes[0].publicFunctions.length,0);
-		assert.strictEqual(classes[0].privateFunctions.length,0);
-		assert.strictEqual(classes[0].protectedFunctions.length,0);
+		assertClassScopeEmpty(classes[0].publicScope);
+		assertClassScopeEmpty(classes[0].protectedScope);
+
+		assert.strictEqual(classes[0].privateScope.memberFunctions.length,1);
+		assert.strictEqual(classes[0].privateScope.constructors.length,0);
+		assert.strictEqual(classes[0].privateScope.nestedClasses.length, 0);
+		assert.strictEqual(classes[0].destructor,undefined);
 		assert.strictEqual(classes[0].inheritance.length,0);
-		assert.strictEqual(classes[0].nestedClasses.length, 0);
 		assert.ok(classes[0] instanceof ClassInterface);
 
 		done();
@@ -92,11 +102,11 @@ suite('Parser GeneralClasses Tests', () => {
 
 		assert.strictEqual(classes.length,1);
 		assert.strictEqual(classes[0].name,"MyClass");
-		assert.strictEqual(classes[0].publicFunctions.length,0);
-		assert.strictEqual(classes[0].privateFunctions.length,0);
-		assert.strictEqual(classes[0].protectedFunctions.length,0);
+		assertClassScopeEmpty(classes[0].publicScope);
+		assertClassScopeEmpty(classes[0].privateScope);
+		assertClassScopeEmpty(classes[0].protectedScope);
+		assert.strictEqual(classes[0].destructor,undefined);
 		assert.strictEqual(classes[0].inheritance.length,inheritData.nDates);
-		assert.strictEqual(classes[0].nestedClasses.length, 0);
 
 		done();
 		});
@@ -123,16 +133,17 @@ suite('Parser GeneralClasses Tests', () => {
 		assert.strictEqual(classes.length,3);
 		for (let index = 1; index < 4; index++) {
 			assert.strictEqual(classes[index-1].name,"MyClass"+index);
-			assert.strictEqual(classes[index-1].publicFunctions.length,0);
-			assert.strictEqual(classes[index-1].privateFunctions.length,0);
-			assert.strictEqual(classes[index-1].protectedFunctions.length,0);
+			assertClassScopeEmpty(classes[index-1].publicScope);
+			assertClassScopeEmpty(classes[index-1].privateScope);
+			assertClassScopeEmpty(classes[index-1].protectedScope);
+			assert.strictEqual(classes[index-1].destructor,undefined);
 			assert.strictEqual(classes[index-1].inheritance.length,0);
-			assert.strictEqual(classes[index-1].nestedClasses.length,0);
 			
 		}
 		done();
 	});
 
+	//TODO private public protected
 	test('ParseNestedClassesWithoutMemberFunctions', (done) => {
 		const testContent = TextFragment.createFromString(
 		`class MyClass {       // The class
@@ -149,19 +160,19 @@ suite('Parser GeneralClasses Tests', () => {
 
 		assert.strictEqual(classes.length,1);
 		assert.strictEqual(classes[0].name,"MyClass");
-		assert.strictEqual(classes[0].publicFunctions.length,0);
-		assert.strictEqual(classes[0].privateFunctions.length,0);
-		assert.strictEqual(classes[0].protectedFunctions.length,0);
+		assert.strictEqual(classes[0].publicScope.memberFunctions.length,0);
+		assert.strictEqual(classes[0].privateScope.memberFunctions.length,0);
+		assert.strictEqual(classes[0].protectedScope.memberFunctions.length,0);
 		assert.strictEqual(classes[0].inheritance.length,0);
-		assert.strictEqual(classes[0].nestedClasses.length,1);
 
-		let nestedClass:IClass = classes[0].nestedClasses[0];
-		assert.strictEqual(nestedClass.name,"NestedClass");
-		assert.strictEqual(nestedClass.publicFunctions.length,0);
-		assert.strictEqual(nestedClass.privateFunctions.length,0);
-		assert.strictEqual(nestedClass.protectedFunctions.length,0);
+		let nestedClass: IClass = classes[0].privateScope.nestedClasses[0];
+		assert.strictEqual(classes[0].privateScope.nestedClasses.length,1);
+		
+		assertClassScopeEmpty(nestedClass.publicScope);
+		assertClassScopeEmpty(nestedClass.privateScope);
+		assertClassScopeEmpty(nestedClass.protectedScope);
+		assert.strictEqual(nestedClass.destructor,undefined);
 		assert.strictEqual(nestedClass.inheritance.length,0);
-		assert.strictEqual(nestedClass.nestedClasses.length,0);
 
 		done();
 	});	
@@ -188,26 +199,25 @@ suite('Parser GeneralClasses Tests', () => {
 
 		assert.strictEqual(classes.length,2);
 		assert.strictEqual(classes[1].name,"MyClass");
-		assert.strictEqual(classes[1].publicFunctions.length,0);
-		assert.strictEqual(classes[1].privateFunctions.length,0);
-		assert.strictEqual(classes[1].protectedFunctions.length,0);
+		assert.strictEqual(classes[1].publicScope.memberFunctions.length,0);
+		assert.strictEqual(classes[1].privateScope.memberFunctions.length,0);
+		assert.strictEqual(classes[1].protectedScope.memberFunctions.length,0);
 		assert.strictEqual(classes[1].inheritance.length,0);
-		assert.strictEqual(classes[1].nestedClasses.length,1);
+		assert.strictEqual(classes[1].privateScope.nestedClasses.length,1);
 
-		let nestedClass:IClass = classes[1].nestedClasses[0];
-		assert.strictEqual(nestedClass.name,"NestedClass");
-		assert.strictEqual(nestedClass.publicFunctions.length,0);
-		assert.strictEqual(nestedClass.privateFunctions.length,0);
-		assert.strictEqual(nestedClass.protectedFunctions.length,0);
+		let nestedClass:IClass = classes[1].privateScope.nestedClasses[0];
+		assertClassScopeEmpty(nestedClass.publicScope);
+		assertClassScopeEmpty(nestedClass.privateScope);
+		assertClassScopeEmpty(nestedClass.protectedScope);
+		assert.strictEqual(nestedClass.destructor,undefined);
 		assert.strictEqual(nestedClass.inheritance.length,0);
-		assert.strictEqual(nestedClass.nestedClasses.length,0);
 
 		assert.strictEqual(classes[0].name,"MyClass2");
-		assert.strictEqual(classes[0].publicFunctions.length,0);
-		assert.strictEqual(classes[0].privateFunctions.length,0);
-		assert.strictEqual(classes[0].protectedFunctions.length,0);
+		assertClassScopeEmpty(classes[0].publicScope);
+		assertClassScopeEmpty(classes[0].privateScope);
+		assertClassScopeEmpty(classes[0].protectedScope);
+		assert.strictEqual(classes[0].destructor,undefined);
 		assert.strictEqual(classes[0].inheritance.length,0);
-		assert.strictEqual(classes[0].nestedClasses.length,0);
 
 		done();
 	});
@@ -223,9 +233,9 @@ suite('Parser GeneralClasses Tests', () => {
 
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
-			assert.strictEqual(classes[0].publicFunctions.length,0);
-			assert.strictEqual(classes[0].privateFunctions.length,functionTestData.nDates);
-			assert.strictEqual(classes[0].protectedFunctions.length,0);
+			assertClassScopeEmpty(classes[0].publicScope);
+			assertClassScopeEmpty(classes[0].protectedScope);
+			assert.strictEqual(classes[0].privateScope.memberFunctions.length,functionTestData.nDates);
 			assert.strictEqual(classes[0].inheritance.length,0);
 
 			done();
@@ -244,9 +254,9 @@ suite('Parser GeneralClasses Tests', () => {
 
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
-			assert.strictEqual(classes[0].publicFunctions.length,0);
-			assert.strictEqual(classes[0].privateFunctions.length,functionTestData.nDates);
-			assert.strictEqual(classes[0].protectedFunctions.length,0);
+			assertClassScopeEmpty(classes[0].publicScope);
+			assertClassScopeEmpty(classes[0].protectedScope);
+			assert.strictEqual(classes[0].privateScope.memberFunctions.length,functionTestData.nDates);
 			assert.strictEqual(classes[0].inheritance.length,0);
 
 			done();
@@ -265,9 +275,9 @@ suite('Parser GeneralClasses Tests', () => {
 
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
-			assert.strictEqual(classes[0].publicFunctions.length,functionTestData.nDates);
-			assert.strictEqual(classes[0].privateFunctions.length,0);
-			assert.strictEqual(classes[0].protectedFunctions.length,0);
+			assert.strictEqual(classes[0].publicScope.memberFunctions.length,functionTestData.nDates);
+			assertClassScopeEmpty(classes[0].protectedScope);
+			assertClassScopeEmpty(classes[0].privateScope);
 			assert.strictEqual(classes[0].inheritance.length,0);
 
 			done();
@@ -286,9 +296,9 @@ suite('Parser GeneralClasses Tests', () => {
 
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
-			assert.strictEqual(classes[0].publicFunctions.length,0);
-			assert.strictEqual(classes[0].privateFunctions.length,0);
-			assert.strictEqual(classes[0].protectedFunctions.length,functionTestData.nDates);
+			assertClassScopeEmpty(classes[0].publicScope);
+			assertClassScopeEmpty(classes[0].privateScope);
+			assert.strictEqual(classes[0].protectedScope.memberFunctions.length,functionTestData.nDates);
 			assert.strictEqual(classes[0].inheritance.length,0);
 
 			done();
@@ -317,9 +327,9 @@ suite('Parser GeneralClasses Tests', () => {
 
 			assert.strictEqual(classes.length,1);
 			assert.strictEqual(classes[0].name,"MyClass");
-			assert.strictEqual(classes[0].publicFunctions.length,2*functionTestData.nDates);
-			assert.strictEqual(classes[0].privateFunctions.length,2*functionTestData.nDates);
-			assert.strictEqual(classes[0].protectedFunctions.length,2*functionTestData.nDates);
+			assert.strictEqual(classes[0].publicScope.memberFunctions.length,2*functionTestData.nDates);
+			assert.strictEqual(classes[0].privateScope.memberFunctions.length,2*functionTestData.nDates);
+			assert.strictEqual(classes[0].protectedScope.memberFunctions.length,2*functionTestData.nDates);
 			assert.strictEqual(classes[0].inheritance.length,0);
 
 			done();

@@ -8,13 +8,30 @@ export interface IFunction extends ISerializable { // Todo inherit from TextScop
     readonly args: string;
 }
 
+export interface IConstructor extends ISerializable {
+    readonly args: string;
+}
+
+export interface IDestructor extends ISerializable {
+    readonly virtual: boolean;
+}
+
+
+export interface IClassScope extends ISerializable,IDeserializable {
+    readonly memberFunctions: IFunction[];
+    readonly nestedClasses: IClass[];
+    readonly constructors: IConstructor[];
+    readonly scopes: TextScope[];
+}
+
+
 export interface IClass extends ISerializable,IDeserializable,TextScope {
     tryAddNestedClass(possibleNestedClass: IClass):boolean;
     readonly name: string;
-    readonly publicFunctions: IFunction[];
-    readonly privateFunctions: IFunction[];
-    readonly protectedFunctions: IFunction[];
-    readonly nestedClasses: IClass[];
+    readonly publicScope : IClassScope;
+    readonly privateScope : IClassScope;
+    readonly protectedScope: IClassScope;
+    readonly destructor?: IDestructor;
     readonly inheritance: string[]; // TODO -> IClass?
 
     //TODO constructor destructor, data members? (at least public/protected ones)
