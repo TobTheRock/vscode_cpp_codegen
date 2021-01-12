@@ -13,6 +13,7 @@ export class HeaderFile implements IFile
 
     deserialize (fileContent:TextFragment)
     {
+        //TODO remove comments
         this._namespaces.push(...Parser.parseNamespaces(fileContent));
         this._namespaces.push(...Parser.parseNoneNamespaces(fileContent));
     }

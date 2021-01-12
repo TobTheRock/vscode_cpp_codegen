@@ -184,24 +184,19 @@ class MemberFunctionMatch {
         if (regexMatch.groupMatches.length !== MemberFunctionMatch.NOF_GROUPMATCHES) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
-        else if (regexMatch.groupMatches[1] === undefined) {
+        else if (regexMatch.groupMatches[2] === undefined) {
             throw new Error("ParserError: No function name, this should not happen!");               
         }
 
-        let virtualMatcher = new RegExp (MemberFunctionMatch.virtualSubMatchRegex);
-        let match = virtualMatcher.exec(regexMatch.groupMatches[0]);
-        if (!match || !match[2]) {
-            throw new Error("ParserError: No function return type, this should not happen!");               
-        }
-        this.virtualMatch = (match[1]) ? true : false;
-        this.returnValMatch = match[2];
+        this.virtualMatch = (regexMatch.groupMatches[0]) ? true : false;
+        this.returnValMatch = regexMatch.groupMatches[1] ;
 
-        this.nameMatch = regexMatch.groupMatches[1];
-        this.argsMatch = (regexMatch.groupMatches[2]) ? regexMatch.groupMatches[2] : "";
-        this.constMatch = (regexMatch.groupMatches[3]) ? true : false;
+        this.nameMatch = regexMatch.groupMatches[2];
+        this.argsMatch = (regexMatch.groupMatches[3]) ? regexMatch.groupMatches[3] : "";
+        this.constMatch = (regexMatch.groupMatches[4]) ? true : false;
 
-        this.virtualMatch = (this.virtualMatch) || ((regexMatch.groupMatches[4]) ? true : false);
-        this.pureMatch = (regexMatch.groupMatches[5]) ? true : false;
+        this.virtualMatch = (this.virtualMatch) || ((regexMatch.groupMatches[5]) ? true : false);
+        this.pureMatch = (regexMatch.groupMatches[6]) ? true : false;
         if (!this.virtualMatch && this.pureMatch) {
            throw new Error("ParserError: Invalid specifier combination: '=0' missing virtual for function: " + this.nameMatch);
            return;
@@ -210,16 +205,16 @@ class MemberFunctionMatch {
     }
 
     private static readonly mayHaveVirtualRegex:string = '(virtual)?';
-    private static readonly returnValRegex:string = '(\\S+[\\s\\S]*?)';
+    private static readonly returnValRegex:string = '((?:(?!virtual)[\\s\\S])+?)';
     private static readonly funcNameRegex:string = '(\\S+)';
     private static readonly funcArgsRegex:string = '\\(([\\s\\S]*?)\\)';
     private static readonly mayHaveConstSpecifierRegex:string = '(const)?';
     private static readonly mayHaveOverrideRegex:string = '(override)?';
     private static readonly mayBePure:string = '(=\\s*0)?';
-    private static readonly virtualSubMatchRegex:string = joinStringsWithWhiteSpace(MemberFunctionMatch.mayHaveVirtualRegex, MemberFunctionMatch.returnValRegex + '$');
-    static readonly REGEX_STR:string = joinStringsWithWhiteSpace(MemberFunctionMatch.returnValRegex+'\\s', MemberFunctionMatch.funcNameRegex,
+    // private static readonly virtualSubMatchRegex:string = joinStringsWithWhiteSpace(MemberFunctionMatch.mayHaveVirtualRegex, MemberFunctionMatch.returnValRegex + '$');
+    static readonly REGEX_STR:string = joinStringsWithWhiteSpace(MemberFunctionMatch.mayHaveVirtualRegex, MemberFunctionMatch.returnValRegex+'\\s', MemberFunctionMatch.funcNameRegex,
          MemberFunctionMatch.funcArgsRegex, MemberFunctionMatch.mayHaveConstSpecifierRegex, MemberFunctionMatch.mayHaveOverrideRegex, MemberFunctionMatch.mayBePure, ';');
-    static readonly NOF_GROUPMATCHES = 6;
+    static readonly NOF_GROUPMATCHES = 7;
 
     readonly virtualMatch:boolean;
     readonly returnValMatch:string;
