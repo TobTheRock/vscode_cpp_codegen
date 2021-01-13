@@ -187,7 +187,8 @@ class MemberFunctionMatch {
             throw new Error("ParserError: No function name, this should not happen!");               
         }
 
-        this.virtualMatch = (regexMatch.groupMatches[0]) ? true : false;
+        this.virtualMatch = (regexMatch.groupMatches[0]) ? (regexMatch.groupMatches[0] === "virtual") : false;
+        this.staticMatch = (regexMatch.groupMatches[0]) ? (regexMatch.groupMatches[0] === "static") : false;
         this.returnValMatch = regexMatch.groupMatches[1] ;
 
         this.nameMatch = regexMatch.groupMatches[2];
@@ -203,18 +204,19 @@ class MemberFunctionMatch {
 
     }
 
-    private static readonly mayHaveVirtualRegex:string = '(virtual\\s*)?';
-    private static readonly returnValRegex:string = '(\\b(?:(?!virtual).)+?)';
+    private static readonly mayHaveVirtualOrStaticRegex:string = '(?:(virtual|static)\\s*)?';
+    private static readonly returnValRegex:string = '(\\b(?:(?!static).)+?)';
     private static readonly funcNameRegex:string = '(\\S+)';
     private static readonly funcArgsRegex:string = '\\(((?:(?!\\()[\\s\\S])*?)\\)';
     private static readonly mayHaveConstSpecifierRegex:string = '(const)?';
     private static readonly mayHaveOverrideRegex:string = '(override)?';
     private static readonly mayBePure:string = '(=\\s*0)?';
-    static readonly regexStr:string = joinStringsWithWhiteSpace(MemberFunctionMatch.mayHaveVirtualRegex + MemberFunctionMatch.returnValRegex+'\\s', MemberFunctionMatch.funcNameRegex,
+    static readonly regexStr:string = joinStringsWithWhiteSpace(MemberFunctionMatch.mayHaveVirtualOrStaticRegex + MemberFunctionMatch.returnValRegex+'\\s', MemberFunctionMatch.funcNameRegex,
          MemberFunctionMatch.funcArgsRegex, MemberFunctionMatch.mayHaveConstSpecifierRegex, MemberFunctionMatch.mayHaveOverrideRegex, MemberFunctionMatch.mayBePure, ';');
     static readonly nofGroupMatches = 7;
 
     readonly virtualMatch:boolean;
+    readonly staticMatch:boolean;
     readonly returnValMatch:string;
     readonly nameMatch:string;
     readonly argsMatch:string;
@@ -296,6 +298,10 @@ export abstract class Parser {
                         newFunc = new cpp.VirtualMemberFunction(match.nameMatch, match.returnValMatch,
                              match.argsMatch, match.constMatch, classNameGen);
                     }
+                }
+                else if (match.staticMatch) {
+                    newFunc = new cpp.StaticMemberFunction(match.nameMatch, match.returnValMatch,
+                        match.argsMatch, match.constMatch, classNameGen);
                 }
                 else {
                     newFunc = new cpp.MemberFunction(match.nameMatch, match.returnValMatch,

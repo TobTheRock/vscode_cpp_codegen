@@ -265,6 +265,32 @@ suite('Full Member Function Tests', () => {
 		done();
 		});
 	});
+	describe('ParseAndSerializeSingleStatic', function() {
+		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {
+		const testContent = TextFragment.createFromString( "static int fncName("+arg+"); ");
+		const testClassName = "TestClass";
+		const classNameGen = new ClassNameGenerator(testClassName, false);
+
+		let parsedFunctions = Parser.parseClassMemberFunctions(testContent, classNameGen);
+		assert.strictEqual(parsedFunctions.length, 1);
+
+		let memberFnct:MemberFunction = parsedFunctions[0] as MemberFunction;	
+		assert.strictEqual(memberFnct.name,"fncName");
+		assert.strictEqual(memberFnct.args, arg);
+		assert.strictEqual(memberFnct.returnVal, "int");
+		assert.strictEqual(memberFnct.isConst, false);
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'static int fncName ('+arg+');');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source), 'int TestClass::fncName ('+arg+') {\n' +
+		'\tint returnValue;\n\treturn returnValue;\n}');
+
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), '');
+
+		done();
+		});
+	});
 		
 	describe('ParseMultipleMixedType', function() {
 		callItAsync("With function arguments ${value}", argData, function (done:Done, arg:string) {		

@@ -13,7 +13,6 @@ export class MemberFunction implements IFunction {
         let serial = "";
         
         switch (mode) {
-            //TODO for source we need the class scope?!
             case SerializableMode.source:
                 serial = this.getHeading(mode) + " {\n";
                 if (this.returnVal !== "void") {
@@ -77,6 +76,39 @@ export class VirtualMemberFunction extends MemberFunction {
 
             default:
                 serial = super.serialize(mode);
+                break;
+        }
+    
+        return serial;
+    }
+
+}
+export class StaticMemberFunction extends MemberFunction {
+    constructor(name:string, 
+                returnVal:string, 
+                args:string,       
+                isConst: boolean,
+                classNameGen:ClassNameGenerator) {
+                   super(name,returnVal,args,isConst, classNameGen);
+                }
+
+    serialize(mode:SerializableMode) {
+        let serial = "";
+        
+        switch (mode) {
+            case SerializableMode.source:
+                serial = this.getHeading(mode) + " {\n";
+                if (this.returnVal !== "void") {
+                    serial += "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";
+                }
+                serial += "}";
+                break;
+            
+            case SerializableMode.header:
+                serial = "static " + this.getHeading(mode) + ";";
+                break;
+
+            default:
                 break;
         }
     
