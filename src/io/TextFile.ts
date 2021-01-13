@@ -52,12 +52,12 @@ export class TextFile
         let deductedFilename = path.join(this.directory, this.basename);        
         switch (mode) {
             // TODO make file endings configurable
-            case SerializableMode.Header:
-            case SerializableMode.InterfaceHeader:
-            case SerializableMode.ImplHeader:
+            case SerializableMode.header:
+            case SerializableMode.interfaceHeader:
+            case SerializableMode.implHeader:
                 deductedFilename += ".hpp"; 
-            case SerializableMode.Source:
-            case SerializableMode.ImplSource:    
+            case SerializableMode.source:
+            case SerializableMode.implSource:    
                 deductedFilename += ".cpp"; 
             break;
         }
@@ -67,12 +67,12 @@ export class TextFile
     private generateFileHeader(mode:SerializableMode, outputFilepath:string):string {
         let fileHeader = "";        
         switch (mode) {
-            case SerializableMode.Header:
-            case SerializableMode.InterfaceHeader:
-            case SerializableMode.ImplHeader:
+            case SerializableMode.header:
+            case SerializableMode.interfaceHeader:
+            case SerializableMode.implHeader:
                 break;
-            case SerializableMode.Source:
-            case SerializableMode.ImplSource:    
+            case SerializableMode.source:
+            case SerializableMode.implSource:    
                 let relFilePath = path.relative(path.dirname(outputFilepath), this.directory);
                 relFilePath = path.join(relFilePath, this.basename + "." + this.ext);
                 // TODO make file header customizable (e.g licence)

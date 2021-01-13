@@ -19,9 +19,9 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
         try {
-			file.writeAs(io.SerializableMode.Source);
+			file.writeAs(io.SerializableMode.source);
 		} catch (error) {
-			vscode.window.showErrorMessage("Unable write source file: ", error);
+			vscode.window.showErrorMessage("Unable to write source file: ", error);
 			return;
 		}
 	});

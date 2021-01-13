@@ -10,19 +10,19 @@ export class ClassConstructor implements IConstructor {
 
         let serial = "";
         switch (mode) {
-            case SerializableMode.Header:
-            case SerializableMode.ImplHeader:
+            case SerializableMode.header:
+            case SerializableMode.implHeader:
                 serial = this.classNameGen.createName(mode) +
                     "(" + this.args + ");";
                 break;
             
-            case SerializableMode.Source:
-            case SerializableMode.ImplSource:
+            case SerializableMode.source:
+            case SerializableMode.implSource:
                 serial = this.classNameGen.createName(mode) + "::" +
                 this.classNameGen.createName(mode) +
                     "(" + this.args + ") {\n}";
                 break;
-            case SerializableMode.InterfaceHeader:
+            case SerializableMode.interfaceHeader:
                 break;
         }
         return serial;
@@ -36,19 +36,19 @@ export class ClassDestructor  implements IDestructor {
 
         let serial = "";
         switch (mode) {
-            case SerializableMode.Header:
-            case SerializableMode.InterfaceHeader:
+            case SerializableMode.header:
+            case SerializableMode.interfaceHeader:
                 serial += this.virtual ? "virtual " : "";
                 serial += "~" + this.classNameGen.createName(mode) +
                     "();";
                 break;
-            case SerializableMode.ImplHeader:
+            case SerializableMode.implHeader:
                 serial = "~" + this.classNameGen.createName(mode) + " ();";
                 serial += this.virtual ? "override " : "";
                 break;
             
-            case SerializableMode.Source:
-            case SerializableMode.ImplSource:
+            case SerializableMode.source:
+            case SerializableMode.implSource:
                 serial = "~" + this.classNameGen.createName(mode) + "::" +
                 this.classNameGen.createName(mode) +
                 "() {\n}";
@@ -91,9 +91,9 @@ class ClassScope implements IClassScope {
     serialize (mode:SerializableMode) {   
         let serial = "";
         switch (mode) {
-            case SerializableMode.Header:
-            case SerializableMode.InterfaceHeader:
-            case SerializableMode.ImplHeader:
+            case SerializableMode.header:
+            case SerializableMode.interfaceHeader:
+            case SerializableMode.implHeader:
                 switch (this.type) {
                     case ClassScopeType.protected:
                         serial += "\tprotected:\n";
@@ -107,8 +107,8 @@ class ClassScope implements IClassScope {
                         break;
                 }
                 break;
-            case SerializableMode.Source:
-            case SerializableMode.ImplSource:    
+            case SerializableMode.source:
+            case SerializableMode.implSource:    
             default:
                 break;
         }
@@ -166,14 +166,14 @@ export class ClassBase  extends TextScope implements IClass {
         let serial = "";
         let suffix = "";
         switch (mode) {
-            case SerializableMode.Header:
-            case SerializableMode.InterfaceHeader:
-            case SerializableMode.ImplHeader:
+            case SerializableMode.header:
+            case SerializableMode.interfaceHeader:
+            case SerializableMode.implHeader:
                 serial += this.getHeaderSerialStart(mode);
                 suffix = "};";  
                 break;
-            case SerializableMode.Source:
-            case SerializableMode.ImplSource:    
+            case SerializableMode.source:
+            case SerializableMode.implSource:    
             default:
                 break;
         }
@@ -217,13 +217,13 @@ export class ClassInterface extends ClassBase {
     serialize (mode:SerializableMode) {    
         let serial = "";
         switch (mode) {
-            case SerializableMode.Source:
+            case SerializableMode.source:
                 //TODO warning
                 break;
-            case SerializableMode.InterfaceHeader:
-            case SerializableMode.Header:
-            case SerializableMode.ImplHeader:
-            case SerializableMode.ImplSource:
+            case SerializableMode.interfaceHeader:
+            case SerializableMode.header:
+            case SerializableMode.implHeader:
+            case SerializableMode.implSource:
             default:
                 serial = super.serialize(mode);
                 break;

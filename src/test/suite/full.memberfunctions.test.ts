@@ -31,13 +31,13 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, false);
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'int fncName ('+arg+');');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'int TestClass::fncName ('+arg+') {\n' +
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'int fncName ('+arg+');');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source), 'int TestClass::fncName ('+arg+') {\n' +
 		'\tint returnValue;\n\treturn returnValue;\n}');
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), '');
 
 		done();
 		});
@@ -58,13 +58,13 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.returnVal, "const int*");
 		assert.strictEqual(memberFnct.isConst, false);
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'const int* fncName ('+arg+');');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'const int* TestClass::fncName ('+arg+') {\n' +
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'const int* fncName ('+arg+');');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source), 'const int* TestClass::fncName ('+arg+') {\n' +
 		'\tconst int* returnValue;\n\treturn returnValue;\n}');
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), '');
 
 
 		done();
@@ -86,13 +86,13 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.returnVal, "std::pair<int, void*>");
 		assert.strictEqual(memberFnct.isConst, false);
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'std::pair<int, void*> fncName ('+arg+');');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'std::pair<int, void*> TestClass::fncName ('+arg+') {\n' +
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'std::pair<int, void*> fncName ('+arg+');');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source), 'std::pair<int, void*> TestClass::fncName ('+arg+') {\n' +
 		'\tstd::pair<int, void*> returnValue;\n\treturn returnValue;\n}');
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), '');
 
 
 		done();
@@ -114,13 +114,13 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, true);
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'int fncName ('+arg+') const;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'int TestClass::fncName ('+arg+') const {\n' +
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'int fncName ('+arg+') const;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source), 'int TestClass::fncName ('+arg+') const {\n' +
 		'\tint returnValue;\n\treturn returnValue;\n}');
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), '');
 
 
 		done();
@@ -142,13 +142,13 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, false);
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'int fncName ('+arg+') override;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'int TestClass::fncName ('+arg+') {\n' +
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'int fncName ('+arg+') override;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source), 'int TestClass::fncName ('+arg+') {\n' +
 		'\tint returnValue;\n\treturn returnValue;\n}');
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), 'virtual int fncName ('+arg+') =0;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), 'virtual int fncName ('+arg+') =0;');
 
 
 
@@ -171,13 +171,13 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, false);
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'int fncName ('+arg+') override;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'int TestClass::fncName ('+arg+') {\n' +
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'int fncName ('+arg+') override;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source), 'int TestClass::fncName ('+arg+') {\n' +
 		'\tint returnValue;\n\treturn returnValue;\n}');
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), 'virtual int fncName ('+arg+') =0;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), 'virtual int fncName ('+arg+') =0;');
 
 
 
@@ -200,13 +200,13 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, true);
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'int fncName ('+arg+') const override;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), 'int TestClass::fncName ('+arg+') const {\n' +
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'int fncName ('+arg+') const override;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source), 'int TestClass::fncName ('+arg+') const {\n' +
 		'\tint returnValue;\n\treturn returnValue;\n}');
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), 'virtual int fncName ('+arg+') const =0;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), 'virtual int fncName ('+arg+') const =0;');
 		done();
 		});
 	});
@@ -227,13 +227,13 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, false);
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'virtual int fncName ('+arg+') =0;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'virtual int fncName ('+arg+') =0;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source), '');
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), 'int fncName ('+arg+') override;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), 'int TestClass::fncName ('+arg+') {\n' +
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), 'int fncName ('+arg+') override;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), 'int TestClass::fncName ('+arg+') {\n' +
 		'\tint returnValue;\n\treturn returnValue;\n}');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), '');
 
 		done();
 		});
@@ -254,13 +254,13 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, true);
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'virtual int fncName ('+arg+') const =0;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'virtual int fncName ('+arg+') const =0;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source), '');
 
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), 'int fncName ('+arg+') const override;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), 'int TestClass::fncName ('+arg+') const {\n' +
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), 'int fncName ('+arg+') const override;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), 'int TestClass::fncName ('+arg+') const {\n' +
 		'\tint returnValue;\n\treturn returnValue;\n}');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), '');
 
 		done();
 		});
@@ -286,59 +286,59 @@ suite('Full Member Function Tests', () => {
 		assert.strictEqual(memberFnct.args, arg);
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, true);
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'virtual int fncName ('+arg+') const =0;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), 'int fncName ('+arg+') const override;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), 'int TestClass::fncName ('+arg+') const {\n' +
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'virtual int fncName ('+arg+') const =0;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), 'int fncName ('+arg+') const override;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), 'int TestClass::fncName ('+arg+') const {\n' +
 		'\tint returnValue;\n\treturn returnValue;\n}');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), '');
 
 		memberFnct = parsedFunctions[1] as MemberFunction;	
 		assert.strictEqual(memberFnct.name,"fncName2");
 		assert.strictEqual(memberFnct.args, arg);
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, false);
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'virtual int fncName2 ('+arg+') =0;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), 'int fncName2 ('+arg+') override;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), 'int TestClass::fncName2 ('+arg+') {\n' +
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'virtual int fncName2 ('+arg+') =0;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), 'int fncName2 ('+arg+') override;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), 'int TestClass::fncName2 ('+arg+') {\n' +
 		'\tint returnValue;\n\treturn returnValue;\n}');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), '');
 
 		memberFnct = parsedFunctions[2] as MemberFunction;	
 		assert.strictEqual(memberFnct.name,"fncName3");
 		assert.strictEqual(memberFnct.args, arg);
 		assert.strictEqual(memberFnct.returnVal, "std::shared_ptr<Test>");
 		assert.strictEqual(memberFnct.isConst, false);
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'std::shared_ptr<Test> fncName3 ('+arg+');');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source),  'std::shared_ptr<Test> ITestClass::fncName3 ('+arg+') {\n' +
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'std::shared_ptr<Test> fncName3 ('+arg+');');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source),  'std::shared_ptr<Test> ITestClass::fncName3 ('+arg+') {\n' +
 		'\tstd::shared_ptr<Test> returnValue;\n\treturn returnValue;\n}');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), '');
 
 		memberFnct = parsedFunctions[3] as MemberFunction;	
 		assert.strictEqual(memberFnct.name,"fncName4");
 		assert.strictEqual(memberFnct.args, arg);
 		assert.strictEqual(memberFnct.returnVal, "void");
 		assert.strictEqual(memberFnct.isConst, true);
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'void fncName4 ('+arg+') const;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source),  'void ITestClass::fncName4 ('+arg+') const {\n}');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'void fncName4 ('+arg+') const;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source),  'void ITestClass::fncName4 ('+arg+') const {\n}');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), '');
 		
 		memberFnct = parsedFunctions[4] as MemberFunction;	
 		assert.strictEqual(memberFnct.name,"fncName5");
 		assert.strictEqual(memberFnct.args, arg);
 		assert.strictEqual(memberFnct.returnVal, "int");
 		assert.strictEqual(memberFnct.isConst, false);
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Header), 'int fncName5 ('+arg+') override;');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.Source),  'int ITestClass::fncName5 ('+arg+') {\n' +
+		assert.strictEqual(memberFnct.serialize(SerializableMode.header), 'int fncName5 ('+arg+') override;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.source),  'int ITestClass::fncName5 ('+arg+') {\n' +
 		'\tint returnValue;\n\treturn returnValue;\n}');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplHeader), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.ImplSource), '');
-		assert.strictEqual(memberFnct.serialize(SerializableMode.InterfaceHeader), 'virtual int fncName5 ('+arg+') =0;');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implHeader), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.implSource), '');
+		assert.strictEqual(memberFnct.serialize(SerializableMode.interfaceHeader), 'virtual int fncName5 ('+arg+') =0;');
 
 		done();
 		});

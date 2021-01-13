@@ -10,7 +10,7 @@ export class StandaloneFunction implements IFunction {
         let serial = "";
         
         switch (mode) {
-            case SerializableMode.Source:
+            case SerializableMode.source:
                 serial = this.getHeading() + " {\n";
                 if (this.returnVal !== "void") {
                     serial = serial + this.returnVal + " returnValue;\n return returnValue;\n";
@@ -18,8 +18,8 @@ export class StandaloneFunction implements IFunction {
                 serial += "}";
                 break;
             
-            case SerializableMode.InterfaceHeader:
-            case SerializableMode.ImplHeader:
+            case SerializableMode.interfaceHeader:
+            case SerializableMode.implHeader:
                 serial = this.getHeading() + ";";
                 break;
 

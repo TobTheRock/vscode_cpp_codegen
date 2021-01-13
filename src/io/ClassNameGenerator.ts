@@ -9,15 +9,15 @@ export class ClassNameGenerator {
         let createdName = "";
 
         switch (mode) {
-            case SerializableMode.Header:
-            case SerializableMode.Source:
+            case SerializableMode.header:
+            case SerializableMode.source:
                 createdName = this.origName;
                 break;
-            case SerializableMode.ImplHeader:
-            case SerializableMode.ImplSource:
+            case SerializableMode.implHeader:
+            case SerializableMode.implSource:
                 createdName = this.createImplName();
                 break;
-            case SerializableMode.InterfaceHeader:
+            case SerializableMode.interfaceHeader:
                 createdName = this.createInterfaceName();
                 break;
             default:
