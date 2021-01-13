@@ -177,10 +177,12 @@ export class ClassBase  extends TextScope implements IClass {
             default:
                 break;
         }
+        if (this.destructor) {
+            serial += this.destructor.serialize(mode);
+        }
         serial += this.publicScope.serialize(mode);
         serial += this.protectedScope.serialize(mode);
         serial += this.privateScope.serialize(mode);
-        serial += this.destructor?.serialize(mode);
         serial += suffix;
         return serial;
     }
