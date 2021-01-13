@@ -77,7 +77,7 @@ export class TextFile
                 let relFilePath = path.relative(path.dirname(outputFilepath), this.directory);
                 relFilePath = path.join(relFilePath, this.basename + "." + this.ext);
                 // TODO make file header customizable (e.g licence)
-                fileHeader += "#include " + relFilePath + "\n\n";
+                fileHeader += "#include \"" + relFilePath + "\"\n\n";
             break;
         }
         return fileHeader;

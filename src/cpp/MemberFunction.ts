@@ -17,7 +17,7 @@ export class MemberFunction implements IFunction {
             case SerializableMode.Source:
                 serial = this.getHeading(mode) + " {\n";
                 if (this.returnVal !== "void") {
-                    serial = serial + this.returnVal + " returnValue;\n return returnValue;\n";
+                    serial += "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";
                 }
                 serial += "}";
                 break;
@@ -109,7 +109,7 @@ export class PureVirtualMemberFunction  extends MemberFunction{
             case SerializableMode.ImplSource:                
                 serial = this.getHeading(mode) + " {\n";
                 if (this.returnVal !== "void") {
-                    serial = serial + this.returnVal + " returnValue;\n return returnValue;\n";
+                    serial += "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";
                 }
                 serial += "}";
                 break;

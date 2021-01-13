@@ -18,7 +18,8 @@ export class ClassConstructor implements IConstructor {
             
             case SerializableMode.Source:
             case SerializableMode.ImplSource:
-                serial = this.classNameGen.createName(mode) +
+                serial = this.classNameGen.createName(mode) + "::" +
+                this.classNameGen.createName(mode) +
                     "(" + this.args + ") {\n}";
                 break;
             case SerializableMode.InterfaceHeader:
@@ -48,8 +49,9 @@ export class ClassDestructor  implements IDestructor {
             
             case SerializableMode.Source:
             case SerializableMode.ImplSource:
-                serial = "~" + this.classNameGen.createName(mode) +
-                    "() {\n}";
+                serial = "~" + this.classNameGen.createName(mode) + "::" +
+                this.classNameGen.createName(mode) +
+                "() {\n}";
                 break;
         }
         return serial;
@@ -111,9 +113,9 @@ class ClassScope implements IClassScope {
                 break;
         }
 
-        serial += serializeArray(this.constructors, mode);
-        serial += serializeArray(this.nestedClasses, mode);
-        serial += serializeArray(this.memberFunctions, mode);
+        serial += serializeArray(this.constructors, mode, "\n\n");
+        serial += serializeArray(this.nestedClasses, mode, "\n\n");
+        serial += serializeArray(this.memberFunctions, mode, "\n\n");
     
         return serial;
     }

@@ -14,10 +14,10 @@ export interface ISerializable
     serialize: (mode:SerializableMode) => string;
 }
 
-export function serializeArray(serializableArray: Array<ISerializable>, mode:SerializableMode) {
+export function serializeArray(serializableArray: Array<ISerializable>, mode:SerializableMode, filler: string = "") {
     let result = "";
     serializableArray.forEach(serializable => {
-        result += serializable.serialize(mode);
+        result += serializable.serialize(mode) + filler;
     });
     return result;
 } 

@@ -205,15 +205,14 @@ class MemberFunctionMatch {
 
     }
 
-    private static readonly mayHaveVirtualRegex:string = '(virtual)?';
-    private static readonly returnValRegex:string = '((?:(?!virtual)[\\s\\S])+?)';
+    private static readonly mayHaveVirtualRegex:string = '(virtual\\s*)?';
+    private static readonly returnValRegex:string = '(\\b(?:(?!virtual).)+?)';
     private static readonly funcNameRegex:string = '(\\S+)';
-    private static readonly funcArgsRegex:string = '\\(([\\s\\S]*?)\\)';
+    private static readonly funcArgsRegex:string = '\\(((?:(?!\\()[\\s\\S])*?)\\)';
     private static readonly mayHaveConstSpecifierRegex:string = '(const)?';
     private static readonly mayHaveOverrideRegex:string = '(override)?';
     private static readonly mayBePure:string = '(=\\s*0)?';
-    // private static readonly virtualSubMatchRegex:string = joinStringsWithWhiteSpace(MemberFunctionMatch.mayHaveVirtualRegex, MemberFunctionMatch.returnValRegex + '$');
-    static readonly REGEX_STR:string = joinStringsWithWhiteSpace(MemberFunctionMatch.mayHaveVirtualRegex, MemberFunctionMatch.returnValRegex+'\\s', MemberFunctionMatch.funcNameRegex,
+    static readonly REGEX_STR:string = joinStringsWithWhiteSpace(MemberFunctionMatch.mayHaveVirtualRegex + MemberFunctionMatch.returnValRegex+'\\s', MemberFunctionMatch.funcNameRegex,
          MemberFunctionMatch.funcArgsRegex, MemberFunctionMatch.mayHaveConstSpecifierRegex, MemberFunctionMatch.mayHaveOverrideRegex, MemberFunctionMatch.mayBePure, ';');
     static readonly NOF_GROUPMATCHES = 7;
 
