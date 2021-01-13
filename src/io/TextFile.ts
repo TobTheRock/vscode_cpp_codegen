@@ -14,7 +14,6 @@ export class TextFile
     }
 
     static createFromHeaderFile(textDocument:vscode.TextDocument) {
-        // TODO check extension?
         const cppHeader = new cpp.HeaderFile(textDocument.getText());
         return new TextFile(textDocument.fileName, cppHeader);
     }

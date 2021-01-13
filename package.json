@@ -18,7 +18,8 @@
 			{
 				"command": "codegen-cpp.cppSourceFromHeader",
 				"title": "Generate C++ source file from current header",
-				"when": "editorLangId == cpp"
+				"when": "editorLangId == cpp",
+				"enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
 			}
 		]
 	},
