@@ -9,7 +9,6 @@ export class ClassNameGenerator {
         let createdName = "";
 
         switch (mode) {
-            // TODO whats the difference between ImplHeader and Header? 1 
             case SerializableMode.Header:
             case SerializableMode.Source:
                 createdName = this.origName;

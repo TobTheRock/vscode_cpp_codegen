@@ -3,8 +3,6 @@ import { ClassDestructor } from "./cpp";
 import * as io from "./io";
 import { TextBlock } from "./io";
 
-// TODO Error handling: do try catch in parser or move it to a higher level (prefered so we can catch errors in deserialze functions)?
-
 function joinStringsWithFiller(strings:string[], filler:string):string {
     let joinedStrings = '';
     for (let index = 0; index < strings.length-1; index++) {

@@ -33,8 +33,6 @@ export interface IClass extends ISerializable,IDeserializable,TextScope {
     readonly protectedScope: IClassScope;
     readonly destructor?: IDestructor;
     readonly inheritance: string[]; // TODO -> IClass?
-
-    //TODO constructor destructor, data members? (at least public/protected ones)
 }
 
 export interface INamespace extends ISerializable,IDeserializable,TextScope {
