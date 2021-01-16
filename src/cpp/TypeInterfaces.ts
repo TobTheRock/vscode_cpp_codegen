@@ -42,6 +42,3 @@ export interface INamespace extends ISerializable,IDeserializable,TextScope {
     readonly functions:IFunction[];
     readonly subnamespaces:INamespace[];
 }
-
-export interface IFile extends ISerializable,IDeserializable {
-}

@@ -10,14 +10,20 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:codegen-cpp.cppSourceFromHeader"
+		"onLanguage:cpp"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
 				"command": "codegen-cpp.cppSourceFromHeader",
-				"title": "Generate C++ source file from current header",
+				"title": "codegen-cpp: Generate source file from header",
+				"when": "editorLangId == cpp",
+				"enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+			},
+			{
+				"command": "codegen-cpp.cppInterfaceImplFromHeader",
+				"title": "codegen-cpp:  Generate interface implementation source/header files",
 				"when": "editorLangId == cpp",
 				"enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
 			}

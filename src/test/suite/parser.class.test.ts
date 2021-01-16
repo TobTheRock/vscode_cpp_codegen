@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { Done, describe} from 'mocha';
 // import * as myExtension from '../../extension';
 import {Parser} from '../../Parser';
-import {IClass, ClassInterface, ClassBase, IClassScope} from '../../cpp';
+import {IClass, ClassInterface, ClassImpl, IClassScope} from '../../cpp';
 import { callItAsync } from "./utils";
 
 import { TextFragment } from '../../io';
@@ -73,7 +73,7 @@ suite('Parser GeneralClasses Tests', () => {
 		assertClassScopeEmpty(classes[0].protectedScope);
 		assert.strictEqual(classes[0].destructor,undefined);
 		assert.strictEqual(classes[0].inheritance.length,0);
-		assert.ok(classes[0] instanceof ClassBase);
+		assert.ok(classes[0] instanceof ClassImpl);
 		done();
 	});
 

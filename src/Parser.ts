@@ -393,7 +393,7 @@ export abstract class Parser {
             data.removeMatching(ClassMatch.regexStr).forEach(
                 (regexMatch) => {           
                     const match = new ClassMatch(regexMatch);
-                    const newClass = match.isInterface? new cpp.ClassInterface(regexMatch, match.nameMatch, match.inheritanceMatch) : new cpp.ClassBase(regexMatch, match.nameMatch, match.inheritanceMatch);
+                    const newClass = match.isInterface? new cpp.ClassInterface(regexMatch, match.nameMatch, match.inheritanceMatch) : new cpp.ClassImpl(regexMatch, match.nameMatch, match.inheritanceMatch);
                     const newData = io.TextFragment.createFromTextBlock(match.bodyMatch);
                     
                     newClass.deserialize(newData);

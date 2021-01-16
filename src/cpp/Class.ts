@@ -30,8 +30,8 @@ export class ClassConstructor implements IConstructor {
 } 
 
 export class ClassDestructor  implements IDestructor {
-    constructor(public readonly virtual:boolean,
-                private readonly classNameGen:ClassNameGenerator) {}
+    constructor(public readonly virtual: boolean,
+                private readonly classNameGen: ClassNameGenerator) {}
     serialize (mode: SerializableMode): string {
 
         let serial = "";
@@ -43,15 +43,15 @@ export class ClassDestructor  implements IDestructor {
                     "();";
                 break;
             case SerializableMode.implHeader:
-                serial = "~" + this.classNameGen.createName(mode) + " ();";
-                serial += this.virtual ? "override " : "";
+                serial = "~" + this.classNameGen.createName(mode) + " ()";
+                serial += this.virtual ? " override;\n" : ";\n";
                 break;
             
             case SerializableMode.source:
             case SerializableMode.implSource:
-                serial = "~" + this.classNameGen.createName(mode) + "::" +
-                this.classNameGen.createName(mode) +
-                "() {\n}";
+                serial =  this.classNameGen.createName(mode) + "::" +
+                "~" + this.classNameGen.createName(mode) +
+                "() {\n}\n\n";
                 break;
         }
         return serial;
@@ -66,8 +66,8 @@ enum ClassScopeType {
 class ClassScope implements IClassScope {
 
     constructor(public readonly type: ClassScopeType,
-        private readonly className: string,
-        private readonly classNameGen: ClassNameGenerator) {}
+        private readonly _className: string,
+        private readonly _classNameGen: ClassNameGenerator) {}
 
     deserialize (data: TextFragment) {
         let content: TextFragment;
@@ -84,38 +84,47 @@ class ClassScope implements IClassScope {
                 break;
         }
         this.scopes.push(...content.blocks);
-        this.constructors.push(...Parser.parseClassConstructor(content, this.className, this.classNameGen));
-        this.memberFunctions.push(...Parser.parseClassMemberFunctions(content, this.classNameGen));
+        this.constructors.push(...Parser.parseClassConstructor(content, this._className, this._classNameGen));
+        this.memberFunctions.push(...Parser.parseClassMemberFunctions(content, this._classNameGen));
     }
 
-    serialize (mode:SerializableMode) {   
+    serialize(mode: SerializableMode) {   
+        
+        if (!this.constructors.length && !this.nestedClasses.length && !this.memberFunctions.length) {
+            return "";
+        }
+
         let serial = "";
+        let arrayPrefix = "";
+        let arraySuffix = "";
         switch (mode) {
             case SerializableMode.header:
             case SerializableMode.interfaceHeader:
             case SerializableMode.implHeader:
                 switch (this.type) {
                     case ClassScopeType.protected:
-                        serial += "\tprotected:\n";
+                        serial += "protected:\n";
                         break;
                     case ClassScopeType.public:
-                        serial += "\tpublic:\n";
+                        serial += "public:\n";
                         break;
                     case ClassScopeType.private:
                     default:
-                        serial += "\tprivate:\n";
+                        serial += "private:\n";
                         break;
                 }
+                arrayPrefix = "\t";
+                arraySuffix = "\n";
                 break;
             case SerializableMode.source:
             case SerializableMode.implSource:    
             default:
+                arraySuffix = "\n\n";
                 break;
         }
-
-        serial += serializeArray(this.constructors, mode, "\n\n");
-        serial += serializeArray(this.nestedClasses, mode, "\n\n");
-        serial += serializeArray(this.memberFunctions, mode, "\n\n");
+        serial += serializeArray(this.constructors, mode, arrayPrefix, arraySuffix);
+        serial += serializeArray(this.nestedClasses, mode, arrayPrefix, arraySuffix); // TODO formatting not working for multiline
+        serial += serializeArray(this.memberFunctions, mode, arrayPrefix, arraySuffix);
     
         return serial;
     }
@@ -126,11 +135,12 @@ class ClassScope implements IClassScope {
     readonly scopes: TextScope[] = [];
 }
 
-export class ClassBase  extends TextScope implements IClass {
+class ClassBase  extends TextScope implements IClass {
     constructor(
         scope:TextScope,
         public readonly name:string,
-        public readonly inheritance:string[]) {
+        public readonly inheritance: string[],
+        private readonly _isInterface: boolean) {
         super(scope.scopeStart, scope.scopeEnd);
     }
 
@@ -151,7 +161,7 @@ export class ClassBase  extends TextScope implements IClass {
     }
 
     deserialize (data: TextFragment) {
-        const dtors = Parser.parseClassDestructors(data, this.name, this.classNameGen);
+        const dtors = Parser.parseClassDestructors(data, this.name, this._classNameGen);
         if (dtors.length > 1) {
             throw new Error("Class " + this.name + " has multiple deconstructors!");
         } else if (dtors.length === 1) {
@@ -168,8 +178,11 @@ export class ClassBase  extends TextScope implements IClass {
         switch (mode) {
             case SerializableMode.header:
             case SerializableMode.interfaceHeader:
-            case SerializableMode.implHeader:
                 serial += this.getHeaderSerialStart(mode);
+                suffix = "};";
+                break;
+            case SerializableMode.implHeader:
+                serial += this.getHeaderSerialStart(mode, [this.name]);
                 suffix = "};";  
                 break;
             case SerializableMode.source:
@@ -187,34 +200,51 @@ export class ClassBase  extends TextScope implements IClass {
         return serial;
     }
 
-    getHeaderSerialStart  (mode:SerializableMode) {
-        let serial = "class " + this.classNameGen.createName(mode);
-        this.inheritance.forEach( (inheritedClass, index) => {
+    getHeaderSerialStart  (mode:SerializableMode, inheritance:string[] = this.inheritance) {
+        let serial = "class " + this._classNameGen.createName(mode);
+        inheritance.forEach( (inheritedClass, index) => {
             if (index === 0) {
                 serial += " : ";
             }
             serial += inheritedClass;   
-            if (index < this.inheritance.length-1) {
+            if (index < inheritance.length-1) {
                 serial += ", ";
             }
         });
 
-        serial += "\n";
+        serial += " {\n";
 
         return serial;
     }
 
-    protected classNameGen: ClassNameGenerator = new ClassNameGenerator(this.name, false);
+    private _classNameGen: ClassNameGenerator = new ClassNameGenerator(this.name, this._isInterface);
 
-    readonly publicScope : IClassScope = new ClassScope(ClassScopeType.public, this.name, this.classNameGen);
-    readonly privateScope : IClassScope = new ClassScope(ClassScopeType.private, this.name, this.classNameGen);
-    readonly protectedScope: IClassScope = new ClassScope(ClassScopeType.protected, this.name, this.classNameGen);
+    readonly publicScope : IClassScope = new ClassScope(ClassScopeType.public, this.name, this._classNameGen);
+    readonly privateScope : IClassScope = new ClassScope(ClassScopeType.private, this.name, this._classNameGen);
+    readonly protectedScope: IClassScope = new ClassScope(ClassScopeType.protected, this.name, this._classNameGen);
     destructor: IDestructor|undefined;
+}
+
+export class ClassImpl extends ClassBase {
+
+    constructor(
+        scope:TextScope,
+        public readonly name:string,
+        public readonly inheritance:string[]) {
+        super(scope, name, inheritance, false);
+    }
 }
 
 
 export class ClassInterface extends ClassBase {
-    serialize (mode:SerializableMode) {    
+    constructor(
+        scope:TextScope,
+        public readonly name:string,
+        public readonly inheritance:string[]) {
+        super(scope, name, inheritance, true);
+    }
+
+    serialize(mode: SerializableMode) {    
         let serial = "";
         switch (mode) {
             case SerializableMode.source:
