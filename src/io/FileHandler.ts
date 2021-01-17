@@ -1,5 +1,6 @@
 
 import { SerializableMode, ISerializable, IDeserializable } from "./ISerial";
+import { quickPickHelper } from "./QuickPickHelper";
 import * as cpp from '../cpp';
 import * as vscode from 'vscode';
 import * as fs from "fs";
@@ -19,32 +20,14 @@ export class FileHandler
     }
 
     writeFileAs(fileBaseName:string, ...modes:SerializableMode[]) {
-        return this.askForOutputDirectoryPath(this.file.directory).then((directory) => {
+        return quickPickHelper.showDirectoryQuickPick("Output directory", this.file.directory).then((directory) => {
+            if (!directory) {
+                throw Error("No output directory was provided!");
+            }
             const promises = [];
             modes.forEach(mode => {
                 promises.push(this.serializeTryWrite(fileBaseName, directory, mode));
             });
-        });
-    }
-
-    private askForOutputDirectoryPath(defaultDirectoryPath: string = ""): Thenable<string> {
-        return vscode.window.showInputBox({
-            "prompt": "Output directory of generated file(s):",
-            "value": defaultDirectoryPath
-        }).then(input => {
-            if (!input?.length) {
-                throw Error("No input path was provided!");
-            } else if (!fs.existsSync(input) || !fs.lstatSync(input).isDirectory()) {
-                throw Error("Directory does not exists!");
-            }
-            else {
-                return input as string;
-            }
-        }).then((input) => {
-            return input;
-        },
-            (error: Error) => {
-                vscode.window.showWarningMessage(error.message);
         });
     }
 

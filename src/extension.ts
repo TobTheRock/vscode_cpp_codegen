@@ -20,7 +20,12 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 		const fileHandler = new io.FileHandler(file);
-		await fileHandler.writeFileAs(file.basename, io.SerializableMode.source);
+		try {
+			await fileHandler.writeFileAs(file.basename, io.SerializableMode.source);
+		} catch (error) {
+			vscode.window.showErrorMessage("Unable to write source file: ", error);
+			return;
+		}
 	}));
 
 
