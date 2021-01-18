@@ -1,6 +1,6 @@
 
 import { SerializableMode, ISerializable, IDeserializable } from "./ISerial";
-import { quickPickHelper } from "./QuickPickHelper";
+import { workspaceDirectoryParser } from "./WorkspaceDirectories";
 import * as cpp from '../cpp';
 import * as vscode from 'vscode';
 import * as fs from "fs";
@@ -13,6 +13,16 @@ export interface IFile extends ISerializable, IDeserializable {
     readonly extension: string;
 }
 
+class DirectoryItem implements vscode.QuickPickItem {
+
+	label: string;
+	description: string;
+	constructor(public readonly absolutePath: string, public readonly rootDir: string) {
+		this.label = "." + path.sep + path.relative(rootDir, absolutePath);
+		this.description = rootDir;
+	}
+}
+
 export class FileHandler
 {
     constructor(private readonly file: IFile) {
@@ -20,16 +30,61 @@ export class FileHandler
     }
 
     writeFileAs(fileBaseName:string, ...modes:SerializableMode[]) {
-        return quickPickHelper.showDirectoryQuickPick("Output directory", this.file.directory).then((directory) => {
+        return this.showDirectoryQuickPick(this.file.directory).then((directory) => {
             if (!directory) {
                 throw Error("No output directory was provided!");
             }
-            const promises = [];
+            const promises: Promise<void | vscode.TextEditor>[] = [];
             modes.forEach(mode => {
                 promises.push(this.serializeTryWrite(fileBaseName, directory, mode));
             });
+            return Promise.all(promises);
         });
     }
+    
+    async showDirectoryQuickPick(defaultValue:string = ""): Promise<string | undefined> {
+		const disposables: vscode.Disposable[] = [];
+		try {
+			return await new Promise<string | undefined>((resolve, reject) => {
+
+                const workspaceDirs = workspaceDirectoryParser.getDirectories();
+                const workspaceRootDirs = workspaceDirectoryParser.getRootDirectories();
+
+				const quickPickInput = vscode.window.createQuickPick<DirectoryItem>();
+                quickPickInput.placeholder = 'Select output directory...';
+                quickPickInput.items = workspaceDirs; //TODO large directories
+				if (path.isAbsolute(defaultValue)) {
+					for (let index = 0; index < workspaceRootDirs.length; index++) {
+						const rootDir = workspaceRootDirs[index];
+						if (defaultValue.startsWith(rootDir)) {
+							quickPickInput.value = (new DirectoryItem(defaultValue, rootDir)).label;
+							break;
+						}
+					}
+				} else {
+					quickPickInput.value = defaultValue;
+				}
+				
+				disposables.push(
+					quickPickInput. onDidChangeValue(value => {return value;}),
+					quickPickInput.onDidChangeSelection(items => {
+						const item = items[0];
+						resolve(item.absolutePath);
+						quickPickInput.hide();
+					}),
+					quickPickInput.onDidHide(() => {
+						resolve(undefined);
+						quickPickInput.dispose();
+					})
+				);
+				quickPickInput.show();
+			});
+		} catch (error) {
+			console.error("Could not parse directory: ", error.message);
+		} finally {
+			disposables.forEach(d => d.dispose());
+		}
+	}
 
     private writeAndOpenFile (outputFilePath:string, content:string) {
         return vscode.workspace.fs.writeFile(vscode.Uri.parse(outputFilePath), Buffer.from(content, 'utf8')).then(
