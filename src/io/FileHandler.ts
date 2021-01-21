@@ -5,7 +5,6 @@ import * as cpp from '../cpp';
 import * as vscode from 'vscode';
 import * as fs from "fs";
 import * as path from "path";
-import { callItAsync } from "../test/suite/utils";
 
 export interface IFile extends ISerializable, IDeserializable {
     getPath(): string;

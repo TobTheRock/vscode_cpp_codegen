@@ -21,10 +21,10 @@ export class Namespace  extends TextScope implements INamespace {
     }
 
     serialize (mode:SerializableMode) {
-        let serial = "namespace " +  this.name + "{\n"; 
+        let serial = "namespace " +  this.name + " {\n\n"; 
         serial += serializeArray(this.functions, mode);
         serial += serializeArray(this.classes, mode);
-        serial += "\n}";
+        serial += "}";
         return serial;
     }
 

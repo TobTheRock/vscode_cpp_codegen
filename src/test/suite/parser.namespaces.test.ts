@@ -156,5 +156,26 @@ suite('Parser Namespace Tests', () => {
 			done();
 		});
 	});
-	
+
+	describe('ParseNestedNamespaceC17', function() {
+		callItAsync("With content ${value}", namespacesData, function (done:Done, data:TestData) {
+			const testData = TextFragment.createFromString( 
+			`
+				namespace namespaceName::namespaceName2
+				{
+					${data.content}
+				}
+			`
+			);
+			let namespaces:INamespace[] = Parser.parseNamespaces(testData);
+
+			assert.strictEqual(namespaces.length, 1);
+			assert.strictEqual(namespaces[0].name, "namespaceName::namespaceName2");
+			assert.strictEqual(namespaces[0].classes.length, data.nClasses);
+			assert.strictEqual(namespaces[0].functions.length, data.nFunc);
+			assert.strictEqual(namespaces[0].subnamespaces.length, 0);
+			assert.ok(namespaces[0] instanceof Namespace);
+			done();
+		});
+	});
 });
