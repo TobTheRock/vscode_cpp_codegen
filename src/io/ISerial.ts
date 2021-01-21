@@ -11,15 +11,13 @@ export enum SerializableMode {
 
 export interface ISerializable
 {
-    serialize: (mode:SerializableMode) => string;
+    serialize: (mode:SerializableMode) => string | Promise<string>;
 }
 
-export function serializeArray(serializableArray: Array<ISerializable>, mode:SerializableMode, elementPrefix: string = "", elementSuffix: string = "") {
-    let result = "";
-    serializableArray.forEach(serializable => {
-        result += elementPrefix + serializable.serialize(mode) + elementSuffix;
-    });
-    return result;
+export function serializeArray(serializableArray: Array<ISerializable>, mode:SerializableMode, elementPrefix: string = "", elementSuffix: string = ""): Promise<string> {
+    return serializableArray.reduce(async (accumulate, serializable) => {
+        return await accumulate + elementPrefix + await serializable.serialize(mode) + elementSuffix;
+    }, Promise.resolve(""));
 } 
 
 export interface IDeserializable

@@ -9,12 +9,12 @@ export class MemberFunction implements IFunction {
                 private readonly classNameGen:ClassNameGenerator
                 ) {}
 
-    serialize(mode:SerializableMode) {
+    async serialize(mode:SerializableMode) {
         let serial = "";
         
         switch (mode) {
             case SerializableMode.source:
-                serial = this.getHeading(mode) + " {\n";
+                serial = await this.getHeading(mode) + " {\n";
                 if (this.returnVal !== "void") {
                     serial += "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";
                 }
@@ -22,7 +22,7 @@ export class MemberFunction implements IFunction {
                 break;
             
             case SerializableMode.header:
-                serial = this.getHeading(mode) + ";";
+                serial = await this.getHeading(mode) + ";";
                 break;
 
             default:
@@ -33,7 +33,7 @@ export class MemberFunction implements IFunction {
     }
 
 
-    protected getHeading(mode:SerializableMode) {
+    protected async getHeading(mode:SerializableMode) {
 
         switch (mode) {
             case SerializableMode.header:
@@ -42,7 +42,7 @@ export class MemberFunction implements IFunction {
                 return this.returnVal + " " + this.name + " (" + this.args + ")" + (this.isConst? " const" : "");
             case SerializableMode.source:
             case SerializableMode.implSource:
-                return this.returnVal + " " + this.classNameGen.createName(mode) + "::" + this.name + " (" + this.args + ")" + (this.isConst? " const" : "");
+                return this.returnVal + " " + await this.classNameGen.createName(mode) + "::" + this.name + " (" + this.args + ")" + (this.isConst? " const" : "");
             default:
                 break;
         }
@@ -62,20 +62,20 @@ export class VirtualMemberFunction extends MemberFunction {
                    super(name,returnVal,args,isConst, classNameGen);
                 }
 
-    serialize(mode:SerializableMode) {
+    async serialize(mode:SerializableMode) {
         let serial = "";
         
         switch (mode) {
             case SerializableMode.header:
-                serial = super.getHeading(mode) + " override;";
+                serial = await super.getHeading(mode) + " override;";
                 break;
             
             case SerializableMode.interfaceHeader:
-                serial = "virtual " + super.getHeading(mode) + " =0;";
+                serial = "virtual " + await super.getHeading(mode) + " =0;";
                 break;
 
             default:
-                serial = super.serialize(mode);
+                serial = await super.serialize(mode);
                 break;
         }
     
@@ -92,12 +92,12 @@ export class StaticMemberFunction extends MemberFunction {
                    super(name,returnVal,args,isConst, classNameGen);
                 }
 
-    serialize(mode:SerializableMode) {
+    async serialize(mode:SerializableMode) {
         let serial = "";
         
         switch (mode) {
             case SerializableMode.source:
-                serial = this.getHeading(mode) + " {\n";
+                serial = await this.getHeading(mode) + " {\n";
                 if (this.returnVal !== "void") {
                     serial += "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";
                 }
@@ -105,7 +105,7 @@ export class StaticMemberFunction extends MemberFunction {
                 break;
             
             case SerializableMode.header:
-                serial = "static " + this.getHeading(mode) + ";";
+                serial = "static " + await this.getHeading(mode) + ";";
                 break;
 
             default:
@@ -126,20 +126,20 @@ export class PureVirtualMemberFunction  extends MemberFunction{
                     super(name,returnVal,args,isConst,classNameGen);
                 }
 
-    serialize(mode:SerializableMode) {
+    async serialize(mode:SerializableMode) {
         let serial = "";
         
         switch (mode) {
             case SerializableMode.header:
-                serial = "virtual " + super.getHeading(mode) + " =0;";
+                serial = "virtual " + await super.getHeading(mode) + " =0;";
                 break;
 
             case SerializableMode.implHeader:
-                serial = super.getHeading(mode) + " override;";
+                serial = await super.getHeading(mode) + " override;";
                 break;
 
             case SerializableMode.implSource:                
-                serial = this.getHeading(mode) + " {\n";
+                serial = await this.getHeading(mode) + " {\n";
                 if (this.returnVal !== "void") {
                     serial += "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";
                 }

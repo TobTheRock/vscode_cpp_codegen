@@ -21,10 +21,10 @@ export class Namespace  extends io.TextScope implements INamespace {
         return false;
     }
 
-    serialize (mode:SerializableMode) {
+    async serialize (mode:SerializableMode) {
         let serial = "namespace " +  this.name + " {\n\n"; 
-        serial += io.serializeArray(this.functions, mode);
-        serial += io.serializeArray(this.classes, mode);
+        serial += await io.serializeArray(this.functions, mode);
+        serial += await io.serializeArray(this.classes, mode);
         serial += "}";
         return serial;
     }
@@ -56,10 +56,9 @@ export class NoneNamespace extends io.TextScope implements INamespace {
         return false;
     }
 
-    serialize (mode:SerializableMode) {
-        let serial = io.serializeArray(this.functions, mode);
-        serial += io.serializeArray(this.classes, mode);
-
+    async serialize (mode:SerializableMode) {
+        let serial:string = await io.serializeArray(this.functions, mode);
+        serial += await io.serializeArray(this.classes, mode);
         return serial;
     }
 

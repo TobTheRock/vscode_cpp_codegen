@@ -1,4 +1,4 @@
-import * as io from "../io"
+import * as io from "../io";
 
 export class ClassNameGenerator {
     constructor(private readonly _origName: string,
@@ -6,7 +6,7 @@ export class ClassNameGenerator {
                 private readonly _nameInputProvider: io.INameInputProvider = {}) {
     }
 
- createName(mode:io.SerializableMode) {
+ async createName(mode:io.SerializableMode): Promise<string> {
         let createdName = "";
 
         switch (mode) {
@@ -16,7 +16,7 @@ export class ClassNameGenerator {
                 break;
             case io.SerializableMode.implHeader:
             case io.SerializableMode.implSource:
-                createdName = this.createImplName();
+                createdName = await this.createImplName();
                 break;
             case io.SerializableMode.interfaceHeader:
                 createdName = this.createInterfaceName();
@@ -28,14 +28,14 @@ export class ClassNameGenerator {
         return createdName;
     }
 
-    private createImplName() {
+    private async createImplName() {
         if (!this._isInterface) {
             throw new Error("Cannot generate a name for an Implementation from a non interface class!");
         }
 
         if (!this._implName.length) {
             if (this._isInterface && this._nameInputProvider.getInterfaceName) {
-                this._implName = this._nameInputProvider.getInterfaceName(this._origName);
+                this._implName = await this._nameInputProvider.getInterfaceName(this._origName);
             }
             // TODO naming conventions config
             else if (this._origName.startsWith('I')) {

@@ -14,7 +14,7 @@ export interface IFile extends ISerializable, IDeserializable {
 }
 
 export interface INameInputProvider {
-    getInterfaceName?(origName: string): string;
+    getInterfaceName?(origName: string): string | Promise<string>;
 }
 
 class DirectoryItem implements vscode.QuickPickItem {
@@ -81,11 +81,10 @@ export class FileHandler
             fileBaseName = mayBeFileBaseName;
         }
 
-        const promises: Promise<void | vscode.TextEditor>[] = [];
-        modes.forEach(mode => {
-            promises.push(this.serializeTryWrite(fileBaseName, directory, mode));
-        });
-        return Promise.all(promises);
+        return modes.reduce(async (accumulate, mode) => {
+            await accumulate;
+            return await this.serializeTryWrite(fileBaseName, directory, mode);
+        }, Promise.resolve());
     }
     
     async showDirectoryQuickPick(defaultValue:string = ""): Promise<string | undefined> {
@@ -154,7 +153,7 @@ export class FileHandler
         const outputFilePath = path.join(directory, this.deduceOutputFilename(fileBaseName, mode)); // TODO make file extensions configurable
         if (!fs.existsSync(outputFilePath)) {
             //TODO pretify output (configurable?)
-            const outputContent = this.generateFileHeader(mode, outputFilePath) + this._file.serialize(mode);
+            const outputContent = this.generateFileHeader(mode, outputFilePath) + await this._file.serialize(mode);
             return await this.writeAndOpenFile(outputFilePath, outputContent);
         }
         else {
@@ -202,8 +201,19 @@ export class FileHandler
         return fileHeader;
     }
 
-    private getInterfaceName(origName: string): string {
-        throw new Error("Method not implemented.");
+    private async getInterfaceName(origName: string): Promise<string> {
+
+        let input = await vscode.window.showInputBox({
+            "prompt": "Enter name for interface " + origName,
+            "placeHolder": origName + "Impl"
+        });
+
+        if (!input?.length) {
+            throw new Error("Aborting, no name was provided for interface: " + origName);
+            
+        }
+
+        return input;
     }
 
 }

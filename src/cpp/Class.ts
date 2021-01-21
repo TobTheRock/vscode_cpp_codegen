@@ -1,26 +1,25 @@
 import { IClass, IFunction, IConstructor, IDestructor, IClassScope, SerializableMode } from "./TypeInterfaces";
 import {Parser} from "../Parser";
 import { ClassNameGenerator } from "./ClassNameGenerator";
-import * as io from "../io"
+import * as io from "../io";
 
 export class ClassConstructor implements IConstructor {
     constructor(public readonly args:string,
                 private readonly classNameGen:ClassNameGenerator) {}
-    serialize (mode: SerializableMode): string {
+    async serialize (mode: SerializableMode): Promise<string> {
 
         let serial = "";
         switch (mode) {
             case SerializableMode.header:
             case SerializableMode.implHeader:
-                serial = this.classNameGen.createName(mode) +
+                serial = await this.classNameGen.createName(mode) +
                     "(" + this.args + ");";
                 break;
             
             case SerializableMode.source:
             case SerializableMode.implSource:
-                serial = this.classNameGen.createName(mode) + "::" +
-                this.classNameGen.createName(mode) +
-                    "(" + this.args + ") {\n}";
+                const name = await this.classNameGen.createName(mode);
+                serial = name + "::" + name + "(" + this.args + ") {\n}";
                 break;
             case SerializableMode.interfaceHeader:
                 break;
@@ -32,25 +31,25 @@ export class ClassConstructor implements IConstructor {
 export class ClassDestructor  implements IDestructor {
     constructor(public readonly virtual: boolean,
                 private readonly classNameGen: ClassNameGenerator) {}
-    serialize (mode: SerializableMode): string {
+    async serialize (mode: SerializableMode): Promise<string> {
 
         let serial = "";
         switch (mode) {
             case SerializableMode.header:
             case SerializableMode.interfaceHeader:
                 serial += this.virtual ? "virtual " : "";
-                serial += "~" + this.classNameGen.createName(mode) +
+                serial += "~" + await this.classNameGen.createName(mode) +
                     "();";
                 break;
             case SerializableMode.implHeader:
-                serial = "~" + this.classNameGen.createName(mode) + " ()";
+                serial = "~" + await this.classNameGen.createName(mode) + " ()";
                 serial += this.virtual ? " override;\n" : ";\n";
                 break;
             
             case SerializableMode.source:
             case SerializableMode.implSource:
-                serial =  this.classNameGen.createName(mode) + "::" +
-                "~" + this.classNameGen.createName(mode) +
+                const name = await this.classNameGen.createName(mode);
+                serial =  name + "::" + "~" + name +
                 "() {\n}\n\n";
                 break;
         }
@@ -88,7 +87,7 @@ class ClassScope implements IClassScope {
         this.memberFunctions.push(...Parser.parseClassMemberFunctions(content, this._classNameGen));
     }
 
-    serialize(mode: SerializableMode) {   
+    async serialize(mode: SerializableMode) {   
         
         if (!this.constructors.length && !this.nestedClasses.length && !this.memberFunctions.length) {
             return "";
@@ -122,9 +121,9 @@ class ClassScope implements IClassScope {
                 arraySuffix = "\n\n";
                 break;
         }
-        serial += io.serializeArray(this.constructors, mode, arrayPrefix, arraySuffix);
-        serial += io.serializeArray(this.nestedClasses, mode, arrayPrefix, arraySuffix); // TODO formatting not working for multiline
-        serial += io.serializeArray(this.memberFunctions, mode, arrayPrefix, arraySuffix);
+        serial += await io.serializeArray(this.constructors, mode, arrayPrefix, arraySuffix);
+        serial += await io.serializeArray(this.nestedClasses, mode, arrayPrefix, arraySuffix); // TODO formatting not working for multiline
+        serial += await io.serializeArray(this.memberFunctions, mode, arrayPrefix, arraySuffix);
     
         return serial;
     }
@@ -143,7 +142,7 @@ class ClassBase  extends io.TextScope implements IClass {
         private readonly _isInterface: boolean, 
         nameInputProvider?: io.INameInputProvider) {
         super(scope.scopeStart, scope.scopeEnd);
-        
+
         this._classNameGen = new ClassNameGenerator(this.name, this._isInterface, nameInputProvider);
         this.publicScope = new ClassScope(ClassScopeType.public, this.name, this._classNameGen);
         this.privateScope = new ClassScope(ClassScopeType.private, this.name, this._classNameGen);
@@ -178,17 +177,17 @@ class ClassBase  extends io.TextScope implements IClass {
         this.protectedScope.deserialize(data);
     }
 
-    serialize (mode:SerializableMode) {   
+    async serialize (mode:SerializableMode) {   
         let serial = "";
         let suffix = "";
         switch (mode) {
             case SerializableMode.header:
             case SerializableMode.interfaceHeader:
-                serial += this.getHeaderSerialStart(mode);
+                serial += await this.getHeaderSerialStart(mode);
                 suffix = "};";
                 break;
             case SerializableMode.implHeader:
-                serial += this.getHeaderSerialStart(mode, [this.name]);
+                serial += await this.getHeaderSerialStart(mode, ["public " + this.name]);
                 suffix = "};";  
                 break;
             case SerializableMode.source:
@@ -197,17 +196,17 @@ class ClassBase  extends io.TextScope implements IClass {
                 break;
         }
         if (this.destructor) {
-            serial += this.destructor.serialize(mode);
+            serial += await this.destructor.serialize(mode);
         }
-        serial += this.publicScope.serialize(mode);
-        serial += this.protectedScope.serialize(mode);
-        serial += this.privateScope.serialize(mode);
+        serial += await this.publicScope.serialize(mode);
+        serial += await this.protectedScope.serialize(mode);
+        serial += await this.privateScope.serialize(mode);
         serial += suffix;
         return serial;
     }
 
-    getHeaderSerialStart  (mode:SerializableMode, inheritance:string[] = this.inheritance) {
-        let serial = "class " + this._classNameGen.createName(mode);
+    async getHeaderSerialStart  (mode:SerializableMode, inheritance:string[] = this.inheritance) {
+        let serial = "class " + await this._classNameGen.createName(mode);
         inheritance.forEach( (inheritedClass, index) => {
             if (index === 0) {
                 serial += " : ";
@@ -251,7 +250,7 @@ export class ClassInterface extends ClassBase {
         super(scope, name, inheritance, true, nameInputProvider);
     }
 
-    serialize(mode: SerializableMode) {    
+    async serialize(mode: SerializableMode) {    
         let serial = "";
         switch (mode) {
             case SerializableMode.source:
@@ -262,7 +261,7 @@ export class ClassInterface extends ClassBase {
             case SerializableMode.implHeader:
             case SerializableMode.implSource:
             default:
-                serial = super.serialize(mode);
+                serial = await super.serialize(mode);
                 break;
         }
         return serial;

@@ -51,9 +51,7 @@ export class HeaderFile extends FileBase implements io.IFile
 
     serialize (mode: SerializableMode)
     {
-        let serial = "";
-        serial += io.serializeArray(this._namespaces, mode);
-        return serial;
+        return io.serializeArray(this._namespaces, mode);
     }
 
     private readonly _namespaces:INamespace[];
@@ -76,9 +74,7 @@ export class SourceFile extends FileBase implements io.IFile
 
     serialize (mode: SerializableMode)
     {
-        let serial = "";
-        serial += io.serializeArray(this._namespaces, mode);
-        return serial;
+        return io.serializeArray(this._namespaces, mode);
     }
 
     static readonly extensions = ["cpp","cxx", "c"]; // TODO make extensions configurable
