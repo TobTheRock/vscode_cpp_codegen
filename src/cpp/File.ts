@@ -1,9 +1,7 @@
 import * as path from 'path';
-import * as vscode from 'vscode';
 import { INamespace, SerializableMode } from "./TypeInterfaces";
 import {Parser} from "../Parser";
-import {TextFragment, IFile, serializeArray } from "../io";
-
+import * as io from '../io';
 class FileBase {
     protected constructor(filePath:string) {
         this.directory = path.dirname(filePath);
@@ -34,42 +32,44 @@ class FileBase {
     readonly extension: string;
 }
 
-export class HeaderFile extends FileBase implements IFile
+export class HeaderFile extends FileBase implements io.IFile
 {
-    constructor(filePath:string, content: string)
+    constructor(filePath:string, content: string, nameInputProvider?: io.INameInputProvider)
     {
         super(filePath);
         this._namespaces = [];
-        this.deserialize(TextFragment.createFromString(content));
+        this._nameInputProvider = nameInputProvider;
+        this.deserialize(io.TextFragment.createFromString(content));
     }
 
-    deserialize (fileContent:TextFragment)
+    deserialize (fileContent: io.TextFragment)
     {
         //TODO remove comments
-        this._namespaces.push(...Parser.parseNamespaces(fileContent));
-        this._namespaces.push(...Parser.parseNoneNamespaces(fileContent));
+        this._namespaces.push(...Parser.parseNamespaces(fileContent, this._nameInputProvider));
+        this._namespaces.push(...Parser.parseNoneNamespaces(fileContent, this._nameInputProvider));
     }
 
     serialize (mode: SerializableMode)
     {
         let serial = "";
-        serial += serializeArray(this._namespaces, mode);
+        serial += io.serializeArray(this._namespaces, mode);
         return serial;
     }
 
     private readonly _namespaces:INamespace[];
+    private _nameInputProvider: io.INameInputProvider | undefined;
 }
 
-export class SourceFile extends FileBase implements IFile
+export class SourceFile extends FileBase implements io.IFile
 {
     constructor(filePath:string, content: string)
     {
         super(filePath);
         this._namespaces = [];
-        this.deserialize(TextFragment.createFromString(content));
+        this.deserialize(io.TextFragment.createFromString(content));
     }
 
-    deserialize (fileContent:TextFragment)
+    deserialize (fileContent: io.TextFragment)
     {
         //TODO
     }
@@ -77,10 +77,10 @@ export class SourceFile extends FileBase implements IFile
     serialize (mode: SerializableMode)
     {
         let serial = "";
-        serial += serializeArray(this._namespaces, mode);
+        serial += io.serializeArray(this._namespaces, mode);
         return serial;
     }
 
-    static readonly extensions = ["hpp","hxx", "h"]; // TODO make extensions configurable
-    private readonly _namespaces:INamespace[];
+    static readonly extensions = ["cpp","cxx", "c"]; // TODO make extensions configurable
+    private readonly _namespaces: INamespace[];
 } 

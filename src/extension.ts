@@ -12,7 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Activating code-gen.cpp!'); // TODO logger!
 
 	context.subscriptions.push(vscode.commands.registerTextEditorCommand('codegen-cpp.cppSourceFromHeader', async (textEditor, edit) => {
-		const fileHandler = io.FileHandler.createFromHeaderFile(textEditor.document, {keepFileNameOnWrite: true});
+		const fileHandler = io.FileHandler.createFromHeaderFile(textEditor.document, {keepFileNameOnWrite : true});
 		if (!fileHandler) {
 			console.error("Could not create file handler");
 			return;
@@ -27,7 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	context.subscriptions.push( vscode.commands.registerTextEditorCommand('codegen-cpp.cppInterfaceImplFromHeader', async (textEditor, edit) => {
-		const fileHandler = io.FileHandler.createFromHeaderFile(textEditor.document);
+		const fileHandler = io.FileHandler.createFromHeaderFile(textEditor.document, {askForInterfaceNames : true});
 		if (!fileHandler) {
 			console.error("Could not create file handler");
 			return;

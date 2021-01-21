@@ -8,8 +8,8 @@ import * as vscode from 'vscode';
 import { callItAsync } from "./utils";
 
 import {Parser} from '../../Parser';
-import {IClass, IFunction, MemberFunction, SerializableMode} from '../../cpp';
-import { ClassNameGenerator, TextFragment } from '../../io';
+import {ClassNameGenerator, MemberFunction, SerializableMode} from '../../cpp';
+import {TextFragment } from '../../io';
 
 const argData = ["", "int test", "int test1, const Class* test2, void* test3", "int \ttest1,\t\n const\n Class* test2\n, void* test3\n\t"];
 

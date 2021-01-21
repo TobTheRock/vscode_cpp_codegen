@@ -262,7 +262,7 @@ export abstract class Parser {
         return protectedFragment;
     }
     
-    static parseClassConstructor(data: io.TextFragment, className: string, classNameGen: io.ClassNameGenerator): cpp.ClassConstructor[] {
+    static parseClassConstructor(data: io.TextFragment, className: string, classNameGen: cpp.ClassNameGenerator): cpp.ClassConstructor[] {
         let ctors: cpp.ClassConstructor[] = [];
         data.removeMatching(ClassConstructorMatch.getRegexStr(className)).forEach(
             (regexMatch) => {
@@ -272,7 +272,7 @@ export abstract class Parser {
         return ctors;
     }
     
-    static parseClassDestructors(data: io.TextFragment, className: string, classNameGen: io.ClassNameGenerator): cpp.ClassDestructor[] {
+    static parseClassDestructors(data: io.TextFragment, className: string, classNameGen: cpp.ClassNameGenerator): cpp.ClassDestructor[] {
         let deconstructors: cpp.ClassDestructor[] = [];
         data.removeMatching(ClassDestructorMatch.getRegexStr(className)).forEach(
             (regexMatch) => {
@@ -282,7 +282,7 @@ export abstract class Parser {
         return deconstructors;
     }
 
-    static parseClassMemberFunctions(data: io.TextFragment, classNameGen:io.ClassNameGenerator): cpp.IFunction[] {
+    static parseClassMemberFunctions(data: io.TextFragment, classNameGen:cpp.ClassNameGenerator): cpp.IFunction[] {
         let memberFunctions:cpp.IFunction[] = [];
         data.removeMatching(MemberFunctionMatch.regexStr).forEach(            
             (regexMatch) => {
@@ -314,7 +314,7 @@ export abstract class Parser {
         return memberFunctions;
     }
 
-    static parseNamespaces(data:io.TextFragment): cpp.INamespace[]  {
+    static parseNamespaces(data:io.TextFragment, nameInputProvider?: io.INameInputProvider): cpp.INamespace[]  {
         let namespaces:cpp.INamespace[] = [];
 
         let matchesFound = true;
@@ -324,7 +324,7 @@ export abstract class Parser {
             data.removeMatching(NamespaceMatch.regexStr).forEach(
                 (regexMatch) => {           
                     const match = new NamespaceMatch(regexMatch);
-                    const newNamespace = new cpp.Namespace(match.nameMatch, regexMatch);
+                    const newNamespace = new cpp.Namespace(match.nameMatch, regexMatch, nameInputProvider);
                     const newData = io.TextFragment.createFromTextBlock(match.bodyMatch);
 
                     newNamespace.deserialize(newData);
@@ -351,15 +351,15 @@ export abstract class Parser {
         return namespaces;
     }    
     
-    static parseNoneNamespaces(data:io.TextFragment): cpp.INamespace[]  { 
+    static parseNoneNamespaces(data:io.TextFragment, nameInputProvider?: io.INameInputProvider): cpp.INamespace[]  { 
         const noneNamespaces:cpp.INamespace[] = [];
 
         data.blocks.forEach(block => {
-            const newnNoneNamespace = new cpp.NoneNamespace(block);
+            const newNoneNamespace = new cpp.NoneNamespace(block, nameInputProvider);
             const newData = io.TextFragment.createEmpty();
             newData.push(block);
-            newnNoneNamespace.deserialize(newData);
-            noneNamespaces.push(newnNoneNamespace);
+            newNoneNamespace.deserialize(newData);
+            noneNamespaces.push(newNoneNamespace);
 
         });
 
@@ -383,7 +383,7 @@ export abstract class Parser {
         return standaloneFunctions;
     }
     
-    static parseClasses(data:io.TextFragment):cpp.IClass[] {
+    static parseClasses(data:io.TextFragment, nameInputProvider?: io.INameInputProvider):cpp.IClass[] {
         let classes: cpp.IClass[] = [];
 
         let matchesFound = true;
@@ -393,7 +393,9 @@ export abstract class Parser {
             data.removeMatching(ClassMatch.regexStr).forEach(
                 (regexMatch) => {           
                     const match = new ClassMatch(regexMatch);
-                    const newClass = match.isInterface? new cpp.ClassInterface(regexMatch, match.nameMatch, match.inheritanceMatch) : new cpp.ClassImpl(regexMatch, match.nameMatch, match.inheritanceMatch);
+                    const newClass = match.isInterface ?
+                        new cpp.ClassInterface(regexMatch, match.nameMatch, match.inheritanceMatch, nameInputProvider) :
+                        new cpp.ClassImpl(regexMatch, match.nameMatch, match.inheritanceMatch, nameInputProvider);
                     const newData = io.TextFragment.createFromTextBlock(match.bodyMatch);
                     
                     newClass.deserialize(newData);

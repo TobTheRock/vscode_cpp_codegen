@@ -4,3 +4,4 @@ export * from './MemberFunction';
 export * from './Namespace';
 export * from './StandaloneFunction';
 export * from './File';
+export * from './ClassNameGenerator';

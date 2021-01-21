@@ -1,5 +1,5 @@
 import { IFunction,  SerializableMode} from "./TypeInterfaces";
-import { ClassNameGenerator } from "../io";
+import { ClassNameGenerator } from "./ClassNameGenerator";
 
 export class MemberFunction implements IFunction {
     constructor(public readonly name:string, 

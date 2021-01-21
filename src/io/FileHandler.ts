@@ -13,6 +13,10 @@ export interface IFile extends ISerializable, IDeserializable {
     readonly extension: string;
 }
 
+export interface INameInputProvider {
+    getInterfaceName?(origName: string): string;
+}
+
 class DirectoryItem implements vscode.QuickPickItem {
 
 	label: string;
@@ -27,22 +31,28 @@ interface FileHandlerOptions {
     outputDirectory?: string;
     keepFileNameOnWrite?: boolean;
     deduceFileNameFromClass?: boolean;
+    askForInterfaceNames?: boolean;
 }
 
 export class FileHandler
 {
-    private constructor(private readonly _file: IFile, private readonly _opt: FileHandlerOptions) {
+    private constructor(private readonly _file: IFile, private readonly _opt: FileHandlerOptions, nameInputProvider?: INameInputProvider) {
+        if (nameInputProvider) {
+            nameInputProvider.getInterfaceName = this._opt.askForInterfaceNames ? this.getInterfaceName.bind(this) : undefined;
+        }
     }
 
     static createFromHeaderFile(vscDocument: vscode.TextDocument, opt: FileHandlerOptions = {}): FileHandler | undefined {
+        const nameInputProvider = {};
         //TODO check file ending?
         try {
-			var file = new cpp.HeaderFile(vscDocument.fileName, vscDocument.getText());
+            var file = new cpp.HeaderFile(
+                vscDocument.fileName, vscDocument.getText(), nameInputProvider);
 		} catch (error) {
 			vscode.window.showErrorMessage("Unable to parse header file: ", error);
 			return;
         }
-        return new FileHandler(file,opt);
+        return new FileHandler(file, opt, nameInputProvider);
     }
 
     async writeFileAs(...modes: SerializableMode[]) {
@@ -191,4 +201,9 @@ export class FileHandler
         }
         return fileHeader;
     }
+
+    private getInterfaceName(origName: string): string {
+        throw new Error("Method not implemented.");
+    }
+
 }

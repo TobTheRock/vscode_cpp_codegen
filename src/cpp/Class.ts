@@ -1,7 +1,7 @@
 import { IClass, IFunction, IConstructor, IDestructor, IClassScope, SerializableMode } from "./TypeInterfaces";
 import {Parser} from "../Parser";
-import { ClassNameGenerator, TextFragment, TextScope, serializeArray } from "../io";
-
+import { ClassNameGenerator } from "./ClassNameGenerator";
+import * as io from "../io"
 
 export class ClassConstructor implements IConstructor {
     constructor(public readonly args:string,
@@ -69,8 +69,8 @@ class ClassScope implements IClassScope {
         private readonly _className: string,
         private readonly _classNameGen: ClassNameGenerator) {}
 
-    deserialize (data: TextFragment) {
-        let content: TextFragment;
+    deserialize (data: io.TextFragment) {
+        let content: io.TextFragment;
         switch (this.type) {
             case ClassScopeType.protected:
                 content = Parser.parseClassProtectedScope(data);
@@ -122,9 +122,9 @@ class ClassScope implements IClassScope {
                 arraySuffix = "\n\n";
                 break;
         }
-        serial += serializeArray(this.constructors, mode, arrayPrefix, arraySuffix);
-        serial += serializeArray(this.nestedClasses, mode, arrayPrefix, arraySuffix); // TODO formatting not working for multiline
-        serial += serializeArray(this.memberFunctions, mode, arrayPrefix, arraySuffix);
+        serial += io.serializeArray(this.constructors, mode, arrayPrefix, arraySuffix);
+        serial += io.serializeArray(this.nestedClasses, mode, arrayPrefix, arraySuffix); // TODO formatting not working for multiline
+        serial += io.serializeArray(this.memberFunctions, mode, arrayPrefix, arraySuffix);
     
         return serial;
     }
@@ -132,16 +132,22 @@ class ClassScope implements IClassScope {
     readonly memberFunctions: IFunction[] = [];
     readonly nestedClasses: IClass[] = [];
     readonly constructors: IConstructor[] = [];
-    readonly scopes: TextScope[] = [];
+    readonly scopes: io.TextScope[] = [];
 }
 
-class ClassBase  extends TextScope implements IClass {
+class ClassBase  extends io.TextScope implements IClass {
     constructor(
-        scope:TextScope,
+        scope:io.TextScope,
         public readonly name:string,
         public readonly inheritance: string[],
-        private readonly _isInterface: boolean) {
+        private readonly _isInterface: boolean, 
+        nameInputProvider?: io.INameInputProvider) {
         super(scope.scopeStart, scope.scopeEnd);
+        
+        this._classNameGen = new ClassNameGenerator(this.name, this._isInterface, nameInputProvider);
+        this.publicScope = new ClassScope(ClassScopeType.public, this.name, this._classNameGen);
+        this.privateScope = new ClassScope(ClassScopeType.private, this.name, this._classNameGen);
+        this.protectedScope = new ClassScope(ClassScopeType.protected, this.name, this._classNameGen);
     }
 
     tryAddNestedClass(possibleNestedClass: IClass) {
@@ -160,7 +166,7 @@ class ClassBase  extends TextScope implements IClass {
         return true;
     }
 
-    deserialize (data: TextFragment) {
+    deserialize (data: io.TextFragment) {
         const dtors = Parser.parseClassDestructors(data, this.name, this._classNameGen);
         if (dtors.length > 1) {
             throw new Error("Class " + this.name + " has multiple deconstructors!");
@@ -217,31 +223,32 @@ class ClassBase  extends TextScope implements IClass {
         return serial;
     }
 
-    private _classNameGen: ClassNameGenerator = new ClassNameGenerator(this.name, this._isInterface);
-
-    readonly publicScope : IClassScope = new ClassScope(ClassScopeType.public, this.name, this._classNameGen);
-    readonly privateScope : IClassScope = new ClassScope(ClassScopeType.private, this.name, this._classNameGen);
-    readonly protectedScope: IClassScope = new ClassScope(ClassScopeType.protected, this.name, this._classNameGen);
+    private _classNameGen: ClassNameGenerator;
+    readonly publicScope : IClassScope;
+    readonly privateScope : IClassScope;
+    readonly protectedScope: IClassScope;
     destructor: IDestructor|undefined;
 }
 
 export class ClassImpl extends ClassBase {
 
     constructor(
-        scope:TextScope,
+        scope:io.TextScope,
         public readonly name:string,
-        public readonly inheritance:string[]) {
-        super(scope, name, inheritance, false);
+        public readonly inheritance: string[],
+        nameInputProvider?: io.INameInputProvider) {
+        super(scope, name, inheritance, false, nameInputProvider);
     }
 }
 
 
 export class ClassInterface extends ClassBase {
     constructor(
-        scope:TextScope,
+        scope:io.TextScope,
         public readonly name:string,
-        public readonly inheritance:string[]) {
-        super(scope, name, inheritance, true);
+        public readonly inheritance: string[],
+        nameInputProvider?: io.INameInputProvider) {
+        super(scope, name, inheritance, true, nameInputProvider);
     }
 
     serialize(mode: SerializableMode) {    
