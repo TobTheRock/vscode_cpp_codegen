@@ -12,16 +12,13 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Activating code-gen.cpp!'); // TODO logger!
 
 	context.subscriptions.push(vscode.commands.registerTextEditorCommand('codegen-cpp.cppSourceFromHeader', async (textEditor, edit) => {
-		let file: cpp.HeaderFile;
-        try {
-			file = new cpp.HeaderFile(textEditor.document.fileName, textEditor.document.getText());
-		} catch (error) {
-			vscode.window.showErrorMessage("Unable to parse header file: ", error);
+		const fileHandler = io.FileHandler.createFromHeaderFile(textEditor.document, {keepFileNameOnWrite: true});
+		if (!fileHandler) {
+			console.error("Could not create file handler");
 			return;
 		}
-		const fileHandler = new io.FileHandler(file);
 		try {
-			await fileHandler.writeFileAs(file.basename, io.SerializableMode.source);
+			await fileHandler.writeFileAs(io.SerializableMode.source);
 		} catch (error) {
 			vscode.window.showErrorMessage("Unable to write source file: ", error);
 			return;
@@ -30,31 +27,18 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	context.subscriptions.push( vscode.commands.registerTextEditorCommand('codegen-cpp.cppInterfaceImplFromHeader', async (textEditor, edit) => {
-		let file: cpp.HeaderFile;
-        try {
-			file = new cpp.HeaderFile(textEditor.document.fileName, textEditor.document.getText());
-		} catch (error) {
-			vscode.window.showErrorMessage("Unable to parse header file '", textEditor.document.fileName, "' :" , error);
+		const fileHandler = io.FileHandler.createFromHeaderFile(textEditor.document);
+		if (!fileHandler) {
+			console.error("Could not create file handler");
 			return;
 		}
-		const fileHandler = new io.FileHandler(file);
-		//TODO get implementation name from user, pass to ClassNameGenerator
-		await vscode.window.showInputBox({
-            "prompt": "File base name of generated files:",
-			"placeHolder": (file.basename + "Impl")
-        }).then(input => {
-            if (!input?.length) {
-                throw Error("No file base name was provided!");
-            }
-            else {
-                return input as string;
-            }
-        }).then((input) => {
-            return fileHandler.writeFileAs(input, io.SerializableMode.implHeader, io.SerializableMode.implSource);
-        },
-            (error: Error) => {
-                vscode.window.showWarningMessage(error.message);
-        });
+		
+		try {
+			await fileHandler.writeFileAs(io.SerializableMode.implHeader, io.SerializableMode.implSource);
+		} catch (error) {
+			vscode.window.showErrorMessage("Unable to create implentation source/header file: ", error);
+			return;
+		}
     }));
 }
 
