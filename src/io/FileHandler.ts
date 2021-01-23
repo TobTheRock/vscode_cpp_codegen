@@ -16,7 +16,6 @@ export interface IFile extends ISerializable, IDeserializable {
 export interface INameInputProvider {
     getInterfaceName?(origName: string): string | Promise<string>;
 }
-
 class DirectoryItem implements vscode.QuickPickItem {
 
 	label: string;
@@ -27,13 +26,22 @@ class DirectoryItem implements vscode.QuickPickItem {
 	}
 }
 
-interface FileHandlerOptions {
+export interface FileHandlerOptions {
     outputDirectory?: string;
     keepFileNameOnWrite?: boolean;
-    deduceFileNameFromClass?: boolean;
+    useClassNameAsFileName?: boolean;
     askForInterfaceNames?: boolean;
 }
 
+interface SerializedContent {
+    mode: SerializableMode;
+    content: string;
+}
+class FileHandlerContext {
+    outputDirectory: string = "";
+    outputFilename: string = "";
+    outputContent: SerializedContent[] = [];
+}
 export class FileHandler
 {
     private constructor(private readonly _file: IFile, private readonly _opt: FileHandlerOptions, nameInputProvider?: INameInputProvider) {
@@ -56,35 +64,35 @@ export class FileHandler
     }
 
     async writeFileAs(...modes: SerializableMode[]) {
-        let directory: string;
+
+        this._context = new FileHandlerContext;
+
         if (this._opt.outputDirectory) {
-            directory = this._opt.outputDirectory;
+            this._context.outputDirectory = this._opt.outputDirectory;
         }
         else {
              let mayBeDirectory = await this.showDirectoryQuickPick(this._file.directory);
              if (!mayBeDirectory) {
                  throw Error("No output directory was provided!");
              }
-            directory = mayBeDirectory;
+            this._context.outputDirectory = mayBeDirectory;
         }
 
-        let fileBaseName: string;
+        await this.serializeAll(modes);
+
         if (this._opt.keepFileNameOnWrite) {
-            fileBaseName = this._file.basename;
+            this._context.outputFilename = this._file.basename;
         }
-        else {
+        else if (!this._context.outputFilename.length) {
             let mayBeFileBaseName = await this.askForFileName();
             if (!mayBeFileBaseName?.length) {
                 console.log("No input was provided!");
                 return;
             }
-            fileBaseName = mayBeFileBaseName;
+            this._context.outputFilename = mayBeFileBaseName;
         }
 
-        return modes.reduce(async (accumulate, mode) => {
-            await accumulate;
-            return await this.serializeTryWrite(fileBaseName, directory, mode);
-        }, Promise.resolve());
+        await this.generateHeaderAndTryWriteAll();
     }
     
     async showDirectoryQuickPick(defaultValue:string = ""): Promise<string | undefined> {
@@ -140,6 +148,21 @@ export class FileHandler
         return input;
     }
 
+    private async generateHeaderAndTryWriteAll() {
+        this._context.outputContent.forEach( async serialized => {
+            const outputFilePath = path.join(this._context.outputDirectory, this.deduceOutputFilename(serialized.mode)); // TODO make file extensions configurable
+            if (!fs.existsSync(outputFilePath)) {
+                //TODO pretify output (configurable?)
+                const outputContent = this.generateFileHeader(serialized.mode, outputFilePath) + serialized.content;
+                return await this.writeAndOpenFile(outputFilePath, outputContent);
+            }
+            else {
+                //TODO implement me, parse source -> show diff!
+                vscode.window.showErrorMessage("Merging files is not implemented yet");
+            }
+        });
+    }
+
     private async writeAndOpenFile(outputFilePath: string, content: string): Promise<void> {
         try {
             await vscode.workspace.fs.writeFile(vscode.Uri.parse(outputFilePath), Buffer.from(content, 'utf8'));
@@ -149,21 +172,19 @@ export class FileHandler
         }
     }
 
-    private async serializeTryWrite(fileBaseName:string, directory:string, mode:SerializableMode) {
-        const outputFilePath = path.join(directory, this.deduceOutputFilename(fileBaseName, mode)); // TODO make file extensions configurable
-        if (!fs.existsSync(outputFilePath)) {
-            //TODO pretify output (configurable?)
-            const outputContent = this.generateFileHeader(mode, outputFilePath) + await this._file.serialize(mode);
-            return await this.writeAndOpenFile(outputFilePath, outputContent);
-        }
-        else {
-            //TODO implement me, parse source -> show diff!
-            vscode.window.showErrorMessage("Merging files is not implemented yet");
-        }
+    private async serializeAll(modes: SerializableMode[]) {
+        return modes.reduce(async (accumulate, mode) => {
+            await accumulate;
+            let content = await this._file.serialize(mode);
+            this._context.outputContent.push({ mode, content });
+        }, Promise.resolve());
     }
 
-    private deduceOutputFilename(fileBaseName:string, mode:SerializableMode):string {
-        let deductedFilename = fileBaseName;        
+    private deduceOutputFilename(mode: SerializableMode, fileBaseName: string = this._context.outputFilename): string {
+        
+        let deductedFilename: string;
+        
+        deductedFilename = fileBaseName;        
         switch (mode) {
             // TODO make file endings configurable
             case SerializableMode.header:
@@ -194,7 +215,7 @@ export class FileHandler
                 break;
             case SerializableMode.implSource:
                 // TODO find a nicer way to provide the path of the header path
-                const headerOutputFilePath = path.join(path.dirname(outputFilePath), this.deduceOutputFilename(path.basename(outputFilePath, ".cpp"), SerializableMode.header));
+                const headerOutputFilePath = path.join(path.dirname(outputFilePath), this.deduceOutputFilename(SerializableMode.header, path.basename(outputFilePath, ".cpp")));
                 fileHeader = cpp.SourceFile.generateFileHeader(outputFilePath, headerOutputFilePath);
             break;
         }
@@ -210,10 +231,14 @@ export class FileHandler
 
         if (!input?.length) {
             throw new Error("Aborting, no name was provided for interface: " + origName);
-            
+        }
+
+        if (this._opt.useClassNameAsFileName && !this._context.outputFilename.length) {
+            this._context.outputFilename = input;
         }
 
         return input;
     }
 
+    private _context = new FileHandlerContext;
 }

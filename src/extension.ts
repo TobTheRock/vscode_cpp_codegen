@@ -25,9 +25,8 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 
-
 	context.subscriptions.push( vscode.commands.registerTextEditorCommand('codegen-cpp.cppInterfaceImplFromHeader', async (textEditor, edit) => {
-		const fileHandler = io.FileHandler.createFromHeaderFile(textEditor.document, {askForInterfaceNames : true});
+		const fileHandler = io.FileHandler.createFromHeaderFile(textEditor.document, {askForInterfaceNames : true, useClassNameAsFileName : true});
 		if (!fileHandler) {
 			console.error("Could not create file handler");
 			return;
