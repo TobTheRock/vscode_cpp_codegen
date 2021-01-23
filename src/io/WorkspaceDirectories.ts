@@ -3,8 +3,14 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 
-async function getDirectoriesRecursivly(startDirectory: string):Promise<string[]> {
-	const dirents = await fs.promises.readdir(startDirectory, { withFileTypes: true });
+async function getDirectoriesRecursivly(startDirectory: string): Promise<string[]> {
+	try {
+		var dirents = await fs.promises.readdir(startDirectory, { withFileTypes: true });
+	} catch {
+		console.warn("Could not read directory ", startDirectory)
+		return [];
+	}
+
 	const dirs = await Promise.all(dirents
 		.filter(dirent => dirent.isDirectory())
 		.map((dirent) => {
@@ -71,9 +77,8 @@ class WorkspaceDirectoryFinder {
 
 
 	private _workSpaceFoldersChangedSubscription: vscode.Disposable;
-	private _maxQuickPickItems = 20; 
 	private _workspaceRootDirectories: string[];
 	private _workspaceDirectories: DirectoryItem[] = [];
 }
-const workspaceDirectoryParser = new WorkspaceDirectoryFinder();
-export {workspaceDirectoryParser};
+const workspaceDirectoryFinder = new WorkspaceDirectoryFinder();
+export {workspaceDirectoryFinder};

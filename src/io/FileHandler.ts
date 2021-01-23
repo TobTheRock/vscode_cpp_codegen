@@ -1,6 +1,6 @@
 
 import { SerializableMode, ISerializable, IDeserializable } from "./ISerial";
-import { workspaceDirectoryParser } from "./WorkspaceDirectories";
+import { workspaceDirectoryFinder } from "./WorkspaceDirectories";
 import * as cpp from '../cpp';
 import * as vscode from 'vscode';
 import * as fs from "fs";
@@ -100,8 +100,8 @@ export class FileHandler
 		try {
 			return await new Promise<string | undefined>((resolve, reject) => {
 
-                const workspaceDirs = workspaceDirectoryParser.getDirectories();
-                const workspaceRootDirs = workspaceDirectoryParser.getRootDirectories();
+                const workspaceDirs = workspaceDirectoryFinder.getDirectories();
+                const workspaceRootDirs = workspaceDirectoryFinder.getRootDirectories();
 
 				const quickPickInput = vscode.window.createQuickPick<DirectoryItem>();
                 quickPickInput.placeholder = 'Select output directory...';
