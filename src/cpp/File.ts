@@ -44,7 +44,7 @@ export class HeaderFile extends FileBase implements io.IFile
 
     deserialize (fileContent: io.TextFragment)
     {
-        //TODO remove comments
+        //TODO parser.remove c++ comments, as they probably are deserialized as well
         this._namespaces.push(...Parser.parseNamespaces(fileContent, this._nameInputProvider));
         this._namespaces.push(...Parser.parseNoneNamespaces(fileContent, this._nameInputProvider));
     }
@@ -52,6 +52,13 @@ export class HeaderFile extends FileBase implements io.IFile
     serialize (mode: SerializableMode)
     {
         return io.serializeArray(this._namespaces, mode);
+    }
+
+    static generateFileHeader(outputFilePath: string, ...fileIncludePaths: string[]):string {
+        let fileHeader = io.Configuration.getCppSourceFileHeader();
+        fileHeader += "#pragma once\n\n"; // TODO config for include guards
+        fileHeader += super.generateFileHeader(outputFilePath, ...fileIncludePaths);
+        return fileHeader; 
     }
 
     private readonly _namespaces:INamespace[];
@@ -75,6 +82,12 @@ export class SourceFile extends FileBase implements io.IFile
     serialize (mode: SerializableMode)
     {
         return io.serializeArray(this._namespaces, mode);
+    }
+
+    static generateFileHeader(outputFilePath: string, ...fileIncludePaths: string[]):string {
+        let fileHeader = io.Configuration.getCppSourceFileHeader();
+        fileHeader += super.generateFileHeader(outputFilePath, ...fileIncludePaths);
+        return fileHeader; 
     }
 
     static readonly extensions = ["cpp","cxx", "c"]; // TODO make extensions configurable

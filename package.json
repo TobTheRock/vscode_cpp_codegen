@@ -13,7 +13,24 @@
 		"onLanguage:cpp"
 	],
 	"main": "./out/extension.js",
-	"contributes": {
+	"contributes": {    
+		"configuration": {
+			"title": "Codegen C++",
+			"properties": {
+			"codegen-cpp.cppSourceFileHeader": {
+				"type": "array",
+				"default": "",
+				"description": "File header which is added at the top of each generated C++ source file. Each element of the configuration value represents a new line.",
+				"scope": "resource"
+			},
+			"codegen-cpp.cppHeaderFileHeader": {
+				"type": "array",
+				"default": "",
+				"description": "File header which is added at the top of each generated C++ header file. Each element of the configuration value represents a new line.",
+				"scope": "resource"
+			}
+			}
+		},
 		"commands": [
 			{
 				"command": "codegen-cpp.cppSourceFromHeader",
@@ -27,6 +44,7 @@
 				"when": "editorLangId == cpp",
 				"enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
 			}
+			
 		]
 	},
 	"scripts": {
