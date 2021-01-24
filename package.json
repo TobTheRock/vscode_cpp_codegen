@@ -17,20 +17,25 @@
 		"configuration": {
 			"title": "Codegen C++",
 			"properties": {
-			"codegen-cpp.cppSourceFileHeader": {
-				"type": "array",
-				"default": "",
-				"description": "File header which is added at the top of each generated C++ source file. Each element of the configuration value represents a new line.",
-				"scope": "resource"
+				"codegen-cpp.FileHeader.ForC++Source": {
+					"type": "array",
+					"default": "",
+					"description": "File header which is added at the top of each generated C++ source file. Each element of the configuration value represents a new line.",
+					"scope": "resource"
+				},
+				"codegen-cpp.FileHeader.ForC++Header": {
+					"type": "array",
+					"default": "",
+					"description": "File header which is added at the top of each generated C++ header file. Each element of the configuration value represents a new line.",
+					"scope": "resource"
+				},
+				"codegen-cpp.deduceOutputFileNames" : {
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Whether the output file name(s) should be deduced when generating:\n* Source from Header: by keeping the base name\n* Interface implementations: by using the name of the (first) implementation \n\n\n Else the file base name has to be entered via the UI."
+				  }
+				}
 			},
-			"codegen-cpp.cppHeaderFileHeader": {
-				"type": "array",
-				"default": "",
-				"description": "File header which is added at the top of each generated C++ header file. Each element of the configuration value represents a new line.",
-				"scope": "resource"
-			}
-			}
-		},
 		"commands": [
 			{
 				"command": "codegen-cpp.cppSourceFromHeader",

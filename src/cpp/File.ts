@@ -55,7 +55,7 @@ export class HeaderFile extends FileBase implements io.IFile
     }
 
     static generateFileHeader(outputFilePath: string, ...fileIncludePaths: string[]):string {
-        let fileHeader = io.Configuration.getCppSourceFileHeader();
+        let fileHeader = io.Configuration.getFileHeaderForCppHeader();
         fileHeader += "#pragma once\n\n"; // TODO config for include guards
         fileHeader += super.generateFileHeader(outputFilePath, ...fileIncludePaths);
         return fileHeader; 
@@ -85,7 +85,7 @@ export class SourceFile extends FileBase implements io.IFile
     }
 
     static generateFileHeader(outputFilePath: string, ...fileIncludePaths: string[]):string {
-        let fileHeader = io.Configuration.getCppSourceFileHeader();
+        let fileHeader = io.Configuration.getFileHeaderForCppSource();
         fileHeader += super.generateFileHeader(outputFilePath, ...fileIncludePaths);
         return fileHeader; 
     }

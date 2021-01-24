@@ -16,8 +16,12 @@ For example:
 
 This extension contributes the following settings:
 
-* `codegen-cpp.cppSourceFileHeader`: File header which is added at the top of each generated C++ source file
-* `codegen-cpp.cppHeaderFileHeader"`: "File header which is added at the top of each generated C++ header file
+* `codegen-cpp.FileHeader.ForC++Source`: File header which is added at the top of each generated C++ source file
+* `codegen-cpp.FileHeader.ForC++Header"`: File header which is added at the top of each generated C++ header file
+* `codegen-cpp.deduceOutputFileNames`: Whether the output file name(s) should be deduced when generating:
+    * Source from Header: by keeping the base name
+    * Interface implementations: by using the name of the (first) implementation
+    Else the file base name has to be entered via the UI.
 
 ## Known Issues
 

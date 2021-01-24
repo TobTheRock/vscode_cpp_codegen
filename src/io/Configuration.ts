@@ -11,8 +11,8 @@ function getConfigArray<T>(section: string): T[] {
     }
 } 
 export module Configuration {
-    export function getCppSourceFileHeader(): string {
-        const lines:string[] = getConfigArray("codegen-cpp.cppSourceFileHeader");
+    export function getFileHeaderForCppSource(): string {
+        const lines:string[] = getConfigArray("codegen-cpp.FileHeader.ForC++Source");
         let header = "";
         for (const line of lines) {
             header += line + "\n";
@@ -20,8 +20,8 @@ export module Configuration {
         return header;
     }
 
-    export function getCppHeaderFileHeader(): string {
-        const lines:string[] = getConfigArray("codegen-cpp.cppHeaderFileHeader");
+    export function getFileHeaderForCppHeader(): string {
+        const lines:string[] = getConfigArray("codegen-cpp.FileHeader.ForC++Header");
         let header = "";
         for (const line of lines) {
             header += line + "\n";
@@ -29,4 +29,13 @@ export module Configuration {
         return header;
     }
 
+    export function getDeduceFileNames(): boolean {
+        const config = vscode.workspace.getConfiguration();
+        const deduceFilenames: boolean| undefined =  config.get("codegen-cpp.deduceOutputFileNames");    
+        if (deduceFilenames) {
+            return deduceFilenames;
+        } else {
+            return false;
+        }
+    }
 }
