@@ -7,7 +7,7 @@ async function getDirectoriesRecursivly(startDirectory: string): Promise<string[
 	try {
 		var dirents = await fs.promises.readdir(startDirectory, { withFileTypes: true });
 	} catch {
-		console.warn("Could not read directory ", startDirectory)
+		console.warn("Could not read directory ", startDirectory);
 		return [];
 	}
 

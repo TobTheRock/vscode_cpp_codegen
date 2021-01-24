@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { Done, describe, it } from 'mocha';
+import { Done, describe, it, test } from 'mocha';
 
 
 // You can import and use all API from the 'vscode' module
@@ -369,4 +369,28 @@ suite('Full Member Function Tests', () => {
 		done();
 		});
 	});
+
+	test('ParseCommentedSingle', (done) => {
+		const testContent = TextFragment.createFromString('//int fncName();');
+		const testClassName = "TestClass";
+		const classNameGen = new ClassNameGenerator(testClassName, false);
+
+		let parsedFunctions = Parser.parseClassMemberFunctions(testContent, classNameGen);
+		assert.strictEqual(parsedFunctions.length, 0);
+
+		done();
+	});
+
+	describe('ParseBlockCommented', function() {
+		callItAsync("With function arguments ${value}", argData, async function (done:Done, arg:string) {
+		const testContent = TextFragment.createFromString('/* int fncName('+arg+'); */');
+		const testClassName = "TestClass";
+		const classNameGen = new ClassNameGenerator(testClassName, false);
+
+		let parsedFunctions = Parser.parseClassMemberFunctions(testContent, classNameGen);
+		assert.strictEqual(parsedFunctions.length, 0);
+
+		done();
+		});
+	});	
 });
