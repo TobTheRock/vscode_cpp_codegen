@@ -29,12 +29,12 @@ export class ClassNameGenerator {
     }
 
     private async createImplName() {
-        if (!this._isInterface) {
-            throw new Error("Cannot generate a name for an Implementation from a non interface class!");
-        }
-
         if (!this._implName.length) {
-            if (this._isInterface && this._nameInputProvider.getInterfaceName) {
+            if (!this._isInterface) {
+                // TODO warn?
+                return this._origName;
+            }
+            else if (this._nameInputProvider.getInterfaceName) {
                 this._implName = await this._nameInputProvider.getInterfaceName(this._origName);
             }
             // TODO naming conventions config

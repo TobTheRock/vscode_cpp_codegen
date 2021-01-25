@@ -230,13 +230,28 @@ class ClassBase  extends io.TextScope implements IClass {
 }
 
 export class ClassImpl extends ClassBase {
-
     constructor(
         scope:io.TextScope,
         public readonly name:string,
         public readonly inheritance: string[],
         nameInputProvider?: io.INameInputProvider) {
         super(scope, name, inheritance, false, nameInputProvider);
+    }
+
+    async serialize(mode: SerializableMode) {    
+        let serial = "";
+        switch (mode) {
+            case SerializableMode.implHeader:
+            case SerializableMode.implSource:
+                break;
+            case SerializableMode.source:
+            case SerializableMode.interfaceHeader:
+            case SerializableMode.header:
+            default:
+                serial = await super.serialize(mode);
+                break;
+        }
+        return serial;
     }
 }
 

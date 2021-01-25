@@ -2,6 +2,11 @@
 	"name": "codegen-cpp",
 	"displayName": "Universal Generator for C++",
 	"description": "Generator stuff from C++ headers etc",
+	"publisher": "HerrFroehlich",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/HerrFroehlich/vscode_cpp_codegen"
+	},
 	"version": "0.0.1",
 	"engines": {
 		"vscode": "^1.51.0"

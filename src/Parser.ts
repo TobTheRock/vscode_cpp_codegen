@@ -1,5 +1,5 @@
 import * as cpp from "./cpp";
-import { ClassDestructor } from "./cpp";
+import { ClassDestructor, PureVirtualMemberFunction } from "./cpp";
 import * as io from "./io";
 import { TextBlock } from "./io";
 
@@ -82,7 +82,8 @@ class ClassMatch {
         this.inheritanceMatch = (regexMatch.groupMatches[1]) ? regexMatch.groupMatches[1].split(",") : [];
         this.bodyMatch = regexMatch.getGroupMatchTextBlock(2);
         if (this.bodyMatch) {
-            this.isInterface = ClassMatch.pureVirtualMemberRegexMatcher.test(this.bodyMatch.content);
+            const pureVirtualMemberRegexMatcher = RegExp(ClassMatch.pureVirtualMemberRegex, "g");
+            this.isInterface = pureVirtualMemberRegexMatcher.test(this.bodyMatch.content);
         } else {
             this.isInterface = false;
         }
@@ -94,7 +95,7 @@ class ClassMatch {
     private static readonly noNestedClassRegex: string = "(?!"+ClassMatch.classSpecifierRegex+"\\s*[\\S]+\\s*{)";
     private static readonly classBodyRegex: string = "{((?:"+ClassMatch.noNestedClassRegex+"[\\s\\S])*?)}";
     private static readonly classEndRegex: string = ";";
-    private static readonly pureVirtualMemberRegexMatcher =  /virtual[\s\S]*?=[\s]*0[\s]*;/g;
+    private static readonly pureVirtualMemberRegex =  "virtual(?:(?!virtual)[\\s\\S])*?=[\\s]*0[\\s]*;";
     
     static readonly regexStr: string = joinStringsWithWhiteSpace(
         ClassMatch.classSpecifierRegex, ClassMatch.classNameRegex, ClassMatch.inheritanceRegex,
@@ -393,7 +394,8 @@ export abstract class Parser {
             data.removeMatching(ClassMatch.regexStr).forEach(
                 (regexMatch) => {           
                     const match = new ClassMatch(regexMatch);
-                    const newClass = match.isInterface ?
+                    const newClass = match.
+                    isInterface ?
                         new cpp.ClassInterface(regexMatch, match.nameMatch, match.inheritanceMatch, nameInputProvider) :
                         new cpp.ClassImpl(regexMatch, match.nameMatch, match.inheritanceMatch, nameInputProvider);
                     const newData = io.TextFragment.createFromTextBlock(match.bodyMatch);
