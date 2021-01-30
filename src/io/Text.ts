@@ -140,10 +140,6 @@ export class TextBlock extends TextScope {
         }
         trySliceContent(lastStart, this.scopeEnd+1);
 
-        if (!splittedBlocks.length) {
-            splittedBlocks.push(this);
-        }
-
         return splittedBlocks;
      } 
 
@@ -264,6 +260,7 @@ export class TextFragment {
         const mergedBlock = new TextBlock(mergedContent); 
         const regexMatches = inverse ? mergedBlock.inverseMatch(regex) : mergedBlock.match(regex);
 
+        //calculate the actual position => TODO add RegexMatcher Class
         for (let index = regexMatches.length-1; index >= 0; index--) {
             const match = regexMatches[index];
             const scopeStart = indexHelper.calc(match.scopeStart);
@@ -272,6 +269,7 @@ export class TextFragment {
                 TextRegexMatch.fromTextRegexMatch(match, scopeStart, scopeEnd));
         }      
 
+        //TODO function! => remove regex Matche
         for (let index = this.blocks.length-1; index >= 0; index--) {
             const block = this.blocks[index];
             const splicedBlocks = block.splice(regexMatches);

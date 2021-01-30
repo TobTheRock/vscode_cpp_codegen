@@ -44,7 +44,7 @@ export class HeaderFile extends FileBase implements io.IFile
 
     deserialize (fileContent: io.TextFragment)
     {
-        //TODO parser.remove c++ comments, as they probably are deserialized as well
+        Parser.parseComments(fileContent);
         this._namespaces.push(...Parser.parseNamespaces(fileContent, this._nameInputProvider));
         this._namespaces.push(...Parser.parseNoneNamespaces(fileContent, this._nameInputProvider));
     }

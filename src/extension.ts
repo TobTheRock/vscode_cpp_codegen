@@ -18,7 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
 		try {
 			await fileHandler.writeFileAs(io.SerializableMode.source);
 		} catch (error) {
-			vscode.window.showErrorMessage("Unable to write source file: ", error);
+			vscode.window.showErrorMessage("Unable to write source file: " + error.message);
 			return;
 		}
 	}));
@@ -33,7 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
 		try {
 			await fileHandler.writeFileAs(io.SerializableMode.implHeader, io.SerializableMode.implSource);
 		} catch (error) {
-			vscode.window.showErrorMessage("Unable to create implentation source/header file: ", error);
+			vscode.window.showErrorMessage("Unable to create implentation source/header file: " + error.message);
 			return;
 		}
     }));

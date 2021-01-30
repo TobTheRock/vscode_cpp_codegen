@@ -179,6 +179,10 @@ class ClassDestructorMatch {
     readonly isVirtual:boolean;
 }
 
+class CommentMatch {
+    static readonly regexStr:string = "(\\/\\**[\\s\\S]*\\*\\/)|(\\/\\/.*)";
+}
+
 class MemberFunctionMatch {
     constructor(regexMatch:io.TextRegexMatch) {
         if (regexMatch.groupMatches.length !== MemberFunctionMatch.nofGroupMatches) {
@@ -422,5 +426,9 @@ export abstract class Parser {
         }
 
         return classes;
+    }
+    
+    static parseComments(data:io.TextFragment): void {
+        data.removeMatching(CommentMatch.regexStr);
     }
 }

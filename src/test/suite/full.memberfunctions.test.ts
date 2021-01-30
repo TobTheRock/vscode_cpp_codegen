@@ -375,6 +375,7 @@ suite('Full Member Function Tests', () => {
 		const testClassName = "TestClass";
 		const classNameGen = new ClassNameGenerator(testClassName, false);
 
+		Parser.parseComments(testContent);
 		let parsedFunctions = Parser.parseClassMemberFunctions(testContent, classNameGen);
 		assert.strictEqual(parsedFunctions.length, 0);
 
@@ -387,10 +388,26 @@ suite('Full Member Function Tests', () => {
 		const testClassName = "TestClass";
 		const classNameGen = new ClassNameGenerator(testClassName, false);
 
+		Parser.parseComments(testContent);
 		let parsedFunctions = Parser.parseClassMemberFunctions(testContent, classNameGen);
 		assert.strictEqual(parsedFunctions.length, 0);
 
 		done();
 		});
 	});	
+
+	test('ParseCommentedAndNonCommented', (done) => {
+		const testContent = TextFragment.createFromString(`
+		int fncName(); 
+		//void fncName2();
+		int fncName3();`);
+		const testClassName = "TestClass";
+		const classNameGen = new ClassNameGenerator(testClassName, false);
+
+		Parser.parseComments(testContent);
+		let parsedFunctions = Parser.parseClassMemberFunctions(testContent, classNameGen);
+		assert.strictEqual(parsedFunctions.length, 2);
+
+		done();
+	});
 });
