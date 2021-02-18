@@ -25,7 +25,12 @@ This extension contributes the following settings:
 
 ## Known Issues
 
-* Updating existing files is not supported
+* Updating existing head files is not supported
+* Parser issues:
+    * Bracket initializers in headers lead to errors
+    * Curly brackets in functtion bodies (source file), e.g. an if clause, confusing the parser
+    * Class outside a namespace not parsed correctly, when comments are added  in its body
+    * Desctructor with override not parsed correctly
 * Lots of other stuff, see TODOs
 ## Release Notes
 

@@ -1,10 +1,16 @@
 import * as io from "../io";
+import { INameInputProvider } from "../INameInputProvider";
+
 
 export class ClassNameGenerator {
     constructor(private readonly _origName: string,
                 private readonly _isInterface: boolean,
-                private readonly _nameInputProvider: io.INameInputProvider = {}) {
+                private readonly _nameInputProvider: INameInputProvider = {}) {
     }
+
+getBaseName(): string {
+    return this._origName;
+}
 
  async createName(mode:io.SerializableMode): Promise<string> {
         let createdName = "";

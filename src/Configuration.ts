@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import { TextBlock, TextRegexMatch } from "./Text";
 
 function getConfigArray<T>(section: string): T[] {
     const config = vscode.workspace.getConfiguration();

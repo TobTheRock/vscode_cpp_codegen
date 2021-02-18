@@ -1,5 +1,4 @@
-import { serialize } from "v8";
-import { TextFragment } from "./Text";
+import {TextFragment} from "./Text";
 export enum SerializableMode {
     header,                 // matching header file (respective to current file, which is a Source) 
     source,                 // matching source file (respective to current file, which is a Header) 

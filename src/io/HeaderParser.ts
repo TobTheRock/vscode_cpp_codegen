@@ -1,46 +1,7 @@
-import * as cpp from "./cpp";
-import { ClassDestructor, PureVirtualMemberFunction } from "./cpp";
-import * as io from "./io";
-import { TextBlock } from "./io";
-
-function joinStringsWithFiller(strings:string[], filler:string):string {
-    let joinedStrings = '';
-    for (let index = 0; index < strings.length-1; index++) {
-        joinedStrings += strings[index] + filler;
-    }
-
-    return joinedStrings + strings[strings.length-1];
-}
-
-function joinStringsWithWhiteSpace(...strings:string[]):string {
-    return joinStringsWithFiller(strings, "\\s*");
-}
-class NamespaceMatch {
-    constructor(regexMatch:io.TextRegexMatch) {
-        if (regexMatch.groupMatches.length !== NamespaceMatch.nofGroupMatches) {
-            throw new Error("ParserError: Unexpected number of matches!");  
-        }
-        else if (regexMatch.groupMatches[0] === undefined) {
-            throw new Error("ParserError: No namespace name, this should not happen!");               
-        }
-
-        this.nameMatch = regexMatch.groupMatches[0];
-
-        this.bodyMatch = regexMatch.getGroupMatchTextBlock(1);
-    }
-
-    private static readonly namespaceSpecifierRegex: string = "namespace\\s";
-    private static readonly namespaceNameRegex: string = "([\\S]+)";
-    private static readonly noNestedNamespaceRegex: string = "(?!"+NamespaceMatch.namespaceSpecifierRegex+"\\s*[\\S]+\\s*{)";
-    private static readonly namespaceBodyRegex: string = "{((?:"+NamespaceMatch.noNestedNamespaceRegex+"[\\s\\S])*?)}(?![\\s]*;)";
-    
-    static readonly regexStr: string = joinStringsWithWhiteSpace(
-        NamespaceMatch.namespaceSpecifierRegex, NamespaceMatch.namespaceNameRegex, NamespaceMatch.namespaceBodyRegex);
-    static readonly nofGroupMatches = 2;
-
-    readonly nameMatch:string;
-    readonly bodyMatch:io.TextBlock|undefined;
-}
+import * as cpp from "../cpp";
+import * as io from ".";
+import { INameInputProvider } from "../INameInputProvider";
+import { NamespaceMatch, joinStringsWithWhiteSpace, CommonParser } from "./CommonParser";
 
 class StandaloneFunctionMatch {
     constructor(regexMatch:io.TextRegexMatch) {
@@ -104,7 +65,7 @@ class ClassMatch {
 
     readonly nameMatch:string;
     readonly inheritanceMatch: string[];
-    readonly bodyMatch: TextBlock|undefined;
+    readonly bodyMatch: io.TextBlock|undefined;
     readonly isInterface: boolean;
 }
 class ClassProtectedScopeMatch {
@@ -141,7 +102,7 @@ class ClassPublicScopeMatch {
 class ClassConstructorMatch {
 
     constructor(regexMatch:io.TextRegexMatch) {
-        if (regexMatch.groupMatches.length !== ClassPublicScopeMatch.nofGroupMatches) {
+        if (regexMatch.groupMatches.length !== ClassConstructorMatch.nofGroupMatches) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
 
@@ -162,7 +123,7 @@ class ClassConstructorMatch {
 class ClassDestructorMatch {
 
     constructor(regexMatch:io.TextRegexMatch) {
-        if (regexMatch.groupMatches.length !== ClassPublicScopeMatch.nofGroupMatches) {
+        if (regexMatch.groupMatches.length !== ClassDestructorMatch.nofGroupMatches) {
             throw new Error("ParserError: Unexpected number of matches!");  
         }
 
@@ -170,17 +131,13 @@ class ClassDestructorMatch {
     }
 
     static getRegexStr(classname: string) {
-        return joinStringsWithWhiteSpace(this.mayHaveVirtualRegex, "~" + classname, "\\([\\s\\S]*\\)", ";");        
+        return joinStringsWithWhiteSpace(this.mayHaveVirtualRegex, "~" + classname, "\\([\\s\\S]*?\\)", ";");        
     }
     private static readonly mayHaveVirtualRegex:string = '(virtual)?';
 
     static readonly nofGroupMatches = 1;
 
     readonly isVirtual:boolean;
-}
-
-class CommentMatch {
-    static readonly regexStr:string = "(\\/\\**[\\s\\S]*\\*\\/)|(\\/\\/.*)";
 }
 
 class MemberFunctionMatch {
@@ -229,7 +186,7 @@ class MemberFunctionMatch {
     readonly pureMatch:boolean;
 }
 
-export abstract class Parser {
+export abstract class HeaderParser extends CommonParser {
 
     static parseClassPrivateScope(data:io.TextFragment): io.TextFragment {
         let publicOrPrivateRegex= "(?:public:|protected:)((?!private:)[\\s\\S])*";
@@ -272,7 +229,7 @@ export abstract class Parser {
         data.removeMatching(ClassConstructorMatch.getRegexStr(className)).forEach(
             (regexMatch) => {
                 let match = new ClassConstructorMatch(regexMatch);
-                ctors.push(new cpp.ClassConstructor(match.argsMatch, classNameGen));
+                ctors.push(new cpp.ClassConstructor(match.argsMatch, classNameGen, regexMatch as io.TextScope));
             });
         return ctors;
     }
@@ -282,7 +239,7 @@ export abstract class Parser {
         data.removeMatching(ClassDestructorMatch.getRegexStr(className)).forEach(
             (regexMatch) => {
                 let match = new ClassDestructorMatch(regexMatch);
-                deconstructors.push(new cpp.ClassDestructor(match.isVirtual, classNameGen));
+                deconstructors.push(new cpp.ClassDestructor(match.isVirtual, classNameGen, regexMatch as io.TextScope));
             });
         return deconstructors;
     }
@@ -297,20 +254,20 @@ export abstract class Parser {
                 if (match.virtualMatch) {
                     if (match.pureMatch) {
                         newFunc = new cpp.PureVirtualMemberFunction(match.nameMatch, match.returnValMatch,
-                             match.argsMatch, match.constMatch, classNameGen);
+                             match.argsMatch, match.constMatch, classNameGen, regexMatch as io.TextScope);
                     }
                     else {
                         newFunc = new cpp.VirtualMemberFunction(match.nameMatch, match.returnValMatch,
-                             match.argsMatch, match.constMatch, classNameGen);
+                             match.argsMatch, match.constMatch, classNameGen, regexMatch as io.TextScope);
                     }
                 }
                 else if (match.staticMatch) {
                     newFunc = new cpp.StaticMemberFunction(match.nameMatch, match.returnValMatch,
-                        match.argsMatch, match.constMatch, classNameGen);
+                        match.argsMatch, match.constMatch, classNameGen, regexMatch as io.TextScope);
                 }
                 else {
                     newFunc = new cpp.MemberFunction(match.nameMatch, match.returnValMatch,
-                        match.argsMatch, match.constMatch, classNameGen);
+                        match.argsMatch, match.constMatch, classNameGen, regexMatch as io.TextScope);
                 }
 
                 memberFunctions.push(newFunc);
@@ -319,7 +276,7 @@ export abstract class Parser {
         return memberFunctions;
     }
 
-    static parseNamespaces(data:io.TextFragment, nameInputProvider?: io.INameInputProvider): cpp.INamespace[]  {
+    static parseNamespaces(data:io.TextFragment, nameInputProvider?: INameInputProvider): cpp.INamespace[]  {
         let namespaces:cpp.INamespace[] = [];
 
         let matchesFound = true;
@@ -356,7 +313,7 @@ export abstract class Parser {
         return namespaces;
     }    
     
-    static parseNoneNamespaces(data:io.TextFragment, nameInputProvider?: io.INameInputProvider): cpp.INamespace[]  { 
+    static parseNoneNamespaces(data:io.TextFragment, nameInputProvider?: INameInputProvider): cpp.INamespace[]  { 
         const noneNamespaces:cpp.INamespace[] = [];
 
         data.blocks.forEach(block => {
@@ -381,14 +338,15 @@ export abstract class Parser {
                 let match = new StandaloneFunctionMatch(regexMatch);
                 standaloneFunctions.push(new cpp.StandaloneFunction(match.nameMatch, 
                     match.returnValMatch, 
-                    match.argsMatch));
+                    match.argsMatch,
+                    regexMatch as io.TextScope));
             }
         );
 
         return standaloneFunctions;
     }
     
-    static parseClasses(data:io.TextFragment, nameInputProvider?: io.INameInputProvider):cpp.IClass[] {
+    static parseClasses(data:io.TextFragment, nameInputProvider?: INameInputProvider):cpp.IClass[] {
         let classes: cpp.IClass[] = [];
 
         let matchesFound = true;
@@ -428,7 +386,4 @@ export abstract class Parser {
         return classes;
     }
     
-    static parseComments(data:io.TextFragment): void {
-        data.removeMatching(CommentMatch.regexStr);
-    }
 }

@@ -1,31 +1,29 @@
-import {ISerializable, IDeserializable, SerializableMode, TextScope} from "../io";
+import * as io from "../io";
 
-export {SerializableMode as SerializableMode};
-
-export interface IFunction extends ISerializable { // Todo inherit from TextScope
+export interface IFunction extends io.ISerializable, io.TextScope {
     readonly name: string;
     readonly returnVal: string;
     readonly args: string;
 }
 
-export interface IConstructor extends ISerializable {
+export interface IConstructor extends io.ISerializable, io.TextScope {
     readonly args: string;
 }
 
-export interface IDestructor extends ISerializable {
+export interface IDestructor extends io.ISerializable, io.TextScope {
     readonly virtual: boolean;
 }
 
 
-export interface IClassScope extends ISerializable,IDeserializable {
+export interface IClassScope extends io.ISerializable, io.IDeserializable {
     readonly memberFunctions: IFunction[];
     readonly nestedClasses: IClass[];
     readonly constructors: IConstructor[];
-    readonly scopes: TextScope[];
+    readonly scopes:  io.TextScope[];
 }
 
 
-export interface IClass extends ISerializable,IDeserializable,TextScope {
+export interface IClass extends io.ISerializable, io.IDeserializable, io.TextScope {
     tryAddNestedClass(possibleNestedClass: IClass):boolean;
     readonly name: string;
     readonly publicScope : IClassScope;
@@ -35,7 +33,7 @@ export interface IClass extends ISerializable,IDeserializable,TextScope {
     readonly inheritance: string[]; // TODO -> IClass?
 }
 
-export interface INamespace extends ISerializable,IDeserializable,TextScope {
+export interface INamespace extends io.ISerializable, io.IDeserializable, io.TextScope {
     tryAddNestedNamespace(possibleNestedClass: INamespace):boolean;
     readonly name:string;
     readonly classes:IClass[]; 
