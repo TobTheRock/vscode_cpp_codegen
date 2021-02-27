@@ -28,7 +28,7 @@ export class SourceFileMerger {
         //TODO MAKE confirmation configurable
         addedSignatures.forEach(addedSignature => 
             //TODO add sorted ?
-            edit.insert(textDocument.uri, textDocument.positionAt(text.length-1), addedSignature.content), {needsConfirmation: true, label: addedFunctionLabel});
+            edit.insert(textDocument.uri, textDocument.positionAt(text.length-1), addedSignature.content + "\n"), {needsConfirmation: true, label: addedFunctionLabel});
         
         removedSignatures.forEach(removedSignature => 
             edit.delete(textDocument.uri, 

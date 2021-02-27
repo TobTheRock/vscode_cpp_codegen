@@ -88,7 +88,7 @@ class ClassScope implements IClassScope {
                 content = HeaderParser.parseClassPrivateScope(data);
                 break;
         }
-        this.scopes.push(...content.blocks);
+        this.nestedClasses.push(...HeaderParser.parseClasses(content)); //TODO pass prefix aka this._className
         this.constructors.push(...HeaderParser.parseClassConstructor(content, this._className, this._classNameGen));
         this.memberFunctions.push(...HeaderParser.parseClassMemberFunctions(content, this._classNameGen));
     }
@@ -137,7 +137,6 @@ class ClassScope implements IClassScope {
     readonly memberFunctions: IFunction[] = [];
     readonly nestedClasses: IClass[] = [];
     readonly constructors: IConstructor[] = [];
-    readonly scopes: io.TextScope[] = [];
 }
 
 class ClassBase  extends io.TextScope implements IClass {
@@ -153,22 +152,6 @@ class ClassBase  extends io.TextScope implements IClass {
         this.publicScope = new ClassScope(ClassScopeType.public, this.name, this._classNameGen);
         this.privateScope = new ClassScope(ClassScopeType.private, this.name, this._classNameGen);
         this.protectedScope = new ClassScope(ClassScopeType.protected, this.name, this._classNameGen);
-    }
-
-    tryAddNestedClass(possibleNestedClass: IClass) {
-        if (!this.fullyContains(possibleNestedClass)) {
-            return false;
-        }
-        else if (this.publicScope.scopes.some(scope => (scope.fullyContains(possibleNestedClass)))) {
-            this.publicScope.nestedClasses.push(possibleNestedClass);
-        }
-        else if (this.protectedScope.scopes.some(scope => (scope.fullyContains(possibleNestedClass)))) {
-            this.protectedScope.nestedClasses.push(possibleNestedClass);
-        }
-        else {
-            this.privateScope.nestedClasses.push(possibleNestedClass);
-        }
-        return true;
     }
 
     deserialize (data: io.TextFragment) {

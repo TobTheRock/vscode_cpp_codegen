@@ -9,7 +9,7 @@ import {TextFragment, SerializableMode, ISerializable, TextScope, compareSignatu
 const argData = ["", "int test", "int test1, const Class* test2, void* test3", "int \ttest1,\t\n const\n Class* test2\n, void* test3\n\t"];
 suite('Parser Source Files Tests', () => {
 
-	describe('ParseStandaloneSignature', function() {
+	describe('ParseStandaloneSignatures', function() {
 		callItAsync("With function arguments ${value}", argData, async function (done:Done, arg:string) {
         const testData = TextFragment.createFromString( 
         `
@@ -37,6 +37,25 @@ suite('Parser Source Files Tests', () => {
         assert.strictEqual(
             signatures.filter(sig => compareSignaturables(sig,  
                 {namespaces:[], signature:`fncName3(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+        done();
+    });});
+
+    describe('ParseStandaloneSingleSignatureWithBody', function() {
+		callItAsync("With function arguments ${value}", argData, async function (done:Done, arg:string) {
+        const testStr = `int fncName(${arg}) {
+            if (working) {
+            }}`;
+        const testData = TextFragment.createFromString(testStr);
+        const signatures = SourceParser.parseSignatures(testData);
+        assert.strictEqual(signatures.length, 1);
+
+        const argWithoutSpaces = `${arg}`.replace(/\s/g,'');
+
+        assert.strictEqual(signatures[0].signature, `fncName(${argWithoutSpaces})`);
+        assert.deepStrictEqual(signatures[0].namespaces, []);
+        assert.strictEqual(signatures[0].textScope.scopeStart, 0);
+        assert.strictEqual(signatures[0].textScope.scopeEnd, testStr.length-1);
+        assert.strictEqual(signatures[0].content, testStr);
         done();
     });});
 
@@ -178,4 +197,61 @@ suite('Parser Source Files Tests', () => {
                 {namespaces:["namespaceName", "namespaceName2", "TestClass"], signature:`fncName(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
         done();
     });});
+
+	describe('ParseConstructorSignature', function() {
+		callItAsync("With arguments ${value}", argData, async function (done:Done, arg:string) {
+        const testData = TextFragment.createFromString( 
+        `
+            ClassName::ClassName(${arg}) {
+                //CTOR BODY
+            }
+        `
+        );
+        const signatures = SourceParser.parseSignatures(testData);
+        assert.strictEqual(signatures.length, 1);
+
+        const argWithoutSpaces = `${arg}`.replace(/\s/g,'');
+        assert.strictEqual(
+            signatures.filter(sig => compareSignaturables(sig,  
+                {namespaces:["ClassName"], signature:`ClassName(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+        done();
+    });});
+
+	describe('ParseConstructorWithInitializerListSignature', function() {
+		callItAsync("With arguments ${value}", argData, async function (done:Done, arg:string) {
+        const testData = TextFragment.createFromString( 
+        `
+            ClassName::ClassName(${arg})
+            : _bla(42)
+            , _xyz(12)
+            {
+                //CTOR BODY
+            }
+        `
+        );
+        const signatures = SourceParser.parseSignatures(testData);
+        assert.strictEqual(signatures.length, 1);
+
+        const argWithoutSpaces = `${arg}`.replace(/\s/g,'');
+        assert.strictEqual(
+            signatures.filter(sig => compareSignaturables(sig,  
+                {namespaces:["ClassName"], signature:`ClassName(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+        done();
+    });});
+
+	test('ParseDestructorSignature', (done) => {
+        const testData = TextFragment.createFromString( 
+        `
+            ClassName::~ClassName() {
+                //BODY
+            }
+        `
+        );
+        const signatures = SourceParser.parseSignatures(testData);
+        assert.strictEqual(signatures.length, 1);
+        assert.strictEqual(
+            signatures.filter(sig => compareSignaturables(sig,  
+                {namespaces:["ClassName"], signature:`~ClassName()`, textScope: new TextScope(0,0), content:"" })).length, 1);
+        done();
+    });
 });

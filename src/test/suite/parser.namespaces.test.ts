@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import { Done, describe} from 'mocha';
 // import * as myExtension from '../../extension';
 import {HeaderParser} from '../../io/HeaderParser';
-import {INamespace, Namespace} from '../../cpp';
+import {INamespace, Namespace, NoneNamespace} from '../../cpp';
 import {TextFragment, compareSignaturables, TextScope} from '../../io';
 import { callItAsync } from "./utils";
 class TestData {
@@ -143,13 +143,13 @@ suite('Parser Namespace Tests', () => {
 			assert.strictEqual(namespaces[0].functions.length, 0);
 
 			let namespace2 = namespaces[0].subnamespaces[0];
-			assert.strictEqual(namespace2.name,"namespaceName3");
+			assert.strictEqual(namespace2.name,"namespaceName2");
 			assert.strictEqual(namespace2.classes.length, data.nClasses);
 			assert.strictEqual(namespace2.subnamespaces.length, 0);
 			assert.strictEqual(namespace2.functions.length, data.nFunc);
 
 			let namespace3 = namespaces[0].subnamespaces[1];
-			assert.strictEqual(namespace3.name,"namespaceName2");
+			assert.strictEqual(namespace3.name,"namespaceName3");
 			assert.strictEqual(namespace3.classes.length, data.nClasses);
 			assert.strictEqual(namespace3.subnamespaces.length, 0);
 			assert.strictEqual(namespace3.functions.length, data.nFunc);
@@ -178,4 +178,24 @@ suite('Parser Namespace Tests', () => {
 			done();
 		});
 	});
-});
+
+	test('ParseNonNamespaceSeparatedByComments', (done) => {
+			const testData = TextFragment.createFromString( 
+			`
+			class MyClass {       // The class
+				int myNum;        // Attribute (int variable)
+				string myString;  // Attribute (string variable)
+			};`
+			);
+			HeaderParser.parseComments(testData);
+			let namespaces:INamespace[] = HeaderParser.parseNoneNamespaces(testData);
+
+			assert.strictEqual(namespaces.length, 1);
+			assert.strictEqual(namespaces[0].name, "");
+			assert.strictEqual(namespaces[0].classes.length, 1);
+			assert.strictEqual(namespaces[0].functions.length, 0);
+			assert.strictEqual(namespaces[0].subnamespaces.length, 0);
+			assert.ok(namespaces[0] instanceof NoneNamespace);
+			done();
+		});
+	});

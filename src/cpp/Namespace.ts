@@ -14,14 +14,6 @@ export class Namespace  extends io.TextScope implements INamespace {
         this._nameInputProvider = nameInputProvider;
     }
 
-    tryAddNestedNamespace(possibleNestedNamespace: INamespace): boolean {
-        if (this.fullyContains(possibleNestedNamespace)) {
-            this.subnamespaces.push(possibleNestedNamespace);
-            return true;
-        }
-        return false;
-    }
-
     async serialize (mode:io.SerializableMode) {
         let serial = "namespace " +  this.name + " {\n\n"; 
         serial += await io.serializeArray(this.functions, mode);
@@ -31,6 +23,7 @@ export class Namespace  extends io.TextScope implements INamespace {
     }
 
     deserialize (data: io.TextFragment) {
+        this.subnamespaces = HeaderParser.parseNamespaces(data);
         this.classes = HeaderParser.parseClasses(data, this._nameInputProvider);
         this.functions = HeaderParser.parseStandaloneFunctiones(data);
     }
@@ -53,10 +46,6 @@ export class NoneNamespace extends io.TextScope implements INamespace {
         this.subnamespaces = [];
     }
 
-    tryAddNestedNamespace(possibleNestedNamespace: INamespace): boolean {
-        return false;
-    }
-
     async serialize (mode:io.SerializableMode) {
         let serial:string = await io.serializeArray(this.functions, mode);
         serial += await io.serializeArray(this.classes, mode);
@@ -71,6 +60,6 @@ export class NoneNamespace extends io.TextScope implements INamespace {
     readonly name:string;
     classes:IClass[]; 
     functions:IFunction[];
-    readonly subnamespaces:INamespace[];
+    subnamespaces:INamespace[];
     private readonly _nameInputProvider: INameInputProvider | undefined;
 }

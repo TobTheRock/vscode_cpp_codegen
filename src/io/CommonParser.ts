@@ -14,30 +14,20 @@ export function joinStringsWithWhiteSpace(...strings:string[]):string {
 }
 
 export class NamespaceMatch {
-    constructor(regexMatch:io.TextRegexMatch) {
-        if (regexMatch.groupMatches.length !== NamespaceMatch.nofGroupMatches) {
-            throw new Error("ParserError: Unexpected number of matches!");  
-        }
-        else if (regexMatch.groupMatches[0] === undefined) {
-            throw new Error("ParserError: No namespace name, this should not happen!");               
-        }
+    constructor(regexMatch:io.TextMatch) {
 
-        this.nameMatch = regexMatch.groupMatches[0];
+        this.nameMatch = regexMatch.getGroupMatch(0) as string;
 
-        this.bodyMatch = regexMatch.getGroupMatchTextBlock(1);
+        this.bodyMatch = regexMatch.getGroupMatchFragment(1) as io.TextFragment;
     }
 
     private static readonly namespaceSpecifierRegex: string = "namespace\\s";
     private static readonly namespaceNameRegex: string = "([\\S]+)";
-    private static readonly noNestedNamespaceRegex: string = "(?!"+NamespaceMatch.namespaceSpecifierRegex+"\\s*[\\S]+\\s*{)";
-    private static readonly namespaceBodyRegex: string = "{((?:"+NamespaceMatch.noNestedNamespaceRegex+"[\\s\\S])*?)}(?![\\s]*;)";
     
-    static readonly regexStr: string = joinStringsWithWhiteSpace(
-        NamespaceMatch.namespaceSpecifierRegex, NamespaceMatch.namespaceNameRegex, NamespaceMatch.namespaceBodyRegex);
-    static readonly nofGroupMatches = 2;
+    static readonly regexStr: string = joinStringsWithWhiteSpace(NamespaceMatch.namespaceSpecifierRegex, NamespaceMatch.namespaceNameRegex);
 
     readonly nameMatch:string;
-    readonly bodyMatch:io.TextBlock|undefined;
+    readonly bodyMatch:io.TextFragment;
 }
 
 class CommentMatch {
@@ -46,6 +36,6 @@ class CommentMatch {
 
 export abstract class CommonParser {
     static parseComments(data:io.TextFragment): void {
-        data.removeMatching(CommentMatch.regexStr);
+        new io.RemovingRegexMatcher(CommentMatch.regexStr).match(data);
     }
 }

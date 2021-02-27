@@ -83,208 +83,76 @@ suite('Text Utility Tests', () => {
 
 		done();
 	});
-	
-	test('Textblock removes single regex match', (done) => {
+
+	test('TextBlock slice single', (done) => {
 		const testContent = "This is a test message";
-		const regex = "test";
-		const textBlock = new io.TextBlock(testContent);
+		const subStrStart = 2;
+		const subStrEnd = 8;
+		const textBlock =  new io.TextBlock(testContent);
+		const slicedBlocks = textBlock.slice(new io.TextScope(subStrStart, subStrEnd));
 
-		const matches = textBlock.match(regex);
-		const slicedBlocks = textBlock.splice(matches);
-		
-		assert.strictEqual(slicedBlocks.length,2);
-		assert.strictEqual(slicedBlocks[0].content, "This is a ");
-		assert.strictEqual(slicedBlocks[0].scopeStart, 0);
-		assert.strictEqual(slicedBlocks[0].scopeEnd, testContent.indexOf(regex)-1);
-		assert.strictEqual(slicedBlocks[1].content, " message");
-		assert.strictEqual(slicedBlocks[1].scopeStart, testContent.indexOf(regex)+regex.length);
-		assert.strictEqual(slicedBlocks[1].scopeEnd, testContent.length-1);
-
-		assert.strictEqual(matches.length,1);
-		assert.strictEqual(matches[0].fullMatch, regex);
-
-		done();
-	});
-
-	test('Textblock removes multiple regex match', (done) => {
-		let testContent = "";
-		const regex = "test";
-		const spaceStr = "[SPACE]";
-		const iter = 20;
-		for (let i = 0; i < iter; i++) {
-			testContent += spaceStr+regex;
-		}
-		const textBlock = new io.TextBlock(testContent);
-
-		
-		const matches = textBlock.match(regex);
-		const slicedBlocks = textBlock.splice(matches);
-		
-		assert.strictEqual(slicedBlocks.length,iter);
-		assert.strictEqual(matches.length,iter);
-		for (let index = 0; index < iter; index++) {			
-			assert.strictEqual(slicedBlocks[index].content, spaceStr);
-			const start = index*(spaceStr+regex).length;
-			const end = start+spaceStr.length-1;
-			assert.strictEqual(slicedBlocks[index].scopeStart, start);
-			assert.strictEqual(slicedBlocks[index].scopeEnd, end);
-
-			assert.strictEqual(matches[index].fullMatch, regex);
-			assert.strictEqual(matches[index].scopeStart, end+1);
-			assert.strictEqual(matches[index].scopeEnd, end+regex.length);
-		}
-
-		done();
-	});	
-	
-	test('Textblock remove all', (done) => {
-		const testContent = "This is a test message";
-		const regex = testContent;
-		const textBlock = new io.TextBlock(testContent);
-
-		
-		const matches = textBlock.match(regex);
-		const slicedBlocks = textBlock.splice(matches);
-		
-		assert.strictEqual(slicedBlocks.length,0);
-		assert.strictEqual(matches.length,1);
-		assert.strictEqual(matches[0].fullMatch, regex);
-
-		done();
-	});
-
-	test('Textblock removes single  regex non match', (done) => {
-		const testContent = "This is a test message";
-		const regex = "test";
-		const textBlock = new io.TextBlock(testContent);
-
-		const matches = textBlock.inverseMatch(regex);
-		const slicedBlocks = textBlock.splice(matches);
-		
 		assert.strictEqual(slicedBlocks.length,1);
-		assert.strictEqual(slicedBlocks[0].content, "test");
-		assert.strictEqual(slicedBlocks[0].scopeStart, testContent.indexOf(regex));
-		assert.strictEqual(slicedBlocks[0].scopeEnd, testContent.indexOf(regex)+regex.length-1);
-
-		assert.strictEqual(matches.length,2);
-		assert.strictEqual(matches[0].fullMatch, "This is a ");
-		assert.strictEqual(matches[1].fullMatch, " message");
+		assert.strictEqual(slicedBlocks[0].scopeStart, subStrStart);
+		assert.strictEqual(slicedBlocks[0].scopeEnd, subStrEnd);
+		assert.strictEqual(slicedBlocks[0].content, testContent.slice(subStrStart, subStrEnd+1));
 
 		done();
 	});
 
-	test('Textblock removes multiple regex not match', (done) => {
-		let testContent = "";
-		const regex = "test";
-		const spaceStr = "[SPACE]";
-		const iter = 20;
-		for (let i = 0; i < iter; i++) {
-			testContent += regex+spaceStr;
-		}
-		const textBlock = new io.TextBlock(testContent);
-
-		const matches = textBlock.inverseMatch(regex);
-		const slicedBlocks = textBlock.splice(matches);
-		
-		assert.strictEqual(slicedBlocks.length,iter);
-		assert.strictEqual(matches.length,iter);
-		for (let index = 0; index < iter; index++) {			
-			assert.strictEqual(slicedBlocks[index].content, regex);
-			const start = index*(spaceStr+regex).length;
-			const end = start+regex.length-1;
-			assert.strictEqual(slicedBlocks[index].scopeStart, start);
-			assert.strictEqual(slicedBlocks[index].scopeEnd, end);
-
-			assert.strictEqual(matches[index].fullMatch, spaceStr);
-			assert.strictEqual(matches[index].scopeStart, end+1);
-			assert.strictEqual(matches[index].scopeEnd, end+spaceStr.length);
-		}
-
-		done();
-	});
-
-	test('TextFragment removes multiple regex match', (done) => {
-		let testContent = "";
-		const regex = "test";
-		const spaceStr = "[SPACE]";
-		const iter = 20;
-		for (let i = 0; i < iter; i++) {
-			testContent += spaceStr+regex;
-		}
-		const textFrag = io.TextFragment.createFromString(testContent);
-
-		const matches = textFrag.removeMatching(regex);
-		assert.strictEqual(matches.length,iter);
-		assert.strictEqual(textFrag.blocks.length,iter);
-
-		done();
-	});
-
-	test('TextFragment removes multiple regex not match', (done) => {
-		let testContent = "";
-		const regex = "test";
-		const spaceStr = "[SPACE]";
-		const iter = 20;
-		for (let i = 0; i < iter; i++) {
-			testContent += spaceStr+regex;
-		}
-		const textFrag = io.TextFragment.createFromString(testContent);
-
-		const matches = textFrag.removeNotMatching(regex);
-		assert.strictEqual(matches.length,iter);
-		assert.strictEqual(textFrag.blocks.length,iter);
-
-		done();
-	});
-	
-	test('TextFragment removes nested regex', (done) => {
-		const testContent = "a{{}}b";
-		const regex = "{}";
-
-		const textFrag = io.TextFragment.createFromString(testContent);
-
-		let matches = textFrag.removeMatching(regex);
-		assert.strictEqual(matches.length,1);
-		assert.strictEqual(matches[0].fullMatch, regex);
-		assert.strictEqual(matches[0].scopeStart, 2);
-		assert.strictEqual(matches[0].scopeEnd, 3);
-		assert.strictEqual(textFrag.blocks.length,2);
-
-		matches = textFrag.removeMatching(regex);
-		assert.strictEqual(matches.length,1);
-		assert.strictEqual(matches[0].fullMatch, regex);
-		assert.strictEqual(matches[0].scopeStart, 1);
-		assert.strictEqual(matches[0].scopeEnd, 4);
-		assert.strictEqual(textFrag.blocks.length,2);
-
-		done();
-	});
-
-	test('TexRegexMatch return correct group matches', (done) => {
+	test('TextBlock slice multi', (done) => {
 		const testContent = "This is a test message";
-		const regex = "(test) (message)(too)?";
-		const textBlock = new io.TextBlock(testContent);
+		const subStrStart = 2;
+		const subStrEnd = 8;
+		const subStrStart2 = 9;
+		const subStrEnd2 = 12;
+		const textBlock =  new io.TextBlock(testContent);
+		const slicedBlocks = textBlock.slice(new io.TextScope(subStrStart, subStrEnd), new io.TextScope(subStrStart2, subStrEnd2));
 
-		const matches = textBlock.match(regex);
-	
-		assert.strictEqual(matches.length,1);
-		assert.strictEqual(matches[0].fullMatch, "test message");
-		assert.strictEqual(matches[0].groupMatches[0], "test");
-		assert.strictEqual(matches[0].groupMatches[1], "message");
-		assert.strictEqual(matches[0].groupMatches[2], undefined);
+		assert.strictEqual(slicedBlocks.length,2);
+		assert.strictEqual(slicedBlocks[0].scopeStart, subStrStart);
+		assert.strictEqual(slicedBlocks[0].scopeEnd, subStrEnd);
+		assert.strictEqual(slicedBlocks[0].content, testContent.slice(subStrStart, subStrEnd+1));
+		assert.strictEqual(slicedBlocks[1].scopeStart, subStrStart2);
+		assert.strictEqual(slicedBlocks[1].scopeEnd, subStrEnd2);
+		assert.strictEqual(slicedBlocks[1].content, testContent.slice(subStrStart2, subStrEnd2+1));
 
-		for (let index = 0; index < 2; index++) {
-			const groupMatch = matches[0].getGroupMatchTextBlock(index);
-			assert(groupMatch);
-			const str = matches[0].groupMatches[index];
-			assert.strictEqual(groupMatch.content, str);
-			assert.strictEqual(groupMatch.scopeStart, testContent.indexOf(str));
-			assert.strictEqual(groupMatch.scopeEnd, testContent.indexOf(str)+str.length-1);
-		}
-		assert(!matches[0].getGroupMatchTextBlock(2));
-		assert.throws(() => {
-			matches[0].getGroupMatchTextBlock(3);
-		});
+		done();
+	});
+
+	test('TextBlock slice multi overlapping', (done) => {
+		const testContent = "This is a test message";
+		const subStrStart = 2;
+		const subStrEnd = 8;
+		const subStrStart2 = 5;
+		const subStrEnd2 = 12;
+		const textBlock =  new io.TextBlock(testContent);
+		const slicedBlocks = textBlock.slice(new io.TextScope(subStrStart, subStrEnd), new io.TextScope(subStrStart2, subStrEnd2));
+
+		assert.strictEqual(slicedBlocks.length,1);
+		assert.strictEqual(slicedBlocks[0].scopeStart, subStrStart);
+		assert.strictEqual(slicedBlocks[0].scopeEnd, subStrEnd2);
+		assert.strictEqual(slicedBlocks[0].content, testContent.slice(subStrStart, subStrEnd2+1));
+
+		done();
+	});
+
+	test('TextFragment slice single', (done) => {
+		const testContent1 = "Hello";
+		const testContent2 = "World";
+		const subStrStart = 2;
+		const subStrEnd = 12;
+		const gap = 5;
+		const textFragment = io.TextFragment.createEmpty();
+		textFragment.push(new io.TextBlock(testContent1),new io.TextBlock(testContent2, testContent1.length + gap));
+		const slicedTextFragment = textFragment.slice(new io.TextScope(subStrStart, subStrEnd));
+
+		assert.strictEqual(slicedTextFragment.blocks.length,2);
+		assert.strictEqual(slicedTextFragment.blocks[0].scopeStart, subStrStart);
+		assert.strictEqual(slicedTextFragment.blocks[0].scopeEnd, testContent1.length-1);
+		assert.strictEqual(slicedTextFragment.blocks[0].content, testContent1.slice(subStrStart));
+		assert.strictEqual(slicedTextFragment.blocks[1].scopeStart, testContent1.length + gap);
+		assert.strictEqual(slicedTextFragment.blocks[1].scopeEnd, subStrEnd);
+		assert.strictEqual(slicedTextFragment.blocks[1].content, testContent2.slice(0, subStrEnd+1 - gap - testContent1.length));
 
 		done();
 	});

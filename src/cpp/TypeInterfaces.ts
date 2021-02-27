@@ -19,12 +19,10 @@ export interface IClassScope extends io.ISerializable, io.IDeserializable {
     readonly memberFunctions: IFunction[];
     readonly nestedClasses: IClass[];
     readonly constructors: IConstructor[];
-    readonly scopes:  io.TextScope[];
 }
 
 
 export interface IClass extends io.ISerializable, io.IDeserializable, io.TextScope {
-    tryAddNestedClass(possibleNestedClass: IClass):boolean;
     readonly name: string;
     readonly publicScope : IClassScope;
     readonly privateScope : IClassScope;
@@ -34,7 +32,6 @@ export interface IClass extends io.ISerializable, io.IDeserializable, io.TextSco
 }
 
 export interface INamespace extends io.ISerializable, io.IDeserializable, io.TextScope {
-    tryAddNestedNamespace(possibleNestedClass: INamespace):boolean;
     readonly name:string;
     readonly classes:IClass[]; 
     readonly functions:IFunction[];

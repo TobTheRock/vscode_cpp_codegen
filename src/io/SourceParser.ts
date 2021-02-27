@@ -1,27 +1,21 @@
-import { TextScope, TextFragment, TextRegexMatch } from "./Text";
+import { TextScope, TextFragment } from "./Text";
+import { RemovingRegexMatcher, RemovingRegexWithBodyMatcher, TextMatch } from "./Matcher";
 import { ISignaturable } from "./ISignaturable";
 import { NamespaceMatch, CommonParser, joinStringsWithWhiteSpace } from "./CommonParser";
-import { ISerializable, SerializableMode } from "./ISerial";
 class FunctionDefinitionMatch {
-    constructor(regexMatch:TextRegexMatch) {
-        if (regexMatch.groupMatches.length !== FunctionDefinitionMatch.nofGroupMatches) {
-            throw new Error("ParserError: Unexpected number of matches!");  
-        }
-
-        this.returnValMatch = regexMatch.groupMatches[0];
-        this.nameMatch = regexMatch.groupMatches[1];
-        this.argsMatch = regexMatch.groupMatches[2];
-        this.constMatch = regexMatch.groupMatches[3] ? regexMatch.groupMatches[3] : "";
+    constructor(regexMatch:TextMatch) {
+        this.returnValMatch = regexMatch.getGroupMatch(0);
+        this.nameMatch = regexMatch.getGroupMatch(1);
+        this.argsMatch = regexMatch.getGroupMatch(2);
+        this.constMatch = regexMatch.getGroupMatch(3);
     }
 
     private static readonly returnValRegex:string = '(\\b.+?)\\s';
     private static readonly funcNameRegex:string = '(\\S+)';
     private static readonly funcArgsRegex:string = '\\(((?:(?!\\()[\\s\\S])*?)\\)';
     private static readonly mayHaveConstSpecifierRegex:string = '(const)?';
-    private static readonly funcBodyRegex:string = '{[\\s\\S]*?}';
     static readonly regexStr:string = joinStringsWithWhiteSpace(FunctionDefinitionMatch.returnValRegex, FunctionDefinitionMatch.funcNameRegex,
-         FunctionDefinitionMatch.funcArgsRegex, FunctionDefinitionMatch.mayHaveConstSpecifierRegex, FunctionDefinitionMatch.funcBodyRegex);
-    static readonly nofGroupMatches = 4;
+         FunctionDefinitionMatch.funcArgsRegex, FunctionDefinitionMatch.mayHaveConstSpecifierRegex);
 
     readonly returnValMatch:string;
     readonly nameMatch:string;
@@ -31,38 +25,32 @@ class FunctionDefinitionMatch {
 
 class ClassConstructorSignatureMatch {
 
-    constructor(regexMatch:TextRegexMatch) {
-        if (regexMatch.groupMatches.length !== ClassConstructorSignatureMatch.nofGroupMatches) {
-            throw new Error("ParserError: Unexpected number of matches!");  
-        }
-
-        this.classNameMatch = (regexMatch.groupMatches[0]) ? regexMatch.groupMatches[0] : "";
+    constructor(regexMatch:TextMatch) {
+        this.classNameMatch = regexMatch.getGroupMatch(0);
+        this.argsMatch = regexMatch.getGroupMatch(1);
     }
 
-    static readonly nofGroupMatches = 1;
-    private static readonly classNameRegex:string = '(\\S+)::\\1\\s*\\(\\s*\\)';
+    private static readonly classNameRegex:string = '(\\S+)::\\1';
+    private static readonly ctorArgsRegex:string = '\\(([\\s\\S]*?)\\)';
+    private static readonly mayHaveInitializerListRegex:string = '(?::(?:(?!\\{)[\\s\\S])*)?';
     
-    private static readonly funcBodyRegex:string = '{[\\s\\S]*?}';
-    static readonly regexStr:string = joinStringsWithWhiteSpace(ClassConstructorSignatureMatch.classNameRegex,  ClassConstructorSignatureMatch.funcBodyRegex);
+    static readonly regexStr:string = joinStringsWithWhiteSpace(ClassConstructorSignatureMatch.classNameRegex,
+         ClassConstructorSignatureMatch.ctorArgsRegex, ClassConstructorSignatureMatch.mayHaveInitializerListRegex);
 
 
     readonly classNameMatch:string;
+    readonly argsMatch:string;
 }
 
 class ClassDestructorSignatureMatch {
 
-    constructor(regexMatch:TextRegexMatch) {
-        if (regexMatch.groupMatches.length !== ClassDestructorSignatureMatch.nofGroupMatches) {
-            throw new Error("ParserError: Unexpected number of matches!");  
-        }
-
-        this.classNameMatch = (regexMatch.groupMatches[0]) ? regexMatch.groupMatches[0] : "";
+    constructor(regexMatch:TextMatch) {
+        this.classNameMatch = regexMatch.getGroupMatch(0);
     }
 
     static readonly nofGroupMatches = 1;
     private static readonly classNameRegex:string = '(\\S+)::~\\1\\s*\\(\\s*\\)';
-    private static readonly funcBodyRegex:string = '{[\\s\\S]*?}';
-    static readonly regexStr:string = joinStringsWithWhiteSpace(ClassDestructorSignatureMatch.classNameRegex, ClassDestructorSignatureMatch.funcBodyRegex);
+    static readonly regexStr:string = joinStringsWithWhiteSpace(ClassDestructorSignatureMatch.classNameRegex);
 
     readonly classNameMatch:string;
 
@@ -74,38 +62,38 @@ class SourceFileNamespace extends TextScope {
         super(scope.scopeStart, scope.scopeEnd);
     };
 
-    tryAddNameToSignature(signature:ISignaturable): boolean {
-        if (!this.fullyContains(signature.textScope)) {
-            return false;
-        } {
-            this.subnamespaces.every(subnamespace => !subnamespace.tryAddNameToSignature(signature));
-            signature.namespaces.unshift(this.name);
-        }
-        return true;
+    deserialize(data:TextFragment): void {
+        this._subnamespaces.push(...SourceParser.parseNamespaces(data));
+        this._signatures.push(... SourceParser.parseSignaturesWithinNamespace(data));
     }
 
-    subnamespaces: SourceFileNamespace[] = [];
+    getSignatures(): ISignaturable[] {
+        const signatures =  ([] as ISignaturable[]).concat(...this._subnamespaces.map(ns => ns.getSignatures()));    
+        signatures.push(...this._signatures);
+        signatures.forEach(signature => signature.namespaces.unshift(this.name));
+        return signatures;
+    }
+
+    private  _subnamespaces: SourceFileNamespace[] = [];
+    private _signatures:ISignaturable[] = [];
 }
 export abstract class SourceParser extends CommonParser {
     static parseSignatures(data:TextFragment): ISignaturable[] {
-        const signatures:ISignaturable[] = SourceParser.parseSignaturesWithinNamespace(data);
-    
         const namespaces = this.parseNamespaces(data);
-        signatures.forEach(signature => 
-            namespaces.every(namespace => namespace.tryAddNameToSignature(signature)));
-
+        const signatures = ([] as ISignaturable[]).concat(...namespaces.map(ns => ns.getSignatures()));
+        signatures.push(...SourceParser.parseSignaturesWithinNamespace(data));
         return signatures;
     }    
 
-    private static parseSignaturesWithinNamespace(data:TextFragment): ISignaturable[] {
+    static parseSignaturesWithinNamespace(data:TextFragment): ISignaturable[] {
         const signatures:ISignaturable[] = [];
-
-        data.removeMatching(ClassDestructorSignatureMatch.regexStr).forEach(
+        let matcher = new RemovingRegexWithBodyMatcher(ClassDestructorSignatureMatch.regexStr);
+        matcher.match(data).forEach(
             (regexMatch) => {           
                 const match = new ClassDestructorSignatureMatch(regexMatch);
                 const signature:ISignaturable = {
                     namespaces: [match.classNameMatch],
-                    signature: match.classNameMatch+"::~"+match.classNameMatch+"()",
+                    signature: "~"+match.classNameMatch+"()",
                     textScope: regexMatch as TextScope,
                     content: regexMatch.fullMatch
                 };
@@ -113,12 +101,13 @@ export abstract class SourceParser extends CommonParser {
             }
         );        
 
-        data.removeMatching(ClassConstructorSignatureMatch.regexStr).forEach(
+        matcher = new RemovingRegexWithBodyMatcher(ClassConstructorSignatureMatch.regexStr);
+        matcher.match(data).forEach(
             (regexMatch) => {           
                 const match = new ClassConstructorSignatureMatch(regexMatch);
                 const signature:ISignaturable = {
                     namespaces: [match.classNameMatch],
-                    signature: match.classNameMatch+"::"+match.classNameMatch+"()",
+                    signature: match.classNameMatch + "(" + match.argsMatch.replace(/\s/g,'') +")",
                     textScope: regexMatch as TextScope,
                     content: regexMatch.fullMatch
                 };
@@ -126,7 +115,8 @@ export abstract class SourceParser extends CommonParser {
             }
         );
 
-        data.removeMatching(FunctionDefinitionMatch.regexStr).forEach(
+        matcher = new RemovingRegexWithBodyMatcher(FunctionDefinitionMatch.regexStr);
+        matcher.match(data).forEach(
             (regexMatch) => {           
                 const match = new FunctionDefinitionMatch(regexMatch);
                 const funcDefinition:ISignaturable = {
@@ -144,38 +134,18 @@ export abstract class SourceParser extends CommonParser {
         );
         return signatures;
     }
-    private static parseNamespaces(data:TextFragment): SourceFileNamespace[]  {
-        let namespaces:SourceFileNamespace[] = [];
 
-        let matchesFound = true;
-        while (matchesFound) {
-            let newNamespaces: SourceFileNamespace[] = [];
-            matchesFound = false;
-            data.removeMatching(NamespaceMatch.regexStr).forEach(
-                (regexMatch) => {           
-                    const match = new NamespaceMatch(regexMatch);
-                    newNamespaces.push(new SourceFileNamespace(match.nameMatch, regexMatch as TextScope)); 
-                    matchesFound = true;
-                }
-            );
-            
-            if (matchesFound) {
-                newNamespaces.forEach(
-                    (newNamespace) => {
-                        namespaces.every ((possibleNestedNamespace, index) => 
-                            {
-                                if (newNamespace.fullyContains(possibleNestedNamespace)) {
-                                    newNamespace.subnamespaces.push(possibleNestedNamespace);
-                                    namespaces.splice(index,1);
-                                    return false;
-                                }
-                                return true;
-                            });
-                        namespaces.push(newNamespace);
-                    }
-                );
+    static parseNamespaces(data:TextFragment): SourceFileNamespace[]  {
+        let namespaces:SourceFileNamespace[] = [];
+        const matcher = new RemovingRegexWithBodyMatcher(NamespaceMatch.regexStr);
+        matcher.match(data).forEach(
+            (regexMatch) => {           
+                const match = new NamespaceMatch(regexMatch);
+                const newNamespace = new SourceFileNamespace(match.nameMatch, regexMatch as TextScope);
+                newNamespace.deserialize(match.bodyMatch);
+                namespaces.push(newNamespace); 
             }
-        }
+        );
 
         return namespaces;
     }    

@@ -18,7 +18,7 @@
 		"onLanguage:cpp"
 	],
 	"main": "./out/extension.js",
-	"contributes": {    
+	"contributes": {
 		"configuration": {
 			"title": "Codegen C++",
 			"properties": {
@@ -34,13 +34,13 @@
 					"description": "File header which is added at the top of each generated C++ header file. Each element of the configuration value represents a new line.",
 					"scope": "resource"
 				},
-				"codegen-cpp.deduceOutputFileNames" : {
+				"codegen-cpp.deduceOutputFileNames": {
 					"type": "boolean",
 					"default": true,
 					"markdownDescription": "Whether the output file name(s) should be deduced when generating:\n* Source from Header: by keeping the base name\n* Interface implementations: by using the name of the (first) implementation \n\n\n Else the file base name has to be entered via the UI."
-				  }
 				}
-			},
+			}
+		},
 		"commands": [
 			{
 				"command": "codegen-cpp.cppSourceFromHeader",
@@ -54,7 +54,6 @@
 				"when": "editorLangId == cpp",
 				"enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
 			}
-			
 		]
 	},
 	"scripts": {
@@ -79,5 +78,7 @@
 		"typescript": "^4.0.2",
 		"vscode-test": "^1.4.0"
 	},
-	"dependencies": {}
+	"dependencies": {
+		"g2-bracket-parser": "^2.0.0"
+	}
 }
