@@ -344,6 +344,8 @@ export class RemovingRegexWithBodyMatcher implements IMatcher {
           newMatch.groupMatches.push(...bodyMatch.groupMatches);
           matches.push(new TextMatch(newMatch, textFragment));
           lastMatchEndIdx = newMatch.textScope.scopeEnd;
+        } else {
+          matchesFound = false;
         }
       } else {
         matchesFound = false;
