@@ -1,66 +1,64 @@
 import * as io from "../io";
 import { INameInputProvider } from "../INameInputProvider";
 
-
 export class ClassNameGenerator {
-    constructor(private readonly _origName: string,
-                private readonly _isInterface: boolean,
-                private readonly _nameInputProvider: INameInputProvider = {}) {
-    }
+  constructor(
+    private readonly _origName: string,
+    private readonly _isInterface: boolean,
+    private readonly _nameInputProvider: INameInputProvider = {}
+  ) {}
 
-getBaseName(): string {
+  getBaseName(): string {
     return this._origName;
-}
+  }
 
- async createName(mode:io.SerializableMode): Promise<string> {
-        let createdName = "";
+  async createName(mode: io.SerializableMode): Promise<string> {
+    let createdName = "";
 
-        switch (mode) {
-            case io.SerializableMode.header:
-            case io.SerializableMode.source:
-                createdName = this._origName;
-                break;
-            case io.SerializableMode.implHeader:
-            case io.SerializableMode.implSource:
-                createdName = await this.createImplName();
-                break;
-            case io.SerializableMode.interfaceHeader:
-                createdName = this.createInterfaceName();
-                break;
-            default:
-                break;
-        }
-
-        return createdName;
+    switch (mode) {
+      case io.SerializableMode.header:
+      case io.SerializableMode.source:
+        createdName = this._origName;
+        break;
+      case io.SerializableMode.implHeader:
+      case io.SerializableMode.implSource:
+        createdName = await this.createImplName();
+        break;
+      case io.SerializableMode.interfaceHeader:
+        createdName = this.createInterfaceName();
+        break;
+      default:
+        break;
     }
 
-    private async createImplName() {
-        if (!this._implName.length) {
-            if (!this._isInterface) {
-                // TODO warn?
-                return this._origName;
-            }
-            else if (this._nameInputProvider.getInterfaceName) {
-                this._implName = await this._nameInputProvider.getInterfaceName(this._origName);
-            }
-            // TODO naming conventions config
-            else if (this._origName.startsWith('I')) {
-                this._implName = this._origName.substring(1);
-            }
-            else {
-                this._implName = this._origName + "Impl";
-            }    
-        }
-        
-        return this._implName;
+    return createdName;
+  }
+
+  private async createImplName() {
+    if (!this._implName.length) {
+      if (!this._isInterface) {
+        // TODO warn?
+        return this._origName;
+      } else if (this._nameInputProvider.getInterfaceName) {
+        this._implName = await this._nameInputProvider.getInterfaceName(
+          this._origName
+        );
+      }
+      // TODO naming conventions config
+      else if (this._origName.startsWith("I")) {
+        this._implName = this._origName.substring(1);
+      } else {
+        this._implName = this._origName + "Impl";
+      }
     }
 
-    private createInterfaceName() {
+    return this._implName;
+  }
 
-        // TODO naming conventions config
-        return  "I" + this._origName;
-    }
+  private createInterfaceName() {
+    // TODO naming conventions config
+    return "I" + this._origName;
+  }
 
-    private _implName = "";
-
+  private _implName = "";
 }

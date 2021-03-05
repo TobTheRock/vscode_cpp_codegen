@@ -1,18 +1,29 @@
-
-
-import * as assert from 'assert';
-import { Done, describe, it, test } from 'mocha';
+import * as assert from "assert";
+import { Done, describe, it, test } from "mocha";
 import { callItAsync } from "./utils";
-import {SourceParser} from '../../io/SourceParser';
-import {TextFragment, SerializableMode, ISerializable, TextScope, compareSignaturables} from '../../io';
+import { SourceParser } from "../../io/SourceParser";
+import {
+  TextFragment,
+  SerializableMode,
+  ISerializable,
+  TextScope,
+  compareSignaturables,
+} from "../../io";
 
-const argData = ["", "int test", "int test1, const Class* test2, void* test3", "int \ttest1,\t\n const\n Class* test2\n, void* test3\n\t"];
-suite('Parser Source Files Tests', () => {
-
-	describe('ParseStandaloneSignatures', function() {
-		callItAsync("With function arguments ${value}", argData, async function (done:Done, arg:string) {
-        const testData = TextFragment.createFromString( 
-        `
+const argData = [
+  "",
+  "int test",
+  "int test1, const Class* test2, void* test3",
+  "int \ttest1,\t\n const\n Class* test2\n, void* test3\n\t",
+];
+suite("Parser Source Files Tests", () => {
+  describe("ParseStandaloneSignatures", function () {
+    callItAsync(
+      "With function arguments ${value}",
+      argData,
+      async function (done: Done, arg: string) {
+        const testData = TextFragment.createFromString(
+          `
             int fncName(${arg}) {
                 //FUNCTION BODY
             }
@@ -27,21 +38,50 @@ suite('Parser Source Files Tests', () => {
         const signatures = SourceParser.parseSignatures(testData);
         assert.strictEqual(signatures.length, 3);
 
-        const argWithoutSpaces = `${arg}`.replace(/\s/g,'');
+        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:[], signature:`fncName(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: [],
+              signature: `fncName(${argWithoutSpaces})`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:[], signature:`fncName2(${argWithoutSpaces})const`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: [],
+              signature: `fncName2(${argWithoutSpaces})const`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:[], signature:`fncName3(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: [],
+              signature: `fncName3(${argWithoutSpaces})`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         done();
-    });});
+      }
+    );
+  });
 
-    describe('ParseStandaloneSingleSignatureWithBody', function() {
-		callItAsync("With function arguments ${value}", argData, async function (done:Done, arg:string) {
+  describe("ParseStandaloneSingleSignatureWithBody", function () {
+    callItAsync(
+      "With function arguments ${value}",
+      argData,
+      async function (done: Done, arg: string) {
         const testStr = `int fncName(${arg}) {
             if (working) {
             }}`;
@@ -49,20 +89,31 @@ suite('Parser Source Files Tests', () => {
         const signatures = SourceParser.parseSignatures(testData);
         assert.strictEqual(signatures.length, 1);
 
-        const argWithoutSpaces = `${arg}`.replace(/\s/g,'');
+        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
 
-        assert.strictEqual(signatures[0].signature, `fncName(${argWithoutSpaces})`);
+        assert.strictEqual(
+          signatures[0].signature,
+          `fncName(${argWithoutSpaces})`
+        );
         assert.deepStrictEqual(signatures[0].namespaces, []);
         assert.strictEqual(signatures[0].textScope.scopeStart, 0);
-        assert.strictEqual(signatures[0].textScope.scopeEnd, testStr.length-1);
+        assert.strictEqual(
+          signatures[0].textScope.scopeEnd,
+          testStr.length - 1
+        );
         assert.strictEqual(signatures[0].content, testStr);
         done();
-    });});
+      }
+    );
+  });
 
-    describe('ParseMemberFunctionSignature', function() {
-		callItAsync("With function arguments ${value}", argData, async function (done:Done, arg:string) {
-        const testData = TextFragment.createFromString( 
-        `
+  describe("ParseMemberFunctionSignature", function () {
+    callItAsync(
+      "With function arguments ${value}",
+      argData,
+      async function (done: Done, arg: string) {
+        const testData = TextFragment.createFromString(
+          `
             int TestClass::fncName(${arg}) {
                 //FUNCTION BODY
             }
@@ -77,21 +128,50 @@ suite('Parser Source Files Tests', () => {
         const signatures = SourceParser.parseSignatures(testData);
         assert.strictEqual(signatures.length, 3);
 
-        const argWithoutSpaces = `${arg}`.replace(/\s/g,'');
+        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:["TestClass"], signature:`fncName(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: ["TestClass"],
+              signature: `fncName(${argWithoutSpaces})`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:["TestClass"], signature:`fncName2(${argWithoutSpaces})const`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: ["TestClass"],
+              signature: `fncName2(${argWithoutSpaces})const`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:["TestClass"], signature:`fncName3(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: ["TestClass"],
+              signature: `fncName3(${argWithoutSpaces})`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         done();
-    });});
+      }
+    );
+  });
 
-    describe('FunctionSignatureHasCorrectTextScope', function() {
-		callItAsync("With function arguments ${value}", argData, async function (done:Done, arg:string) {
+  describe("FunctionSignatureHasCorrectTextScope", function () {
+    callItAsync(
+      "With function arguments ${value}",
+      argData,
+      async function (done: Done, arg: string) {
         const testDataStr = `
         int TestClass::fncName(${arg}) {
             //FUNCTION BODY
@@ -101,18 +181,22 @@ suite('Parser Source Files Tests', () => {
         const signatures = SourceParser.parseSignatures(testData);
         assert.strictEqual(signatures.length, 1);
 
-        const sigStart = testDataStr.indexOf('int');
-        const sigEnd = testDataStr.indexOf('}');
+        const sigStart = testDataStr.indexOf("int");
+        const sigEnd = testDataStr.indexOf("}");
         assert.strictEqual(signatures[0].textScope.scopeStart, sigStart);
         assert.strictEqual(signatures[0].textScope.scopeEnd, sigEnd);
         done();
-    });});
+      }
+    );
+  });
 
-
-    describe('ParseExplicitNamespaceSignature', function() {
-		callItAsync("With function arguments ${value}", argData, async function (done:Done, arg:string) {
-        const testData = TextFragment.createFromString( 
-        `
+  describe("ParseExplicitNamespaceSignature", function () {
+    callItAsync(
+      "With function arguments ${value}",
+      argData,
+      async function (done: Done, arg: string) {
+        const testData = TextFragment.createFromString(
+          `
             int namespace::TestClass::fncName(${arg}) {
                 //FUNCTION BODY
             }
@@ -127,23 +211,52 @@ suite('Parser Source Files Tests', () => {
         const signatures = SourceParser.parseSignatures(testData);
         assert.strictEqual(signatures.length, 3);
 
-        const argWithoutSpaces = `${arg}`.replace(/\s/g,'');
+        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:["namespace", "TestClass"], signature:`fncName(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: ["namespace", "TestClass"],
+              signature: `fncName(${argWithoutSpaces})`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:["namespace"], signature:`standAloneFnc(${argWithoutSpaces})const`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: ["namespace"],
+              signature: `standAloneFnc(${argWithoutSpaces})const`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:["namespace", "namespace2", "TestClass"], signature:`fncName2(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: ["namespace", "namespace2", "TestClass"],
+              signature: `fncName2(${argWithoutSpaces})`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         done();
-    });});
+      }
+    );
+  });
 
-    describe('ParseImplicitNamespaceSignature', function() {
-		callItAsync("With function arguments ${value}", argData, async function (done:Done, arg:string) {
-        const testData = TextFragment.createFromString( 
-        `
+  describe("ParseImplicitNamespaceSignature", function () {
+    callItAsync(
+      "With function arguments ${value}",
+      argData,
+      async function (done: Done, arg: string) {
+        const testData = TextFragment.createFromString(
+          `
             namespace namespaceName {
                 int TestClass::fncName(${arg}) {
                     //FUNCTION BODY
@@ -163,23 +276,52 @@ suite('Parser Source Files Tests', () => {
         const signatures = SourceParser.parseSignatures(testData);
         assert.strictEqual(signatures.length, 3);
 
-        const argWithoutSpaces = `${arg}`.replace(/\s/g,'');
+        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:["namespaceName", "TestClass"], signature:`fncName(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: ["namespaceName", "TestClass"],
+              signature: `fncName(${argWithoutSpaces})`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:["namespaceName"], signature:`standAloneFnc(${argWithoutSpaces})const`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: ["namespaceName"],
+              signature: `standAloneFnc(${argWithoutSpaces})const`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:["namespaceName", "namespaceName2", "TestClass"], signature:`fncName2(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: ["namespaceName", "namespaceName2", "TestClass"],
+              signature: `fncName2(${argWithoutSpaces})`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         done();
-    });});    
-    
-    describe('ParseImplicitAndExplicitNamespaceSignature', function() {
-		callItAsync("With function arguments ${value}", argData, async function (done:Done, arg:string) {
-        const testData = TextFragment.createFromString( 
-        `
+      }
+    );
+  });
+
+  describe("ParseImplicitAndExplicitNamespaceSignature", function () {
+    callItAsync(
+      "With function arguments ${value}",
+      argData,
+      async function (done: Done, arg: string) {
+        const testData = TextFragment.createFromString(
+          `
             namespace namespaceName {
                 int namespaceName2::TestClass::fncName(${arg}) {
                     //FUNCTION BODY
@@ -191,17 +333,30 @@ suite('Parser Source Files Tests', () => {
         const signatures = SourceParser.parseSignatures(testData);
         assert.strictEqual(signatures.length, 1);
 
-        const argWithoutSpaces = `${arg}`.replace(/\s/g,'');
+        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:["namespaceName", "namespaceName2", "TestClass"], signature:`fncName(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: ["namespaceName", "namespaceName2", "TestClass"],
+              signature: `fncName(${argWithoutSpaces})`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         done();
-    });});
+      }
+    );
+  });
 
-	describe('ParseConstructorSignature', function() {
-		callItAsync("With arguments ${value}", argData, async function (done:Done, arg:string) {
-        const testData = TextFragment.createFromString( 
-        `
+  describe("ParseConstructorSignature", function () {
+    callItAsync(
+      "With arguments ${value}",
+      argData,
+      async function (done: Done, arg: string) {
+        const testData = TextFragment.createFromString(
+          `
             ClassName::ClassName(${arg}) {
                 //CTOR BODY
             }
@@ -210,17 +365,30 @@ suite('Parser Source Files Tests', () => {
         const signatures = SourceParser.parseSignatures(testData);
         assert.strictEqual(signatures.length, 1);
 
-        const argWithoutSpaces = `${arg}`.replace(/\s/g,'');
+        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:["ClassName"], signature:`ClassName(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: ["ClassName"],
+              signature: `ClassName(${argWithoutSpaces})`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         done();
-    });});
+      }
+    );
+  });
 
-	describe('ParseConstructorWithInitializerListSignature', function() {
-		callItAsync("With arguments ${value}", argData, async function (done:Done, arg:string) {
-        const testData = TextFragment.createFromString( 
-        `
+  describe("ParseConstructorWithInitializerListSignature", function () {
+    callItAsync(
+      "With arguments ${value}",
+      argData,
+      async function (done: Done, arg: string) {
+        const testData = TextFragment.createFromString(
+          `
             ClassName::ClassName(${arg})
             : _bla(42)
             , _xyz(12)
@@ -232,26 +400,44 @@ suite('Parser Source Files Tests', () => {
         const signatures = SourceParser.parseSignatures(testData);
         assert.strictEqual(signatures.length, 1);
 
-        const argWithoutSpaces = `${arg}`.replace(/\s/g,'');
+        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
         assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:["ClassName"], signature:`ClassName(${argWithoutSpaces})`, textScope: new TextScope(0,0), content:"" })).length, 1);
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: ["ClassName"],
+              signature: `ClassName(${argWithoutSpaces})`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
         done();
-    });});
+      }
+    );
+  });
 
-	test('ParseDestructorSignature', (done) => {
-        const testData = TextFragment.createFromString( 
-        `
+  test("ParseDestructorSignature", (done) => {
+    const testData = TextFragment.createFromString(
+      `
             ClassName::~ClassName() {
                 //BODY
             }
         `
-        );
-        const signatures = SourceParser.parseSignatures(testData);
-        assert.strictEqual(signatures.length, 1);
-        assert.strictEqual(
-            signatures.filter(sig => compareSignaturables(sig,  
-                {namespaces:["ClassName"], signature:`~ClassName()`, textScope: new TextScope(0,0), content:"" })).length, 1);
-        done();
-    });
+    );
+    const signatures = SourceParser.parseSignatures(testData);
+    assert.strictEqual(signatures.length, 1);
+    assert.strictEqual(
+      signatures.filter((sig) =>
+        compareSignaturables(sig, {
+          namespaces: ["ClassName"],
+          signature: `~ClassName()`,
+          textScope: new TextScope(0, 0),
+          content: "",
+        })
+      ).length,
+      1
+    );
+    done();
+  });
 });
