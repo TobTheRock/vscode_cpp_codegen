@@ -145,8 +145,7 @@ suite("Parser GeneralClasses Tests", () => {
     done();
   });
 
-  //TODO private public protected
-  test("ParseNestedClassesWithoutMemberFunctions", (done) => {
+  test("ParseImplicitPrivateNestedClassesWithoutMemberFunctions", (done) => {
     const testContent = TextFragment.createFromString(
       `class MyClass { 	
 			class NestedClass { 
@@ -165,6 +164,96 @@ suite("Parser GeneralClasses Tests", () => {
 
     let nestedClass: IClass = classes[0].privateScope.nestedClasses[0];
     assert.strictEqual(classes[0].privateScope.nestedClasses.length, 1);
+
+    assertClassScopeEmpty(nestedClass.publicScope);
+    assertClassScopeEmpty(nestedClass.privateScope);
+    assertClassScopeEmpty(nestedClass.protectedScope);
+    assert.strictEqual(nestedClass.destructor, undefined);
+    assert.strictEqual(nestedClass.inheritance.length, 0);
+
+    done();
+  });
+
+  test("ParseExplicitPrivateNestedClassesWithoutMemberFunctions", (done) => {
+    const testContent = TextFragment.createFromString(
+      `class MyClass { 
+      private:
+			class NestedClass { 
+		  	};
+		  };
+		`
+    );
+    let classes: IClass[] = HeaderParser.parseClasses(testContent);
+
+    assert.strictEqual(classes.length, 1);
+    assert.strictEqual(classes[0].name, "MyClass");
+    assert.strictEqual(classes[0].publicScope.memberFunctions.length, 0);
+    assert.strictEqual(classes[0].privateScope.memberFunctions.length, 0);
+    assert.strictEqual(classes[0].protectedScope.memberFunctions.length, 0);
+    assert.strictEqual(classes[0].inheritance.length, 0);
+
+    let nestedClass: IClass = classes[0].privateScope.nestedClasses[0];
+    assert.strictEqual(classes[0].privateScope.nestedClasses.length, 1);
+
+    assertClassScopeEmpty(nestedClass.publicScope);
+    assertClassScopeEmpty(nestedClass.privateScope);
+    assertClassScopeEmpty(nestedClass.protectedScope);
+    assert.strictEqual(nestedClass.destructor, undefined);
+    assert.strictEqual(nestedClass.inheritance.length, 0);
+
+    done();
+  });
+
+  test("ParsePublicNestedClassesWithoutMemberFunctions", (done) => {
+    const testContent = TextFragment.createFromString(
+      `class MyClass { 
+      public:
+			class NestedClass { 
+		  	};
+		  };
+		`
+    );
+    let classes: IClass[] = HeaderParser.parseClasses(testContent);
+
+    assert.strictEqual(classes.length, 1);
+    assert.strictEqual(classes[0].name, "MyClass");
+    assert.strictEqual(classes[0].publicScope.memberFunctions.length, 0);
+    assert.strictEqual(classes[0].privateScope.memberFunctions.length, 0);
+    assert.strictEqual(classes[0].protectedScope.memberFunctions.length, 0);
+    assert.strictEqual(classes[0].inheritance.length, 0);
+
+    let nestedClass: IClass = classes[0].publicScope.nestedClasses[0];
+    assert.strictEqual(classes[0].publicScope.nestedClasses.length, 1);
+
+    assertClassScopeEmpty(nestedClass.publicScope);
+    assertClassScopeEmpty(nestedClass.privateScope);
+    assertClassScopeEmpty(nestedClass.protectedScope);
+    assert.strictEqual(nestedClass.destructor, undefined);
+    assert.strictEqual(nestedClass.inheritance.length, 0);
+
+    done();
+  });
+
+  test("ParseProtectedNestedClassesWithoutMemberFunctions", (done) => {
+    const testContent = TextFragment.createFromString(
+      `class MyClass { 
+      protected:
+			class NestedClass { 
+		  	};
+		  };
+		`
+    );
+    let classes: IClass[] = HeaderParser.parseClasses(testContent);
+
+    assert.strictEqual(classes.length, 1);
+    assert.strictEqual(classes[0].name, "MyClass");
+    assert.strictEqual(classes[0].publicScope.memberFunctions.length, 0);
+    assert.strictEqual(classes[0].privateScope.memberFunctions.length, 0);
+    assert.strictEqual(classes[0].protectedScope.memberFunctions.length, 0);
+    assert.strictEqual(classes[0].inheritance.length, 0);
+
+    let nestedClass: IClass = classes[0].protectedScope.nestedClasses[0];
+    assert.strictEqual(classes[0].protectedScope.nestedClasses.length, 1);
 
     assertClassScopeEmpty(nestedClass.publicScope);
     assertClassScopeEmpty(nestedClass.privateScope);
