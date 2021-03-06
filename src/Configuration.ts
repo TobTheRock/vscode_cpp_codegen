@@ -9,6 +9,17 @@ function getConfigArray<T>(section: string): T[] {
     return [];
   }
 }
+
+function getConfigString(section: string): string {
+  const config = vscode.workspace.getConfiguration();
+  const value: string | undefined = config.get(section);
+  if (value) {
+    return value;
+  } else {
+    return "";
+  }
+}
+
 export module Configuration {
   export function getFileHeaderForCppSource(): string {
     const lines: string[] = getConfigArray(
@@ -42,5 +53,13 @@ export module Configuration {
     } else {
       return false;
     }
+  }
+
+  export function getOutputFileExtensionForCppSource(): string {
+    return getConfigString("codegen-cpp.OutputFileExtension.ForC++Source");
+  }
+
+  export function getOutputFileExtensionForCppHeader(): string {
+    return getConfigString("codegen-cpp.OutputFileExtension.ForC++Header");
   }
 }

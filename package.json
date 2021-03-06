@@ -34,6 +34,20 @@
 					"description": "File header which is added at the top of each generated C++ header file. Each element of the configuration value represents a new line.",
 					"scope": "resource"
 				},
+				"codegen-cpp.OutputFileExtension.ForC++Source": {
+					"type": "string",
+					"default": "cpp",
+					"maxLength": "255",
+					"pattern": "^[^\\s]+$",
+					"markdownDescription": "File extension used when generating C++ source files"
+				},
+				"codegen-cpp.OutputFileExtension.ForC++Header": {
+					"type": "string",
+					"default": "hpp",
+					"maxLength": "255",
+					"pattern": "^[^\\s]+$",
+					"markdownDescription": "File extension used when generating C++ header files"
+				},
 				"codegen-cpp.deduceOutputFileNames": {
 					"type": "boolean",
 					"default": true,

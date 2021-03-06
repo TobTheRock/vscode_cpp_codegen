@@ -6,6 +6,7 @@ import * as io from "./io";
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
+import { Configuration } from "./Configuration";
 
 // TODO move interfaces to seperate files
 export interface IFile extends io.ISerializable, io.IDeserializable {
@@ -238,11 +239,13 @@ export class FileHandler {
       case io.SerializableMode.header:
       case io.SerializableMode.interfaceHeader:
       case io.SerializableMode.implHeader:
-        deductedFilename += ".hpp";
+        deductedFilename +=
+          "." + Configuration.getOutputFileExtensionForCppHeader();
         break;
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
-        deductedFilename += ".cpp";
+        deductedFilename +=
+          "." + Configuration.getOutputFileExtensionForCppSource();
         break;
     }
     return deductedFilename;
