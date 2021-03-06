@@ -249,6 +249,7 @@ class ClassBase extends io.TextScope implements IClass {
     serial += await this.protectedScope.serialize(mode);
     serial += await this.privateScope.serialize(mode);
     serial += suffix;
+    serial += "\n";
     return serial;
   }
 

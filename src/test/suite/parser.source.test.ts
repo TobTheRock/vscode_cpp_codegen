@@ -417,6 +417,38 @@ suite("Parser Source Files Tests", () => {
     );
   });
 
+  describe("ParseConstructorWithExplicitNamespaceSignature", function () {
+    callItAsync(
+      "With arguments ${value}",
+      argData,
+      async function (done: Done, arg: string) {
+        const testData = TextFragment.createFromString(
+          `
+            namespace::ClassName::ClassName(${arg}) {
+                //CTOR BODY
+            }
+        `
+        );
+        const signatures = SourceParser.parseSignatures(testData);
+        assert.strictEqual(signatures.length, 1);
+
+        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
+        assert.strictEqual(
+          signatures.filter((sig) =>
+            compareSignaturables(sig, {
+              namespaces: ["namespace", "ClassName"],
+              signature: `ClassName(${argWithoutSpaces})`,
+              textScope: new TextScope(0, 0),
+              content: "",
+            })
+          ).length,
+          1
+        );
+        done();
+      }
+    );
+  });
+
   test("ParseDestructorSignature", (done) => {
     const testData = TextFragment.createFromString(
       `
@@ -431,6 +463,30 @@ suite("Parser Source Files Tests", () => {
       signatures.filter((sig) =>
         compareSignaturables(sig, {
           namespaces: ["ClassName"],
+          signature: `~ClassName()`,
+          textScope: new TextScope(0, 0),
+          content: "",
+        })
+      ).length,
+      1
+    );
+    done();
+  });
+
+  test("ParseDestructorWithExplicitNamespaceSignature", (done) => {
+    const testData = TextFragment.createFromString(
+      `
+            namespace::ClassName::~ClassName() {
+                //BODY
+            }
+        `
+    );
+    const signatures = SourceParser.parseSignatures(testData);
+    assert.strictEqual(signatures.length, 1);
+    assert.strictEqual(
+      signatures.filter((sig) =>
+        compareSignaturables(sig, {
+          namespaces: ["namespace", "ClassName"],
           signature: `~ClassName()`,
           textScope: new TextScope(0, 0),
           content: "",

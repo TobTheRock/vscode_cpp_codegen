@@ -38,11 +38,15 @@ class FunctionDefinitionMatch {
 
 class ClassConstructorSignatureMatch {
   constructor(regexMatch: TextMatch) {
-    this.classNameMatch = regexMatch.getGroupMatch(0);
-    this.argsMatch = regexMatch.getGroupMatch(1);
+    this.namespaces = regexMatch
+      .getGroupMatch(0)
+      .split("::")
+      .filter((str) => str.length);
+    this.classNameMatch = regexMatch.getGroupMatch(1);
+    this.argsMatch = regexMatch.getGroupMatch(2);
   }
 
-  private static readonly classNameRegex: string = "(\\S+)::\\1";
+  private static readonly classNameRegex: string = "([\\S]+::)?(\\S+)::\\2";
   private static readonly ctorArgsRegex: string = "\\(([\\s\\S]*?)\\)";
   private static readonly mayHaveInitializerListRegex: string =
     "(?::(?:(?!\\{)[\\s\\S])*)?";
@@ -53,21 +57,24 @@ class ClassConstructorSignatureMatch {
     ClassConstructorSignatureMatch.mayHaveInitializerListRegex
   );
 
+  readonly namespaces: string[];
   readonly classNameMatch: string;
   readonly argsMatch: string;
 }
 
 class ClassDestructorSignatureMatch {
   constructor(regexMatch: TextMatch) {
-    this.classNameMatch = regexMatch.getGroupMatch(0);
+    this.namespaces = regexMatch
+      .getGroupMatch(0)
+      .split("::")
+      .filter((str) => str.length);
+    this.classNameMatch = regexMatch.getGroupMatch(1);
   }
 
   static readonly nofGroupMatches = 1;
-  private static readonly classNameRegex: string = "(\\S+)::~\\1\\s*\\(\\s*\\)";
-  static readonly regexStr: string = joinStringsWithWhiteSpace(
-    ClassDestructorSignatureMatch.classNameRegex
-  );
+  static readonly regexStr: string = "([\\S]+::)?(\\S+)::~\\2\\s*\\(\\s*\\)";
 
+  readonly namespaces: string[];
   readonly classNameMatch: string;
 }
 
@@ -111,7 +118,7 @@ export abstract class SourceParser extends CommonParser {
     matcher.match(data).forEach((regexMatch) => {
       const match = new ClassDestructorSignatureMatch(regexMatch);
       const signature: ISignaturable = {
-        namespaces: [match.classNameMatch],
+        namespaces: match.namespaces.concat(match.classNameMatch),
         signature: "~" + match.classNameMatch + "()",
         textScope: regexMatch as TextScope,
         content: regexMatch.fullMatch,
@@ -125,7 +132,7 @@ export abstract class SourceParser extends CommonParser {
     matcher.match(data).forEach((regexMatch) => {
       const match = new ClassConstructorSignatureMatch(regexMatch);
       const signature: ISignaturable = {
-        namespaces: [match.classNameMatch],
+        namespaces: match.namespaces.concat(match.classNameMatch),
         signature:
           match.classNameMatch + "(" + match.argsMatch.replace(/\s/g, "") + ")",
         textScope: regexMatch as TextScope,
