@@ -28,9 +28,8 @@ The following settings are available:
 * `using` statements are not evaluated
 * `struct`s are not supported
 * Generated source definitions for nested classes is missing the outer class name
-* Lots of refactoring/ feature stuff, see TODOs in source code
 * When merging source files, generated defintions are not put in the correct namespace 
-* Defaulted/deleted destructors/constructors cause issues
+* Newly created folders are not detected for selection
 
 # Possible features in future
 * Generating only for selected text ranges

@@ -1,4 +1,3 @@
-import { isFunction, isObject } from "util";
 import { TextScope, TextFragment, TextBlock } from "./Text";
 const g2BracketParser = require("g2-bracket-parser");
 
@@ -402,37 +401,40 @@ export class RemovingRegexWithBodyMatcher implements IMatcher {
 
     const matches: TextMatch[] = [];
     const fragmentEnd = textFragment.getScopeEnd();
+    let textFragForMatching = textFragment.clone();
 
     while (true) {
-      const regexMatch = this._regexMatcher.match(textFragment).pop();
+      const regexMatch = this._regexMatcher.match(textFragForMatching).pop();
       if (!regexMatch) {
         break;
       }
       const bracketIdx = regexMatch.scopeEnd;
+      textFragForMatching = textFragment.slice(new TextScope(bracketIdx, fragmentEnd));
       const bodyMatch = this._bodyMatcher
-        .match(textFragment.slice(new TextScope(bracketIdx, fragmentEnd)))
+        .match(textFragForMatching)
         .pop();
 
       if (!bodyMatch) {
-        break;
+        continue;
       }
 
       let newMatch = regexMatch.concat(bodyMatch);
 
       if (newMatch && this._postRegexMatcher) {
         const bracketIdx = newMatch.scopeEnd;
+        textFragForMatching = textFragment.slice(new TextScope(bracketIdx, fragmentEnd));
         const postRegexMatch = this._postRegexMatcher
-          .match(textFragment.slice(new TextScope(bracketIdx, fragmentEnd)))
+          .match(textFragForMatching)
           .pop();
 
         if (!postRegexMatch) {
-          break;
+          continue;
         }
         newMatch = newMatch.concat(postRegexMatch);
       }
 
       if (!newMatch) {
-        break;
+        continue;
       }
       matches.push(newMatch);
       textFragment.remove(newMatch);

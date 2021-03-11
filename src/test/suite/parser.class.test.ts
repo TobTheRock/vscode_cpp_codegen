@@ -549,6 +549,25 @@ suite("Parser GeneralClasses Tests", () => {
 
   });
 
+  test("ParseClassWithVirtualDefaultDestructorAndMemberFunction", () => {
+    const testContent = TextFragment.createFromString(
+      `class MyClass {
+			virtual ~MyClass () = default;
+			void function();
+		};
+		`
+    );
+    let classes: IClass[] = HeaderParser.parseClasses(testContent);
+
+    assert.strictEqual(classes.length, 1);
+    assert.strictEqual(classes[0].name, "MyClass");
+    assertClassScopeEmpty(classes[0].publicScope);
+    assert.strictEqual(classes[0].privateScope.memberFunctions.length, 1);
+    assertClassScopeEmpty(classes[0].protectedScope);
+    assert.strictEqual(classes[0].inheritance.length, 0);
+    assert.strictEqual(classes[0].destructor, undefined);
+  });
+
   describe("ParseInheritance", function () {
     callItAsync(
       "With inheritance ${value}",
