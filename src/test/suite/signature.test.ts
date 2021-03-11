@@ -17,7 +17,7 @@ const argData = [
   "int \ttest1,\t\n const\n Class* test2\n, void* test3\n\t",
 ];
 suite("Signature Tests", () => {
-  test("ComparingSignatures", (done) => {
+  test("ComparingSignatures", () => {
     let signature = {
       namespaces: ["Namespace1", "Namespace2"],
       signature: `fncName()`,
@@ -33,11 +33,9 @@ suite("Signature Tests", () => {
 
     assert.ok(compareSignaturables(signature, signature));
     assert.ok(!compareSignaturables(signature, signature2));
-
-    done();
   });
 
-  test("ComparingSignatureAdditionalNamespaces", (done) => {
+  test("ComparingSignatureAdditionalNamespaces", () => {
     let signature = {
       namespaces: ["Namespace1", "Namespace2"],
       signature: `fncName()`,
@@ -55,6 +53,5 @@ suite("Signature Tests", () => {
       compareSignaturables(signature, signature2, ["Namespace1", "Namespace2"])
     );
     assert.ok(!compareSignaturables(signature, signature2, ["Namespace3"]));
-    done();
   });
 });

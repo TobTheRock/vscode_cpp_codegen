@@ -11,7 +11,7 @@ import * as io from "../../io";
 // TODO regex matcher tests
 
 suite("Matcher Tests", () => {
-  test("RemovingRegexMatcher removes single regex match", (done) => {
+  test("RemovingRegexMatcher removes single regex match", () => {
     const testContent = "This is a test message";
     const regex = "test";
     const textFragment = io.TextFragment.createFromString(testContent);
@@ -36,11 +36,9 @@ suite("Matcher Tests", () => {
 
     assert.strictEqual(matches.length, 1);
     assert.strictEqual(matches[0].fullMatch, regex);
-
-    done();
   });
 
-  test("RemovingRegexMatcher removes multiple regex match", (done) => {
+  test("RemovingRegexMatcher removes multiple regex match", () => {
     let testContent = "";
     const regex = "test";
     const spaceStr = "[SPACE]";
@@ -67,11 +65,9 @@ suite("Matcher Tests", () => {
       assert.strictEqual(matches[index].scopeStart, end + 1);
       assert.strictEqual(matches[index].scopeEnd, end + regex.length);
     }
-
-    done();
   });
 
-  test("RemovingRegexMatcher remove all", (done) => {
+  test("RemovingRegexMatcher remove all", () => {
     const testContent = "This is a test message";
     const regex = testContent;
     const textFragment = io.TextFragment.createFromString(testContent);
@@ -83,11 +79,9 @@ suite("Matcher Tests", () => {
     assert.strictEqual(slicedBlocks.length, 0);
     assert.strictEqual(matches.length, 1);
     assert.strictEqual(matches[0].fullMatch, regex);
-
-    done();
   });
 
-  test("RemovingRegexMatcher removes single  regex inverse match", (done) => {
+  test("RemovingRegexMatcher removes single  regex inverse match", () => {
     const testContent = "This is a test message";
     const regex = "test";
     const textFragment = io.TextFragment.createFromString(testContent);
@@ -107,11 +101,9 @@ suite("Matcher Tests", () => {
     assert.strictEqual(matches.length, 2);
     assert.strictEqual(matches[0].fullMatch, "This is a ");
     assert.strictEqual(matches[1].fullMatch, " message");
-
-    done();
   });
 
-  test("RemovingRegexMatcher removes multiple regex inverse match", (done) => {
+  test("RemovingRegexMatcher removes multiple regex inverse match", () => {
     let testContent = "";
     const regex = "test";
     const spaceStr = "[SPACE]";
@@ -138,11 +130,9 @@ suite("Matcher Tests", () => {
       assert.strictEqual(matches[index].scopeStart, end + 1);
       assert.strictEqual(matches[index].scopeEnd, end + spaceStr.length);
     }
-
-    done();
   });
 
-  test("TextFragment: RemovingRegexMatcher removes nested regex", (done) => {
+  test("TextFragment: RemovingRegexMatcher removes nested regex", () => {
     const testContent = "a{{}}b";
     const regex = "{}";
 
@@ -162,11 +152,9 @@ suite("Matcher Tests", () => {
     assert.strictEqual(matches[0].scopeStart, 1);
     assert.strictEqual(matches[0].scopeEnd, 4);
     assert.strictEqual(textFragment.blocks.length, 2);
-
-    done();
   });
 
-  test("TextFragment: RemovingRegexMatcher return correct group matches", (done) => {
+  test("TextFragment: RemovingRegexMatcher return correct group matches", () => {
     const testContent = "This is a test message";
     const regex = "(test) (message)(too)?";
     const textFragment = io.TextFragment.createFromString(testContent);
@@ -195,11 +183,9 @@ suite("Matcher Tests", () => {
       );
     }
     assert.strictEqual(matches[0].getGroupMatchFragment(2).blocks.length, 0);
-
-    done();
   });
 
-  test("RemovingRegexWithBodyMatcher: find first bracketed content and removes it", (done) => {
+  test("RemovingRegexWithBodyMatcher: find first bracketed content and removes it", () => {
     const testContent = "a{{}}{}";
     const textFragment = io.TextFragment.createFromString(testContent);
     const matcher = new io.RemovingRegexWithBodyMatcher("a");
@@ -211,10 +197,9 @@ suite("Matcher Tests", () => {
     assert.strictEqual(matches[0].scopeEnd, 4);
 
     assert.strictEqual(textFragment.toString(), "{}");
-    done();
   });
 
-  test("RemovingRegexWithBodyMatcher: bracketed content as group match", (done) => {
+  test("RemovingRegexWithBodyMatcher: bracketed content as group match", () => {
     const testContent = "a{abc}";
     const textFragment = io.TextFragment.createFromString(testContent);
     const matcher = new io.RemovingRegexWithBodyMatcher("a");
@@ -227,10 +212,9 @@ suite("Matcher Tests", () => {
     assert.strictEqual(groupMatchFrag.blocks.length, 1);
     assert.strictEqual(groupMatchFrag.blocks[0].scopeStart, 2);
     assert.strictEqual(groupMatchFrag.blocks[0].scopeEnd, 4);
-    done();
   });
 
-  test("RemovingRegexWithBodyMatcher: fragmented group match", (done) => {
+  test("RemovingRegexWithBodyMatcher: fragmented group match", () => {
     const testContent1 = "a{a";
     const testContent2 = "bc}";
     const textFragment = io.TextFragment.createEmpty();
@@ -250,30 +234,27 @@ suite("Matcher Tests", () => {
     assert.strictEqual(groupMatchFrag.blocks[0].scopeEnd, 2);
     assert.strictEqual(groupMatchFrag.blocks[1].scopeStart, 3);
     assert.strictEqual(groupMatchFrag.blocks[1].scopeEnd, 4);
-    done();
   });
 
-  test("RemovingRegexWithBodyMatcher: return empty if no bracketed content", (done) => {
+  test("RemovingRegexWithBodyMatcher: return empty if no bracketed content", () => {
     const testContent = "testing";
     const textFragment = io.TextFragment.createFromString(testContent);
     const matcher = new io.RemovingRegexWithBodyMatcher("a");
 
     const matches = matcher.match(textFragment);
     assert.strictEqual(matches.length, 0);
-    done();
   });
 
-  test("RemovingRegexWithBodyMatcher: return empty if wrongly bracketed content", (done) => {
+  test("RemovingRegexWithBodyMatcher: return empty if wrongly bracketed content", () => {
     const testContent = "a{{}";
     const textFragment = io.TextFragment.createFromString(testContent);
     const matcher = new io.RemovingRegexWithBodyMatcher("a");
 
     const matches = matcher.match(textFragment);
     assert.strictEqual(matches.length, 0);
-    done();
   });
 
-  test("RemovingRegexWithBodyMatcher: regex group matches", (done) => {
+  test("RemovingRegexWithBodyMatcher: regex group matches", () => {
     const testContent = "ab{abc}";
     const textFragment = io.TextFragment.createFromString(testContent);
     const matcher = new io.RemovingRegexWithBodyMatcher("(a)(b)");
@@ -296,10 +277,9 @@ suite("Matcher Tests", () => {
     assert.strictEqual(groupMatchFrag.blocks.length, 1);
     assert.strictEqual(groupMatchFrag.blocks[0].scopeStart, 3);
     assert.strictEqual(groupMatchFrag.blocks[0].scopeEnd, 5);
-    done();
   });
 
-  test("RemovingRegexWithBodyMatcher: multiple matches", (done) => {
+  test("RemovingRegexWithBodyMatcher: multiple matches", () => {
     const nRep = 20;
     const testBase = "ab{abc}HELLO";
     let testContent = "";
@@ -317,11 +297,12 @@ suite("Matcher Tests", () => {
       assert.strictEqual(match.getGroupMatch(0), "a");
       assert.strictEqual(match.getGroupMatch(1), "b");
       assert.strictEqual(match.getGroupMatch(2), "abc");
+      assert.strictEqual(match.getGroupMatchFragment(0).toString(), "a");
+      assert.strictEqual(match.getGroupMatchFragment(1).toString(), "b");
+      assert.strictEqual(match.getGroupMatchFragment(2).toString(), "abc");
       assert.strictEqual(match.scopeStart, testBase.length * idx);
       assert.strictEqual(match.scopeEnd, 6 + testBase.length * idx);
     });
     assert.strictEqual(textFragment.toString(), remainingContent);
-
-    done();
   });
 });

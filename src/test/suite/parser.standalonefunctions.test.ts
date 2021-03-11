@@ -14,9 +14,8 @@ import {
 } from "../../io";
 
 suite("Parser Standalone Functions Tests", () => {
-  // vscode.window.showInformationMessage('Start all tests.');
 
-  test("ParseStandloneFunction", (done) => {
+  test("ParseStandloneFunction", () => {
     const testContent = TextFragment.createFromString(
       `
 void fncName (int argument);
@@ -30,10 +29,9 @@ void fncName (int argument);
     assert.strictEqual(functions[0].name, "fncName");
     assert.strictEqual(functions[0].args, "int argument");
     assert.strictEqual(functions[0].returnVal, "void");
-    done();
   });
 
-  test("ParseStandloneFunctionMultiline", (done) => {
+  test("ParseStandloneFunctionMultiline", () => {
     const testContent = TextFragment.createFromString(
       `
 void fncName (int argument,
@@ -51,10 +49,9 @@ void fncName (int argument,
       "int argument,\n\tstd::shared_ptr<XYZ> argument2"
     );
     assert.strictEqual(functions[0].returnVal, "void");
-    done();
   });
 
-  test("ParseMultipleStandaloneFunctions", (done) => {
+  test("ParseMultipleStandaloneFunctions", () => {
     const testContent = TextFragment.createFromString(
       `
 void fncName ();
@@ -73,10 +70,9 @@ std::shared_ptr<XYZ> fncName2 (int args2,
     assert.strictEqual(functions[1].name, "fncName2");
     assert.strictEqual(functions[1].args, "int args2,\n\tvoid* arg3");
     assert.strictEqual(functions[1].returnVal, "std::shared_ptr<XYZ>");
-    done();
   });
 
-  test("ParseStandloneFunctionsWithConstReturn", (done) => {
+  test("ParseStandloneFunctionsWithConstReturn", () => {
     const testContent = TextFragment.createFromString(
       `
 const XYZ* fncName (int arg1,
@@ -91,6 +87,5 @@ const XYZ* fncName (int arg1,
     assert.strictEqual(functions[0].name, "fncName");
     assert.strictEqual(functions[0].args, "int arg1,\n\tvoid* arg2");
     assert.strictEqual(functions[0].returnVal, "const XYZ*");
-    done();
   });
 });

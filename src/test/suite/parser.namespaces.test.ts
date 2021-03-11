@@ -43,7 +43,7 @@ suite("Parser Namespace Tests", () => {
     callItAsync(
       "With content ${value}",
       namespacesData,
-      function (done: Done, data: TestData) {
+      function (data: TestData) {
         const testData = TextFragment.createFromString(
           `
 				namespace namespaceName
@@ -60,7 +60,6 @@ suite("Parser Namespace Tests", () => {
         assert.strictEqual(namespaces[0].functions.length, data.nFunc);
         assert.strictEqual(namespaces[0].subnamespaces.length, 0);
         assert.ok(namespaces[0] instanceof Namespace);
-        done();
       }
     );
   });
@@ -69,7 +68,7 @@ suite("Parser Namespace Tests", () => {
     callItAsync(
       "With content ${value}",
       namespacesData,
-      function (done: Done, data: TestData) {
+      function (data: TestData) {
         const testData = TextFragment.createFromString(
           `
 				namespace namespaceName{${data.content}}			
@@ -89,7 +88,6 @@ suite("Parser Namespace Tests", () => {
         assert.strictEqual(namespaces[1].classes.length, data.nClasses);
         assert.strictEqual(namespaces[1].functions.length, data.nFunc);
         assert.strictEqual(namespaces[1].subnamespaces.length, 0);
-        done();
       }
     );
   });
@@ -98,7 +96,7 @@ suite("Parser Namespace Tests", () => {
     callItAsync(
       "With content ${value}",
       namespacesData,
-      function (done: Done, data: TestData) {
+      function (data: TestData) {
         const testData = TextFragment.createFromString(
           `
 				namespace namespaceName
@@ -132,7 +130,6 @@ suite("Parser Namespace Tests", () => {
         assert.strictEqual(namespace3.classes.length, data.nClasses);
         assert.strictEqual(namespace3.subnamespaces.length, 0);
         assert.strictEqual(namespace3.functions.length, data.nFunc);
-        done();
       }
     );
   });
@@ -141,7 +138,7 @@ suite("Parser Namespace Tests", () => {
     callItAsync(
       "With content ${value}",
       namespacesData,
-      function (done: Done, data: TestData) {
+      function (data: TestData) {
         const testData = TextFragment.createFromString(
           `
 				namespace namespaceName
@@ -176,7 +173,6 @@ suite("Parser Namespace Tests", () => {
         assert.strictEqual(namespace3.classes.length, data.nClasses);
         assert.strictEqual(namespace3.subnamespaces.length, 0);
         assert.strictEqual(namespace3.functions.length, data.nFunc);
-        done();
       }
     );
   });
@@ -185,7 +181,7 @@ suite("Parser Namespace Tests", () => {
     callItAsync(
       "With content ${value}",
       namespacesData,
-      function (done: Done, data: TestData) {
+      function (data: TestData) {
         const testData = TextFragment.createFromString(
           `
 				namespace namespaceName::namespaceName2
@@ -202,12 +198,11 @@ suite("Parser Namespace Tests", () => {
         assert.strictEqual(namespaces[0].functions.length, data.nFunc);
         assert.strictEqual(namespaces[0].subnamespaces.length, 0);
         assert.ok(namespaces[0] instanceof Namespace);
-        done();
       }
     );
   });
 
-  test("ParseNonNamespaceSeparatedByComments", (done) => {
+  test("ParseNonNamespaceSeparatedByComments", () => {
     const testData = TextFragment.createFromString(
       `
 			class MyClass {       // The class
@@ -224,6 +219,5 @@ suite("Parser Namespace Tests", () => {
     assert.strictEqual(namespaces[0].functions.length, 0);
     assert.strictEqual(namespaces[0].subnamespaces.length, 0);
     assert.ok(namespaces[0] instanceof NoneNamespace);
-    done();
   });
 });

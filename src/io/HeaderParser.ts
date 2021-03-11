@@ -17,7 +17,8 @@ class StandaloneFunctionMatch {
   }
 
   static readonly regexStr: string =
-    "((?:const )?\\S*)\\s*(\\S*)\\s*\\(([\\s\\S]*?)\\)\\s*;";
+    "((?:const )?\\S*)\\s*(\\S+)";
+  static readonly postRegexStr: string = ";";
 
   readonly returnValMatch: string;
   readonly nameMatch: string;
@@ -52,6 +53,7 @@ class ClassMatch {
     ClassMatch.classNameRegex,
     ClassMatch.inheritanceRegex
   );
+  static readonly postBracketRegexStr = "\\s*;";
 
   readonly nameMatch: string;
   readonly inheritanceMatch: string[];
@@ -85,10 +87,10 @@ class ClassConstructorMatch {
   }
 
   static getRegexStr(classname: string) {
-    return joinStringsWithWhiteSpace("[^~]" + classname, this.argRegex, ";");
+    return joinStringsWithWhiteSpace("[^~]" + classname);
   }
 
-  private static readonly argRegex: string = "\\(([\\s\\S]*?)\\)";
+  static readonly postBracketRegex = ";";
 
   readonly argsMatch: string;
 }
@@ -139,8 +141,6 @@ class MemberFunctionMatch {
     "(?:(virtual|static)\\s*)?";
   private static readonly returnValRegex: string = "(\\b(?:(?!static).)+?)";
   private static readonly funcNameRegex: string = "(\\S+)";
-  private static readonly funcArgsRegex: string =
-    "\\(((?:(?!\\()[\\s\\S])*?)\\)";
   private static readonly mayHaveConstSpecifierRegex: string = "(const)?";
   private static readonly mayHaveOverrideRegex: string = "(override)?";
   private static readonly mayBePure: string = "(=\\s*0)?";
@@ -148,8 +148,9 @@ class MemberFunctionMatch {
     MemberFunctionMatch.mayHaveVirtualOrStaticRegex +
       MemberFunctionMatch.returnValRegex +
       "\\s",
-    MemberFunctionMatch.funcNameRegex,
-    MemberFunctionMatch.funcArgsRegex,
+    MemberFunctionMatch.funcNameRegex
+  );
+  static readonly postBracketRegexStr: string = joinStringsWithWhiteSpace(
     MemberFunctionMatch.mayHaveConstSpecifierRegex,
     MemberFunctionMatch.mayHaveOverrideRegex,
     MemberFunctionMatch.mayBePure,
@@ -208,8 +209,11 @@ export abstract class HeaderParser extends CommonParser {
     classNameGen: cpp.ClassNameGenerator
   ): cpp.ClassConstructor[] {
     let ctors: cpp.ClassConstructor[] = [];
-    const matcher = new io.RemovingRegexMatcher(
-      ClassConstructorMatch.getRegexStr(className)
+    const matcher = new io.RemovingRegexWithBodyMatcher(
+      ClassConstructorMatch.getRegexStr(className),
+      ClassConstructorMatch.postBracketRegex,
+      "(",
+      ")"
     );
     matcher.match(data).forEach((regexMatch) => {
       let match = new ClassConstructorMatch(regexMatch);
@@ -251,7 +255,12 @@ export abstract class HeaderParser extends CommonParser {
     classNameGen: cpp.ClassNameGenerator
   ): cpp.IFunction[] {
     let memberFunctions: cpp.IFunction[] = [];
-    const matcher = new io.RemovingRegexMatcher(MemberFunctionMatch.regexStr);
+    const matcher = new io.RemovingRegexWithBodyMatcher(
+      MemberFunctionMatch.regexStr,
+      MemberFunctionMatch.postBracketRegexStr,
+      "(",
+      ")"
+    );
     matcher.match(data).forEach((regexMatch) => {
       let match = new MemberFunctionMatch(regexMatch);
 
@@ -339,8 +348,11 @@ export abstract class HeaderParser extends CommonParser {
   static parseStandaloneFunctiones(data: io.TextFragment): cpp.IFunction[] {
     let standaloneFunctions: cpp.IFunction[] = [];
 
-    const matcher = new io.RemovingRegexMatcher(
-      StandaloneFunctionMatch.regexStr
+    const matcher = new io.RemovingRegexWithBodyMatcher(
+      StandaloneFunctionMatch.regexStr,
+      StandaloneFunctionMatch.postRegexStr,
+      "(",
+      ")"
     );
     matcher.match(data).forEach((regexMatch) => {
       let match = new StandaloneFunctionMatch(regexMatch);
@@ -362,7 +374,10 @@ export abstract class HeaderParser extends CommonParser {
     nameInputProvider?: INameInputProvider
   ): cpp.IClass[] {
     let classes: cpp.IClass[] = [];
-    const matcher = new io.RemovingRegexWithBodyMatcher(ClassMatch.regexStr);
+    const matcher = new io.RemovingRegexWithBodyMatcher(
+      ClassMatch.regexStr,
+      ClassMatch.postBracketRegexStr
+    );
     matcher.match(data).forEach((regexMatch) => {
       const match = new ClassMatch(regexMatch);
       const newClass = match.isInterface

@@ -30,7 +30,7 @@ The following settings are available:
 * Generated source definitions for nested classes is missing the outer class name
 * Lots of refactoring/ feature stuff, see TODOs in source code
 * When merging source files, generated defintions are not put in the correct namespace 
-* Default arguments in member function declarations cause parse issues
+* Defaulted/deleted destructors/constructors cause issues
 
 # Possible features in future
 * Generating only for selected text ranges

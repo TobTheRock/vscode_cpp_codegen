@@ -9,7 +9,7 @@ import { IFunction } from "../../cpp";
 import * as io from "../../io";
 
 suite("Text Utility Tests", () => {
-  test("Textblock should have correct scope on construction", (done) => {
+  test("Textblock should have correct scope on construction", () => {
     const testContent = "FCK 2020";
     const testOff = 42;
     const textBlock = new io.TextBlock(testContent, testOff);
@@ -17,10 +17,9 @@ suite("Text Utility Tests", () => {
     assert.strictEqual(textBlock.content, testContent);
     assert.strictEqual(textBlock.scopeStart, 42);
     assert.strictEqual(textBlock.scopeEnd, 42 + testContent.length - 1);
-    done();
   });
 
-  test("Textblock fullyContain check", (done) => {
+  test("Textblock fullyContain check", () => {
     const testContent = "This is a test message";
     const subStrStart = 4;
     const subStrEnd = 12;
@@ -32,10 +31,9 @@ suite("Text Utility Tests", () => {
 
     assert.ok(textBlock1.fullyContains(textBlock2));
 
-    done();
   });
 
-  test("Textblock contains check", (done) => {
+  test("Textblock contains check", () => {
     const testContent = "This is a test message";
     const subStrStart = 0;
     const subStrEnd = 8;
@@ -52,10 +50,9 @@ suite("Text Utility Tests", () => {
 
     assert.ok(textBlock1.contains(textBlock2));
 
-    done();
   });
 
-  test("TextScope merge", (done) => {
+  test("TextScope merge", () => {
     const testContent = "This is a test message";
     const subStrStart = 0;
     const subStrEnd = 8;
@@ -76,10 +73,9 @@ suite("Text Utility Tests", () => {
     assert.strictEqual(mergedScopes[0].scopeStart, textBlock1.scopeStart);
     assert.strictEqual(mergedScopes[0].scopeEnd, textBlock2.scopeEnd);
 
-    done();
   });
 
-  test("TextScope not merge", (done) => {
+  test("TextScope not merge", () => {
     const testContent = "This is a test message";
     const subStrStart = 0;
     const subStrEnd = 8;
@@ -102,10 +98,9 @@ suite("Text Utility Tests", () => {
     assert.strictEqual(mergedScopes[1].scopeStart, textBlock2.scopeStart);
     assert.strictEqual(mergedScopes[1].scopeEnd, textBlock2.scopeEnd);
 
-    done();
   });
 
-  test("TextBlock slice single", (done) => {
+  test("TextBlock slice single", () => {
     const testContent = "This is a test message";
     const subStrStart = 2;
     const subStrEnd = 8;
@@ -122,10 +117,9 @@ suite("Text Utility Tests", () => {
       testContent.slice(subStrStart, subStrEnd + 1)
     );
 
-    done();
   });
 
-  test("TextBlock slice multi", (done) => {
+  test("TextBlock slice multi", () => {
     const testContent = "This is a test message";
     const subStrStart = 2;
     const subStrEnd = 8;
@@ -151,10 +145,9 @@ suite("Text Utility Tests", () => {
       testContent.slice(subStrStart2, subStrEnd2 + 1)
     );
 
-    done();
   });
 
-  test("TextBlock slice multi overlapping", (done) => {
+  test("TextBlock slice multi overlapping", () => {
     const testContent = "This is a test message";
     const subStrStart = 2;
     const subStrEnd = 8;
@@ -174,10 +167,9 @@ suite("Text Utility Tests", () => {
       testContent.slice(subStrStart, subStrEnd2 + 1)
     );
 
-    done();
   });
 
-  test("TextFragment slice single", (done) => {
+  test("TextFragment slice single", () => {
     const testContent1 = "Hello";
     const testContent2 = "World";
     const subStrStart = 2;
@@ -212,6 +204,5 @@ suite("Text Utility Tests", () => {
       testContent2.slice(0, subStrEnd + 1 - gap - testContent1.length)
     );
 
-    done();
   });
 });

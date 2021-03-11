@@ -1,5 +1,6 @@
 import { IFunction } from "./TypeInterfaces";
 import { ClassNameGenerator } from "./ClassNameGenerator";
+import { removeDefaultInitializersFromArgs } from "./utils";
 import * as io from "../io";
 
 export class MemberFunction extends io.TextScope implements IFunction {
@@ -61,7 +62,7 @@ export class MemberFunction extends io.TextScope implements IFunction {
           "::" +
           this.name +
           " (" +
-          this.args +
+          removeDefaultInitializersFromArgs(this.args) +
           ")" +
           (this.isConst ? " const" : "")
         );

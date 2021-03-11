@@ -70,7 +70,7 @@ function assertClassScopeEmpty(classScope: IClassScope) {
 }
 
 suite("Parser GeneralClasses Tests", () => {
-  test("ParseClassWithoutMemberFunctions", (done) => {
+  test("ParseClassWithoutMemberFunctions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass {       // The class
 			int myNum;        // Attribute (int variable)
@@ -88,10 +88,9 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(classes[0].destructor, undefined);
     assert.strictEqual(classes[0].inheritance.length, 0);
     assert.ok(classes[0] instanceof ClassImpl);
-    done();
   });
 
-  test("ParseInterface", (done) => {
+  test("ParseInterface", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass {       // The class
 			virtual const int* pureFnct() = 0  ;
@@ -112,10 +111,9 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(classes[0].inheritance.length, 0);
     assert.ok(classes[0] instanceof ClassInterface);
 
-    done();
   });
 
-  test("ParseMultipleClassesWithoutMemberFunctions", (done) => {
+  test("ParseMultipleClassesWithoutMemberFunctions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass1 {       // The class
 			int myNum;        // Attribute (int variable)
@@ -142,10 +140,9 @@ suite("Parser GeneralClasses Tests", () => {
       assert.strictEqual(classes[index - 1].destructor, undefined);
       assert.strictEqual(classes[index - 1].inheritance.length, 0);
     }
-    done();
   });
 
-  test("ParseImplicitPrivateNestedClassesWithoutMemberFunctions", (done) => {
+  test("ParseImplicitPrivateNestedClassesWithoutMemberFunctions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass { 	
 			class NestedClass { 
@@ -171,10 +168,9 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(nestedClass.destructor, undefined);
     assert.strictEqual(nestedClass.inheritance.length, 0);
 
-    done();
   });
 
-  test("ParseExplicitPrivateNestedClassesWithoutMemberFunctions", (done) => {
+  test("ParseExplicitPrivateNestedClassesWithoutMemberFunctions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass { 
       private:
@@ -201,10 +197,9 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(nestedClass.destructor, undefined);
     assert.strictEqual(nestedClass.inheritance.length, 0);
 
-    done();
   });
 
-  test("ParsePublicNestedClassesWithoutMemberFunctions", (done) => {
+  test("ParsePublicNestedClassesWithoutMemberFunctions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass { 
       public:
@@ -231,10 +226,9 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(nestedClass.destructor, undefined);
     assert.strictEqual(nestedClass.inheritance.length, 0);
 
-    done();
   });
 
-  test("ParseProtectedNestedClassesWithoutMemberFunctions", (done) => {
+  test("ParseProtectedNestedClassesWithoutMemberFunctions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass { 
       protected:
@@ -261,10 +255,9 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(nestedClass.destructor, undefined);
     assert.strictEqual(nestedClass.inheritance.length, 0);
 
-    done();
   });
 
-  test("ParseNestedAndMultipleClassesWithoutMemberFunctions", (done) => {
+  test("ParseNestedAndMultipleClassesWithoutMemberFunctions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass {		
 			class NestedClass { 
@@ -299,14 +292,13 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(classes[1].destructor, undefined);
     assert.strictEqual(classes[1].inheritance.length, 0);
 
-    done();
   });
 
   describe("ParseClassWithImplicitPrivateMemberFunctions", function () {
     callItAsync(
       "With functions ${value}",
       functionData,
-      function (done: Done, functionTestData: TestData) {
+      function (functionTestData: TestData) {
         const testContent = TextFragment.createFromString(
           `class MyClass {
 				${functionTestData.content}
@@ -325,7 +317,7 @@ suite("Parser GeneralClasses Tests", () => {
         );
         assert.strictEqual(classes[0].inheritance.length, 0);
 
-        done();
+  
       }
     );
   });
@@ -334,7 +326,7 @@ suite("Parser GeneralClasses Tests", () => {
     callItAsync(
       "With functions ${value}",
       functionData,
-      function (done: Done, functionTestData: TestData) {
+      function (functionTestData: TestData) {
         const testContent = TextFragment.createFromString(
           `class MyClass {
 			private:
@@ -354,7 +346,7 @@ suite("Parser GeneralClasses Tests", () => {
         );
         assert.strictEqual(classes[0].inheritance.length, 0);
 
-        done();
+  
       }
     );
   });
@@ -363,7 +355,7 @@ suite("Parser GeneralClasses Tests", () => {
     callItAsync(
       "With functions ${value}",
       functionData,
-      function (done: Done, functionTestData: TestData) {
+      function (functionTestData: TestData) {
         const testContent = TextFragment.createFromString(
           `class MyClass {
 			public:
@@ -383,7 +375,7 @@ suite("Parser GeneralClasses Tests", () => {
         assertClassScopeEmpty(classes[0].privateScope);
         assert.strictEqual(classes[0].inheritance.length, 0);
 
-        done();
+  
       }
     );
   });
@@ -392,7 +384,7 @@ suite("Parser GeneralClasses Tests", () => {
     callItAsync(
       "With functions ${value}",
       functionData,
-      function (done: Done, functionTestData: TestData) {
+      function (functionTestData: TestData) {
         const testContent = TextFragment.createFromString(
           `class MyClass {
 			protected:
@@ -412,7 +404,7 @@ suite("Parser GeneralClasses Tests", () => {
         );
         assert.strictEqual(classes[0].inheritance.length, 0);
 
-        done();
+  
       }
     );
   });
@@ -421,7 +413,7 @@ suite("Parser GeneralClasses Tests", () => {
     callItAsync(
       "With functions ${value}",
       functionData,
-      function (done: Done, functionTestData: TestData) {
+      function (functionTestData: TestData) {
         const testContent = TextFragment.createFromString(
           `class MyClass {
 			private:
@@ -457,7 +449,7 @@ suite("Parser GeneralClasses Tests", () => {
         );
         assert.strictEqual(classes[0].inheritance.length, 0);
 
-        done();
+  
       }
     );
   });
@@ -466,7 +458,7 @@ suite("Parser GeneralClasses Tests", () => {
     callItAsync(
       "With constructors ${value}",
       ctorData,
-      function (done: Done, ctorTestData: TestData) {
+      function (ctorTestData: TestData) {
         const testContent = TextFragment.createFromString(
           `class MyClass {
 			//implicit private
@@ -489,12 +481,12 @@ suite("Parser GeneralClasses Tests", () => {
         assert.strictEqual(classes[0].protectedScope.constructors.length, 1);
         assert.strictEqual(classes[0].inheritance.length, 0);
 
-        done();
+  
       }
     );
   });
 
-  test("ParseClassWithDestructor", (done) => {
+  test("ParseClassWithDestructor", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass {
 			public:
@@ -513,10 +505,9 @@ suite("Parser GeneralClasses Tests", () => {
     assert.notStrictEqual(classes[0].destructor, undefined);
     assert.strictEqual(classes[0].destructor?.virtual, false);
 
-    done();
   });
 
-  test("ParseClassWithVirtualDestructor", (done) => {
+  test("ParseClassWithVirtualDestructor", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass {
 		//implicit private
@@ -535,10 +526,9 @@ suite("Parser GeneralClasses Tests", () => {
     assert.notStrictEqual(classes[0].destructor, undefined);
     assert.strictEqual(classes[0].destructor?.virtual, true);
 
-    done();
   });
 
-  test("ParseClassWithOverrideDestructor", (done) => {
+  test("ParseClassWithOverrideDestructor", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass {
 		//implicit private
@@ -557,14 +547,13 @@ suite("Parser GeneralClasses Tests", () => {
     assert.notStrictEqual(classes[0].destructor, undefined);
     assert.strictEqual(classes[0].destructor?.virtual, true);
 
-    done();
   });
 
   describe("ParseInheritance", function () {
     callItAsync(
       "With inheritance ${value}",
       inheritData,
-      function (done: Done, inheritData: TestData) {
+      function (inheritData: TestData) {
         const testContent = TextFragment.createFromString(
           `class MyClass ${inheritData.content}  {  // The class
 		  };
@@ -580,7 +569,7 @@ suite("Parser GeneralClasses Tests", () => {
         assert.strictEqual(classes[0].destructor, undefined);
         assert.strictEqual(classes[0].inheritance.length, inheritData.nDates);
 
-        done();
+  
       }
     );
   });
@@ -589,13 +578,14 @@ suite("Parser GeneralClasses Tests", () => {
     callItAsync(
       "With inheritance ${value}",
       inheritData,
-      function (done: Done, inheritData: TestData) {
+      function (inheritData: TestData) {
         const testContent = TextFragment.createFromString(
           `class MyClass ${inheritData.content}  {  // The class
 			void function(int x = {});
 		  };
 		`
         );
+        
         let classes: IClass[] = HeaderParser.parseClasses(testContent);
 
         assert.strictEqual(classes.length, 1);
@@ -606,7 +596,7 @@ suite("Parser GeneralClasses Tests", () => {
         assert.strictEqual(classes[0].destructor, undefined);
         assert.strictEqual(classes[0].inheritance.length, inheritData.nDates);
 
-        done();
+  
       }
     );
   });

@@ -6,8 +6,8 @@ export function callItAsync<T>(
   callback: Function
 ) {
   data.forEach(function (val) {
-    it(renderTemplate(desc, val), function (done) {
-      callback(done, val);
+    it(renderTemplate(desc, val), async() =>  {
+      await callback(val);
     });
   });
 }

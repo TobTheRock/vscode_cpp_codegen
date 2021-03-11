@@ -21,7 +21,7 @@ suite("Parser Source Files Tests", () => {
     callItAsync(
       "With function arguments ${value}",
       argData,
-      async function (done: Done, arg: string) {
+      async function (arg: string) {
         const testData = TextFragment.createFromString(
           `
             int fncName(${arg}) {
@@ -72,7 +72,6 @@ suite("Parser Source Files Tests", () => {
           ).length,
           1
         );
-        done();
       }
     );
   });
@@ -81,7 +80,7 @@ suite("Parser Source Files Tests", () => {
     callItAsync(
       "With function arguments ${value}",
       argData,
-      async function (done: Done, arg: string) {
+      async function (arg: string) {
         const testStr = `int fncName(${arg}) {
             if (working) {
             }}`;
@@ -102,7 +101,6 @@ suite("Parser Source Files Tests", () => {
           testStr.length - 1
         );
         assert.strictEqual(signatures[0].content, testStr);
-        done();
       }
     );
   });
@@ -111,7 +109,7 @@ suite("Parser Source Files Tests", () => {
     callItAsync(
       "With function arguments ${value}",
       argData,
-      async function (done: Done, arg: string) {
+      async function (arg: string) {
         const testData = TextFragment.createFromString(
           `
             int TestClass::fncName(${arg}) {
@@ -162,7 +160,6 @@ suite("Parser Source Files Tests", () => {
           ).length,
           1
         );
-        done();
       }
     );
   });
@@ -171,7 +168,7 @@ suite("Parser Source Files Tests", () => {
     callItAsync(
       "With function arguments ${value}",
       argData,
-      async function (done: Done, arg: string) {
+      async function (arg: string) {
         const testDataStr = `
         int TestClass::fncName(${arg}) {
             //FUNCTION BODY
@@ -185,7 +182,6 @@ suite("Parser Source Files Tests", () => {
         const sigEnd = testDataStr.indexOf("}");
         assert.strictEqual(signatures[0].textScope.scopeStart, sigStart);
         assert.strictEqual(signatures[0].textScope.scopeEnd, sigEnd);
-        done();
       }
     );
   });
@@ -194,7 +190,7 @@ suite("Parser Source Files Tests", () => {
     callItAsync(
       "With function arguments ${value}",
       argData,
-      async function (done: Done, arg: string) {
+      async function (arg: string) {
         const testData = TextFragment.createFromString(
           `
             int namespace::TestClass::fncName(${arg}) {
@@ -245,7 +241,6 @@ suite("Parser Source Files Tests", () => {
           ).length,
           1
         );
-        done();
       }
     );
   });
@@ -254,7 +249,7 @@ suite("Parser Source Files Tests", () => {
     callItAsync(
       "With function arguments ${value}",
       argData,
-      async function (done: Done, arg: string) {
+      async function (arg: string) {
         const testData = TextFragment.createFromString(
           `
             namespace namespaceName {
@@ -310,7 +305,6 @@ suite("Parser Source Files Tests", () => {
           ).length,
           1
         );
-        done();
       }
     );
   });
@@ -319,7 +313,7 @@ suite("Parser Source Files Tests", () => {
     callItAsync(
       "With function arguments ${value}",
       argData,
-      async function (done: Done, arg: string) {
+      async function (arg: string) {
         const testData = TextFragment.createFromString(
           `
             namespace namespaceName {
@@ -345,7 +339,6 @@ suite("Parser Source Files Tests", () => {
           ).length,
           1
         );
-        done();
       }
     );
   });
@@ -354,7 +347,7 @@ suite("Parser Source Files Tests", () => {
     callItAsync(
       "With arguments ${value}",
       argData,
-      async function (done: Done, arg: string) {
+      async function (arg: string) {
         const testData = TextFragment.createFromString(
           `
             ClassName::ClassName(${arg}) {
@@ -377,7 +370,6 @@ suite("Parser Source Files Tests", () => {
           ).length,
           1
         );
-        done();
       }
     );
   });
@@ -386,7 +378,7 @@ suite("Parser Source Files Tests", () => {
     callItAsync(
       "With arguments ${value}",
       argData,
-      async function (done: Done, arg: string) {
+      async function (arg: string) {
         const testData = TextFragment.createFromString(
           `
             ClassName::ClassName(${arg})
@@ -412,7 +404,6 @@ suite("Parser Source Files Tests", () => {
           ).length,
           1
         );
-        done();
       }
     );
   });
@@ -421,7 +412,7 @@ suite("Parser Source Files Tests", () => {
     callItAsync(
       "With arguments ${value}",
       argData,
-      async function (done: Done, arg: string) {
+      async function (arg: string) {
         const testData = TextFragment.createFromString(
           `
             namespace::ClassName::ClassName(${arg}) {
@@ -444,12 +435,11 @@ suite("Parser Source Files Tests", () => {
           ).length,
           1
         );
-        done();
       }
     );
   });
 
-  test("ParseDestructorSignature", (done) => {
+  test("ParseDestructorSignature", () => {
     const testData = TextFragment.createFromString(
       `
             ClassName::~ClassName() {
@@ -468,12 +458,10 @@ suite("Parser Source Files Tests", () => {
           content: "",
         })
       ).length,
-      1
-    );
-    done();
+      1);
   });
 
-  test("ParseDestructorWithExplicitNamespaceSignature", (done) => {
+  test("ParseDestructorWithExplicitNamespaceSignature", () => {
     const testData = TextFragment.createFromString(
       `
             namespace::ClassName::~ClassName() {
@@ -494,6 +482,7 @@ suite("Parser Source Files Tests", () => {
       ).length,
       1
     );
-    done();
   });
+
 });
+
