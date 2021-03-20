@@ -7,7 +7,7 @@
 		"type": "git",
 		"url": "https://github.com/HerrFroehlich/vscode_cpp_codegen"
 	},
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"engines": {
 		"vscode": "^1.51.0"
 	},
@@ -19,7 +19,11 @@
         "cpp",
         "definition",
         "generator",
-        "stub"
+        "stub",
+		"implementation",
+		"header",
+		"source",
+		"interface"
     ],
 	"activationEvents": [
 		"onLanguage:cpp"
