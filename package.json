@@ -1,7 +1,7 @@
 {
 	"name": "codegen-cpp",
-	"displayName": "Universal Generator for C++",
-	"description": "Generator stuff from C++ headers etc",
+	"displayName": "Stub Code Generator for C++",
+	"description": "Faciliates writing C++ by generating stub defintions from header files",
 	"publisher": "HerrFroehlich",
 	"repository": {
 		"type": "git",
