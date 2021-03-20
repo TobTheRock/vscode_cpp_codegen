@@ -10,7 +10,7 @@ export class SourceFile extends FileBase {
     super(filePath);
     const fileContent = io.TextFragment.createFromString(content);
     io.SourceParser.parseComments(fileContent);
-    this._signatures = io.SourceParser.parseSignatures(fileContent);
+    this.namespaces = io.SourceParser.parseNamespaces(fileContent);
   }
 
   static generateFileHeader(
@@ -25,9 +25,5 @@ export class SourceFile extends FileBase {
     return fileHeader;
   }
 
-  getSignatures(): io.ISignaturable[] {
-    return this._signatures;
-  }
-
-  private readonly _signatures: io.ISignaturable[];
+  readonly namespaces: io.ISourceFileNamespace[];
 }

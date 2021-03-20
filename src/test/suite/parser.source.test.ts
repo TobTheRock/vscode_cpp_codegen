@@ -4,8 +4,7 @@ import { callItAsync } from "./utils";
 import { SourceParser } from "../../io/SourceParser";
 import {
   TextFragment,
-  SerializableMode,
-  ISerializable,
+  ISignaturable,
   TextScope,
   compareSignaturables,
 } from "../../io";
@@ -35,7 +34,10 @@ suite("Parser Source Files Tests", () => {
             }
         `
         );
-        const signatures = SourceParser.parseSignatures(testData);
+        const namespaces = SourceParser.parseNamespaces(testData);
+        const signatures = ([] as ISignaturable[]).concat(
+          ...namespaces.map((ns) => ns.getAllSignatures())
+        );
         assert.strictEqual(signatures.length, 3);
 
         const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
@@ -85,7 +87,10 @@ suite("Parser Source Files Tests", () => {
             if (working) {
             }}`;
         const testData = TextFragment.createFromString(testStr);
-        const signatures = SourceParser.parseSignatures(testData);
+        const namespaces = SourceParser.parseNamespaces(testData);
+        const signatures = ([] as ISignaturable[]).concat(
+          ...namespaces.map((ns) => ns.getAllSignatures())
+        );
         assert.strictEqual(signatures.length, 1);
 
         const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
@@ -123,7 +128,10 @@ suite("Parser Source Files Tests", () => {
             }
         `
         );
-        const signatures = SourceParser.parseSignatures(testData);
+        const namespaces = SourceParser.parseNamespaces(testData);
+        const signatures = ([] as ISignaturable[]).concat(
+          ...namespaces.map((ns) => ns.getAllSignatures())
+        );
         assert.strictEqual(signatures.length, 3);
 
         const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
@@ -175,7 +183,10 @@ suite("Parser Source Files Tests", () => {
         }
         `;
         const testData = TextFragment.createFromString(testDataStr);
-        const signatures = SourceParser.parseSignatures(testData);
+        const namespaces = SourceParser.parseNamespaces(testData);
+        const signatures = ([] as ISignaturable[]).concat(
+          ...namespaces.map((ns) => ns.getAllSignatures())
+        );
         assert.strictEqual(signatures.length, 1);
 
         const sigStart = testDataStr.indexOf("int");
@@ -204,7 +215,10 @@ suite("Parser Source Files Tests", () => {
             }
         `
         );
-        const signatures = SourceParser.parseSignatures(testData);
+        const namespaces = SourceParser.parseNamespaces(testData);
+        const signatures = ([] as ISignaturable[]).concat(
+          ...namespaces.map((ns) => ns.getAllSignatures())
+        );
         assert.strictEqual(signatures.length, 3);
 
         const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
@@ -268,7 +282,10 @@ suite("Parser Source Files Tests", () => {
             }}
         `
         );
-        const signatures = SourceParser.parseSignatures(testData);
+        const namespaces = SourceParser.parseNamespaces(testData);
+        const signatures = ([] as ISignaturable[]).concat(
+          ...namespaces.map((ns) => ns.getAllSignatures())
+        );
         assert.strictEqual(signatures.length, 3);
 
         const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
@@ -324,7 +341,10 @@ suite("Parser Source Files Tests", () => {
             }}
         `
         );
-        const signatures = SourceParser.parseSignatures(testData);
+        const namespaces = SourceParser.parseNamespaces(testData);
+        const signatures = ([] as ISignaturable[]).concat(
+          ...namespaces.map((ns) => ns.getAllSignatures())
+        );
         assert.strictEqual(signatures.length, 1);
 
         const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
@@ -355,7 +375,10 @@ suite("Parser Source Files Tests", () => {
             }
         `
         );
-        const signatures = SourceParser.parseSignatures(testData);
+        const namespaces = SourceParser.parseNamespaces(testData);
+        const signatures = ([] as ISignaturable[]).concat(
+          ...namespaces.map((ns) => ns.getAllSignatures())
+        );
         assert.strictEqual(signatures.length, 1);
 
         const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
@@ -389,7 +412,10 @@ suite("Parser Source Files Tests", () => {
             }
         `
         );
-        const signatures = SourceParser.parseSignatures(testData);
+        const namespaces = SourceParser.parseNamespaces(testData);
+        const signatures = ([] as ISignaturable[]).concat(
+          ...namespaces.map((ns) => ns.getAllSignatures())
+        );
         assert.strictEqual(signatures.length, 1);
 
         const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
@@ -420,7 +446,10 @@ suite("Parser Source Files Tests", () => {
             }
         `
         );
-        const signatures = SourceParser.parseSignatures(testData);
+        const namespaces = SourceParser.parseNamespaces(testData);
+        const signatures = ([] as ISignaturable[]).concat(
+          ...namespaces.map((ns) => ns.getAllSignatures())
+        );
         assert.strictEqual(signatures.length, 1);
 
         const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
@@ -447,7 +476,10 @@ suite("Parser Source Files Tests", () => {
             }
         `
     );
-    const signatures = SourceParser.parseSignatures(testData);
+    const namespaces = SourceParser.parseNamespaces(testData);
+    const signatures = ([] as ISignaturable[]).concat(
+      ...namespaces.map((ns) => ns.getAllSignatures())
+    );
     assert.strictEqual(signatures.length, 1);
     assert.strictEqual(
       signatures.filter((sig) =>
@@ -458,7 +490,8 @@ suite("Parser Source Files Tests", () => {
           content: "",
         })
       ).length,
-      1);
+      1
+    );
   });
 
   test("ParseDestructorWithExplicitNamespaceSignature", () => {
@@ -469,7 +502,10 @@ suite("Parser Source Files Tests", () => {
             }
         `
     );
-    const signatures = SourceParser.parseSignatures(testData);
+    const namespaces = SourceParser.parseNamespaces(testData);
+    const signatures = ([] as ISignaturable[]).concat(
+      ...namespaces.map((ns) => ns.getAllSignatures())
+    );
     assert.strictEqual(signatures.length, 1);
     assert.strictEqual(
       signatures.filter((sig) =>
@@ -483,6 +519,4 @@ suite("Parser Source Files Tests", () => {
       1
     );
   });
-
 });
-

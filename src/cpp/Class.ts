@@ -235,7 +235,7 @@ class ClassBase extends io.TextScope implements IClass {
         serial += await this.getHeaderSerialStart(mode, [
           "public " + this.name,
         ]);
-        suffix = "};";
+        suffix = "};\n";
         break;
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
@@ -249,7 +249,6 @@ class ClassBase extends io.TextScope implements IClass {
     serial += await this.protectedScope.serialize(mode);
     serial += await this.privateScope.serialize(mode);
     serial += suffix;
-    serial += "\n";
     return serial;
   }
 
