@@ -6,8 +6,12 @@ Still not perfect, but should work for the most common use cases.
 The extension is automatically loaded when using the C++ language. 
 The following commands are provided while a C++ header file (extension: `hpp`, `h`, `hxx`, `hh`)  is open in the editor:
 
-* `codegen-cpp: Generate source file from header` : Parses an open header file and generates the source stub. The output directory can be provided via the UI.
-* `codegen-cpp:  Generate interface implementation source/header files` : Parses an open header file and generates implementation stubs for all available interfaces. The names of the interface implementations can be provided via the UI.
+* `codegen-cpp:  Generate interface implementation source/header files` : Parses the currently opened header file and generates implementation stubs for all available interfaces. The names of the interface implementations can be provided via the UI.
+![](./docu/showcase_generate_interface_impl_stubs.gif)
+
+* `codegen-cpp: Generate source file from header` : Parses the currently opened header file and generates the source stubs. The output directory can be provided via the UI. In case a source file exists, changes can be evaluated with the refactoring view;
+
+![](./docu/showcase_merge_source_files.gif)
 
 ## Extension Settings
 
@@ -22,16 +26,19 @@ The following settings are available:
     * Interface implementations: by using the name of the (first) implementation
     Else the file base name has to be entered via the UI.
 
-## Known Issues
-
+## Issues
+Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issues). Contribution is also welcome in any form.
+### Known
 * Updating existing header files is not supported
 * `using` statements are not evaluated
 * `struct`s are not supported
 * Generated source definitions for nested classes is missing the outer class name
-* When merging source files, generated defintions are not put in the correct namespace 
-* Newly created folders are not detected for selection
+* Newly created folders are not detected for selection until reloading VS-Code window
+* cast operator not serialized properly
+* friend declarations parsed wrongly
 
-# Possible features in future
+## Possible features in future
+* Add config toggle for name space generation around/before definitions 
 * Generating only for selected text ranges
 * Prettifing the generated output 
 * more configuration possibilities (e.g. for namespaces)
@@ -39,9 +46,8 @@ The following settings are available:
 * ...
 ## Release Notes
 
+### 0.1.0
 
-### 0.0.1
-
-Initial release for testing the initial two generator features: source stubs and implementing interfaces
+Initial release for testing the two generator features: source stubs and generating interface implemention stubs
 
 -----------------------------------------------------------------------------------------------------------
