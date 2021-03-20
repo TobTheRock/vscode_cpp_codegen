@@ -57,14 +57,10 @@ export class SourceFileMerger {
       existingNamespace.isEmpty()
     );
 
-    const signaturesRemovedByNamespace = flatten2dArray(
-      namespacesToBeRemoved.map((namespace) => namespace.getAllSignatures())
-    );
-
     removedSignatures = removedSignatures.filter(
       (signature) =>
-        !signaturesRemovedByNamespace.some((removedSignature) =>
-          io.compareSignaturables(removedSignature, signature)
+        !namespacesToBeRemoved.some((removedNamespace) =>
+          removedNamespace.fullyContains(signature.textScope)
         )
     );
     this.deleteTextScope(

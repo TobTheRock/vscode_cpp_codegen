@@ -103,6 +103,9 @@ class SourceFileNamespace extends TextScope implements ISourceFileNamespace {
     const signatures = ([] as ISignaturable[]).concat(
       ...this.subnamespaces.map((ns) => ns.getAllSignatures())
     );
+    signatures.forEach((signature) =>
+      signature.namespaces.unshift(this.name)
+    );
     signatures.push(...this.signatures);
     return signatures;
   }
