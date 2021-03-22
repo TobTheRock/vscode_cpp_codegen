@@ -9,7 +9,12 @@ import { HeaderParser } from "../../io/HeaderParser";
 import { IClass, ClassInterface, ClassImpl, IClassScope } from "../../cpp";
 import { callItAsync } from "./utils";
 
-import { TextFragment, TextScope, compareSignaturables } from "../../io";
+import {
+  TextFragment,
+  TextScope,
+  compareSignaturables,
+  SerializableMode,
+} from "../../io";
 
 const argData = [
   "",
@@ -110,7 +115,6 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(classes[0].destructor, undefined);
     assert.strictEqual(classes[0].inheritance.length, 0);
     assert.ok(classes[0] instanceof ClassInterface);
-
   });
 
   test("ParseMultipleClassesWithoutMemberFunctions", () => {
@@ -167,7 +171,6 @@ suite("Parser GeneralClasses Tests", () => {
     assertClassScopeEmpty(nestedClass.protectedScope);
     assert.strictEqual(nestedClass.destructor, undefined);
     assert.strictEqual(nestedClass.inheritance.length, 0);
-
   });
 
   test("ParseExplicitPrivateNestedClassesWithoutMemberFunctions", () => {
@@ -196,7 +199,6 @@ suite("Parser GeneralClasses Tests", () => {
     assertClassScopeEmpty(nestedClass.protectedScope);
     assert.strictEqual(nestedClass.destructor, undefined);
     assert.strictEqual(nestedClass.inheritance.length, 0);
-
   });
 
   test("ParsePublicNestedClassesWithoutMemberFunctions", () => {
@@ -225,7 +227,6 @@ suite("Parser GeneralClasses Tests", () => {
     assertClassScopeEmpty(nestedClass.protectedScope);
     assert.strictEqual(nestedClass.destructor, undefined);
     assert.strictEqual(nestedClass.inheritance.length, 0);
-
   });
 
   test("ParseProtectedNestedClassesWithoutMemberFunctions", () => {
@@ -254,7 +255,6 @@ suite("Parser GeneralClasses Tests", () => {
     assertClassScopeEmpty(nestedClass.protectedScope);
     assert.strictEqual(nestedClass.destructor, undefined);
     assert.strictEqual(nestedClass.inheritance.length, 0);
-
   });
 
   test("ParseNestedAndMultipleClassesWithoutMemberFunctions", () => {
@@ -291,7 +291,6 @@ suite("Parser GeneralClasses Tests", () => {
     assertClassScopeEmpty(classes[1].protectedScope);
     assert.strictEqual(classes[1].destructor, undefined);
     assert.strictEqual(classes[1].inheritance.length, 0);
-
   });
 
   describe("ParseClassWithImplicitPrivateMemberFunctions", function () {
@@ -316,8 +315,6 @@ suite("Parser GeneralClasses Tests", () => {
           functionTestData.nDates
         );
         assert.strictEqual(classes[0].inheritance.length, 0);
-
-  
       }
     );
   });
@@ -345,8 +342,6 @@ suite("Parser GeneralClasses Tests", () => {
           functionTestData.nDates
         );
         assert.strictEqual(classes[0].inheritance.length, 0);
-
-  
       }
     );
   });
@@ -374,8 +369,6 @@ suite("Parser GeneralClasses Tests", () => {
         assertClassScopeEmpty(classes[0].protectedScope);
         assertClassScopeEmpty(classes[0].privateScope);
         assert.strictEqual(classes[0].inheritance.length, 0);
-
-  
       }
     );
   });
@@ -403,8 +396,6 @@ suite("Parser GeneralClasses Tests", () => {
           functionTestData.nDates
         );
         assert.strictEqual(classes[0].inheritance.length, 0);
-
-  
       }
     );
   });
@@ -448,8 +439,6 @@ suite("Parser GeneralClasses Tests", () => {
           2 * functionTestData.nDates
         );
         assert.strictEqual(classes[0].inheritance.length, 0);
-
-  
       }
     );
   });
@@ -480,8 +469,6 @@ suite("Parser GeneralClasses Tests", () => {
         assert.strictEqual(classes[0].publicScope.constructors.length, 1);
         assert.strictEqual(classes[0].protectedScope.constructors.length, 1);
         assert.strictEqual(classes[0].inheritance.length, 0);
-
-  
       }
     );
   });
@@ -504,7 +491,6 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(classes[0].inheritance.length, 0);
     assert.notStrictEqual(classes[0].destructor, undefined);
     assert.strictEqual(classes[0].destructor?.virtual, false);
-
   });
 
   test("ParseClassWithVirtualDestructor", () => {
@@ -525,7 +511,6 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(classes[0].inheritance.length, 0);
     assert.notStrictEqual(classes[0].destructor, undefined);
     assert.strictEqual(classes[0].destructor?.virtual, true);
-
   });
 
   test("ParseClassWithOverrideDestructor", () => {
@@ -546,7 +531,6 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(classes[0].inheritance.length, 0);
     assert.notStrictEqual(classes[0].destructor, undefined);
     assert.strictEqual(classes[0].destructor?.virtual, true);
-
   });
 
   test("ParseClassWithVirtualDefaultDestructorAndMemberFunction", () => {
@@ -587,8 +571,6 @@ suite("Parser GeneralClasses Tests", () => {
         assertClassScopeEmpty(classes[0].protectedScope);
         assert.strictEqual(classes[0].destructor, undefined);
         assert.strictEqual(classes[0].inheritance.length, inheritData.nDates);
-
-  
       }
     );
   });
@@ -604,7 +586,7 @@ suite("Parser GeneralClasses Tests", () => {
 		  };
 		`
         );
-        
+
         let classes: IClass[] = HeaderParser.parseClasses(testContent);
 
         assert.strictEqual(classes.length, 1);
@@ -614,9 +596,27 @@ suite("Parser GeneralClasses Tests", () => {
         assertClassScopeEmpty(classes[0].protectedScope);
         assert.strictEqual(classes[0].destructor, undefined);
         assert.strictEqual(classes[0].inheritance.length, inheritData.nDates);
-
-  
       }
     );
+  });
+
+  test("DeserializeNestedClassAsSourceWithCorrectScope", async () => {
+    const testContent = TextFragment.createFromString(
+      `class MyClass { 	
+			class NestedClass {
+          void fncName();
+		  	};
+		  };
+		`
+    );
+    let classes: IClass[] = HeaderParser.parseClasses(testContent);
+
+    assert.strictEqual(classes.length, 1);
+    let nestedClass: IClass = classes[0].privateScope.nestedClasses[0];
+    assert.strictEqual(classes[0].privateScope.nestedClasses.length, 1);
+    const serialized = await classes[0].serialize({
+      mode: SerializableMode.source,
+    });
+    assert.ok(serialized.includes("MyClass::Nested"));
   });
 });

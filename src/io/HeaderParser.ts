@@ -1,6 +1,5 @@
 import * as cpp from "../cpp";
 import * as io from ".";
-import { INameInputProvider } from "../INameInputProvider";
 import {
   NamespaceMatch,
   joinStringsWithWhiteSpace,
@@ -16,8 +15,7 @@ class StandaloneFunctionMatch {
     this.argsMatch = regexMatch.getGroupMatch(2);
   }
 
-  static readonly regexStr: string =
-    "((?:const )?\\S*)\\s*(\\S+)";
+  static readonly regexStr: string = "((?:const )?\\S*)\\s*(\\S+)";
   static readonly postRegexStr: string = ";";
 
   readonly returnValMatch: string;
@@ -205,8 +203,7 @@ export abstract class HeaderParser extends CommonParser {
 
   static parseClassConstructor(
     data: io.TextFragment,
-    className: string,
-    classNameGen: cpp.ClassNameGenerator
+    className: string
   ): cpp.ClassConstructor[] {
     let ctors: cpp.ClassConstructor[] = [];
     const matcher = new io.RemovingRegexWithBodyMatcher(
@@ -220,7 +217,7 @@ export abstract class HeaderParser extends CommonParser {
       ctors.push(
         new cpp.ClassConstructor(
           match.argsMatch,
-          classNameGen,
+          className,
           regexMatch as io.TextScope
         )
       );
@@ -230,8 +227,7 @@ export abstract class HeaderParser extends CommonParser {
 
   static parseClassDestructors(
     data: io.TextFragment,
-    className: string,
-    classNameGen: cpp.ClassNameGenerator
+    className: string
   ): cpp.ClassDestructor[] {
     let deconstructors: cpp.ClassDestructor[] = [];
     const matcher = new io.RemovingRegexMatcher(
@@ -242,7 +238,7 @@ export abstract class HeaderParser extends CommonParser {
       deconstructors.push(
         new cpp.ClassDestructor(
           match.isVirtual,
-          classNameGen,
+          className,
           regexMatch as io.TextScope
         )
       );
@@ -250,10 +246,7 @@ export abstract class HeaderParser extends CommonParser {
     return deconstructors;
   }
 
-  static parseClassMemberFunctions(
-    data: io.TextFragment,
-    classNameGen: cpp.ClassNameGenerator
-  ): cpp.IFunction[] {
+  static parseClassMemberFunctions(data: io.TextFragment): cpp.IFunction[] {
     let memberFunctions: cpp.IFunction[] = [];
     const matcher = new io.RemovingRegexWithBodyMatcher(
       MemberFunctionMatch.regexStr,
@@ -272,7 +265,6 @@ export abstract class HeaderParser extends CommonParser {
             match.returnValMatch,
             match.argsMatch,
             match.constMatch,
-            classNameGen,
             regexMatch as io.TextScope
           );
         } else {
@@ -281,7 +273,6 @@ export abstract class HeaderParser extends CommonParser {
             match.returnValMatch,
             match.argsMatch,
             match.constMatch,
-            classNameGen,
             regexMatch as io.TextScope
           );
         }
@@ -291,7 +282,6 @@ export abstract class HeaderParser extends CommonParser {
           match.returnValMatch,
           match.argsMatch,
           match.constMatch,
-          classNameGen,
           regexMatch as io.TextScope
         );
       } else {
@@ -300,7 +290,6 @@ export abstract class HeaderParser extends CommonParser {
           match.returnValMatch,
           match.argsMatch,
           match.constMatch,
-          classNameGen,
           regexMatch as io.TextScope
         );
       }
@@ -313,7 +302,7 @@ export abstract class HeaderParser extends CommonParser {
 
   static parseNamespaces(
     data: io.TextFragment,
-    nameInputProvider?: INameInputProvider
+    nameInputProvider?: io.INameInputProvider
   ): cpp.INamespace[] {
     let namespaces: cpp.INamespace[] = [];
     const matcher = new io.RemovingRegexWithBodyMatcher(
@@ -321,11 +310,7 @@ export abstract class HeaderParser extends CommonParser {
     );
     matcher.match(data).forEach((regexMatch) => {
       const match = new NamespaceMatch(regexMatch);
-      const newNamespace = new cpp.Namespace(
-        match.nameMatch,
-        regexMatch,
-        nameInputProvider
-      );
+      const newNamespace = new cpp.Namespace(match.nameMatch, regexMatch);
       newNamespace.deserialize(match.bodyMatch);
       namespaces.push(newNamespace);
     });
@@ -333,13 +318,9 @@ export abstract class HeaderParser extends CommonParser {
     return namespaces;
   }
 
-  static parseNoneNamespaces(
-    data: io.TextFragment,
-    nameInputProvider?: INameInputProvider
-  ): cpp.INamespace[] {
+  static parseNoneNamespaces(data: io.TextFragment): cpp.INamespace[] {
     const newNoneNamespace = new cpp.NoneNamespace(
-      new TextScope(data.getScopeStart(), data.getScopeEnd()),
-      nameInputProvider
+      new TextScope(data.getScopeStart(), data.getScopeEnd())
     );
     newNoneNamespace.deserialize(data);
     return [newNoneNamespace];
@@ -369,10 +350,7 @@ export abstract class HeaderParser extends CommonParser {
     return standaloneFunctions;
   }
 
-  static parseClasses(
-    data: io.TextFragment,
-    nameInputProvider?: INameInputProvider
-  ): cpp.IClass[] {
+  static parseClasses(data: io.TextFragment): cpp.IClass[] {
     let classes: cpp.IClass[] = [];
     const matcher = new io.RemovingRegexWithBodyMatcher(
       ClassMatch.regexStr,
@@ -384,14 +362,12 @@ export abstract class HeaderParser extends CommonParser {
         ? new cpp.ClassInterface(
             regexMatch,
             match.nameMatch,
-            match.inheritanceMatch,
-            nameInputProvider
+            match.inheritanceMatch
           )
         : new cpp.ClassImpl(
             regexMatch,
             match.nameMatch,
-            match.inheritanceMatch,
-            nameInputProvider
+            match.inheritanceMatch
           );
       newClass.deserialize(match.bodyMatch);
       classes.push(newClass);

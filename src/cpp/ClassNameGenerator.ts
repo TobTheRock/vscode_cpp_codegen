@@ -1,28 +1,18 @@
 import * as io from "../io";
-import { INameInputProvider } from "../INameInputProvider";
-
 export class ClassNameGenerator {
-  constructor(
-    private readonly _origName: string,
-    private readonly _isInterface: boolean,
-    private readonly _nameInputProvider: INameInputProvider = {}
-  ) {}
+  constructor(private readonly _origName: string) {}
 
-  getBaseName(): string {
-    return this._origName;
-  }
-
-  async createName(mode: io.SerializableMode): Promise<string> {
+  async createName(options: io.SerializationOptions): Promise<string> {
     let createdName = "";
 
-    switch (mode) {
+    switch (options.mode) {
       case io.SerializableMode.header:
       case io.SerializableMode.source:
         createdName = this._origName;
         break;
       case io.SerializableMode.implHeader:
       case io.SerializableMode.implSource:
-        createdName = await this.createImplName();
+        createdName = await this.createImplName(options);
         break;
       case io.SerializableMode.interfaceHeader:
         createdName = this.createInterfaceName();
@@ -34,13 +24,10 @@ export class ClassNameGenerator {
     return createdName;
   }
 
-  private async createImplName() {
+  private async createImplName(options: io.SerializationOptions) {
     if (!this._implName.length) {
-      if (!this._isInterface) {
-        // TODO warn?
-        return this._origName;
-      } else if (this._nameInputProvider.getInterfaceName) {
-        this._implName = await this._nameInputProvider.getInterfaceName(
+      if (options.nameInputProvider?.getInterfaceName) {
+        this._implName = await options.nameInputProvider.getInterfaceName(
           this._origName
         );
       }

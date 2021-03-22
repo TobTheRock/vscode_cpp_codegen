@@ -5,4 +5,3 @@ export * from "./Namespace";
 export * from "./StandaloneFunction";
 export * from "./HeaderFile";
 export * from "./SourceFile";
-export * from "./ClassNameGenerator";

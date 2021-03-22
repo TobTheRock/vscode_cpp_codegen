@@ -1,6 +1,5 @@
 import { IFunction } from "./TypeInterfaces";
-import { ClassNameGenerator } from "./ClassNameGenerator";
-import { removeDefaultInitializersFromArgs } from "./utils";
+import { removeDefaultInitializersFromArgs, joinNameScopes } from "./utils";
 import * as io from "../io";
 
 export class MemberFunction extends io.TextScope implements IFunction {
@@ -9,18 +8,17 @@ export class MemberFunction extends io.TextScope implements IFunction {
     public readonly returnVal: string,
     public readonly args: string,
     public readonly isConst: boolean,
-    private readonly classNameGen: ClassNameGenerator,
     scope: io.TextScope
   ) {
     super(scope.scopeStart, scope.scopeEnd);
   }
 
-  async serialize(mode: io.SerializableMode) {
+  async serialize(options: io.SerializationOptions) {
     let serial = "";
 
-    switch (mode) {
+    switch (options.mode) {
       case io.SerializableMode.source:
-        serial = (await this.getHeading(mode)) + " {\n";
+        serial = this.getHeading(options) + " {\n";
         if (this.returnVal !== "void") {
           serial +=
             "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";
@@ -29,7 +27,7 @@ export class MemberFunction extends io.TextScope implements IFunction {
         break;
 
       case io.SerializableMode.header:
-        serial = (await this.getHeading(mode)) + ";";
+        serial = this.getHeading(options) + ";";
         break;
 
       default:
@@ -39,8 +37,8 @@ export class MemberFunction extends io.TextScope implements IFunction {
     return serial;
   }
 
-  protected async getHeading(mode: io.SerializableMode) {
-    switch (mode) {
+  protected getHeading(options: io.SerializationOptions) {
+    switch (options.mode) {
       case io.SerializableMode.header:
       case io.SerializableMode.implHeader:
       case io.SerializableMode.interfaceHeader:
@@ -58,9 +56,7 @@ export class MemberFunction extends io.TextScope implements IFunction {
         return (
           this.returnVal +
           " " +
-          (await this.classNameGen.createName(mode)) +
-          "::" +
-          this.name +
+          joinNameScopes(options.nameScope, this.name) +
           " (" +
           removeDefaultInitializersFromArgs(this.args) +
           ")" +
@@ -78,26 +74,25 @@ export class VirtualMemberFunction extends MemberFunction {
     returnVal: string,
     args: string,
     isConst: boolean,
-    classNameGen: ClassNameGenerator,
     scope: io.TextScope
   ) {
-    super(name, returnVal, args, isConst, classNameGen, scope);
+    super(name, returnVal, args, isConst, scope);
   }
 
-  async serialize(mode: io.SerializableMode) {
+  async serialize(options: io.SerializationOptions) {
     let serial = "";
 
-    switch (mode) {
+    switch (options.mode) {
       case io.SerializableMode.header:
-        serial = (await super.getHeading(mode)) + " override;";
+        serial = (await super.getHeading(options)) + " override;";
         break;
 
       case io.SerializableMode.interfaceHeader:
-        serial = "virtual " + (await super.getHeading(mode)) + " =0;";
+        serial = "virtual " + (await super.getHeading(options)) + " =0;";
         break;
 
       default:
-        serial = await super.serialize(mode);
+        serial = await super.serialize(options);
         break;
     }
 
@@ -110,18 +105,17 @@ export class StaticMemberFunction extends MemberFunction {
     returnVal: string,
     args: string,
     isConst: boolean,
-    classNameGen: ClassNameGenerator,
     scope: io.TextScope
   ) {
-    super(name, returnVal, args, isConst, classNameGen, scope);
+    super(name, returnVal, args, isConst, scope);
   }
 
-  async serialize(mode: io.SerializableMode) {
+  async serialize(options: io.SerializationOptions) {
     let serial = "";
 
-    switch (mode) {
+    switch (options.mode) {
       case io.SerializableMode.source:
-        serial = (await this.getHeading(mode)) + " {\n";
+        serial = this.getHeading(options) + " {\n";
         if (this.returnVal !== "void") {
           serial +=
             "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";
@@ -130,7 +124,7 @@ export class StaticMemberFunction extends MemberFunction {
         break;
 
       case io.SerializableMode.header:
-        serial = "static " + (await this.getHeading(mode)) + ";";
+        serial = "static " + this.getHeading(options) + ";";
         break;
 
       default:
@@ -147,26 +141,25 @@ export class PureVirtualMemberFunction extends MemberFunction {
     returnVal: string,
     args: string,
     isConst: boolean,
-    classNameGen: ClassNameGenerator,
     scope: io.TextScope
   ) {
-    super(name, returnVal, args, isConst, classNameGen, scope);
+    super(name, returnVal, args, isConst, scope);
   }
 
-  async serialize(mode: io.SerializableMode) {
+  async serialize(options: io.SerializationOptions) {
     let serial = "";
 
-    switch (mode) {
+    switch (options.mode) {
       case io.SerializableMode.header:
-        serial = "virtual " + (await super.getHeading(mode)) + " =0;";
+        serial = "virtual " + (await super.getHeading(options)) + " =0;";
         break;
 
       case io.SerializableMode.implHeader:
-        serial = (await super.getHeading(mode)) + " override;";
+        serial = (await super.getHeading(options)) + " override;";
         break;
 
       case io.SerializableMode.implSource:
-        serial = (await this.getHeading(mode)) + " {\n";
+        serial = this.getHeading(options) + " {\n";
         if (this.returnVal !== "void") {
           serial +=
             "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";

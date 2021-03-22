@@ -6,7 +6,7 @@ import {
   CommonParser,
   joinStringsWithWhiteSpace,
 } from "./CommonParser";
-import { IDeserializable } from "./ISerial";
+import { IDeserializable } from "./Serialization";
 class FunctionDefinitionMatch {
   constructor(regexMatch: TextMatch) {
     this.returnValMatch = regexMatch.getGroupMatch(0);
@@ -103,9 +103,7 @@ class SourceFileNamespace extends TextScope implements ISourceFileNamespace {
     const signatures = ([] as ISignaturable[]).concat(
       ...this.subnamespaces.map((ns) => ns.getAllSignatures())
     );
-    signatures.forEach((signature) =>
-      signature.namespaces.unshift(this.name)
-    );
+    signatures.forEach((signature) => signature.namespaces.unshift(this.name));
     signatures.push(...this.signatures);
     return signatures;
   }

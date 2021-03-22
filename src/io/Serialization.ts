@@ -7,13 +7,23 @@ export enum SerializableMode {
   interfaceHeader, // interface header file (respective to current file, which has a class with  virtual functions => pure virtual ones are generated)
 }
 
+export interface INameInputProvider {
+  getInterfaceName?(origName: string): string | Promise<string>;
+}
+
+export interface SerializationOptions {
+  mode: SerializableMode;
+  nameScope?: string;
+  nameInputProvider?: INameInputProvider;
+}
+
 export interface ISerializable {
-  serialize: (mode: SerializableMode) => string | Promise<string>;
+  serialize: (options: SerializationOptions) => string | Promise<string>;
 }
 
 export function serializeArray(
   serializableArray: Array<ISerializable>,
-  mode: SerializableMode,
+  options: SerializationOptions,
   elementPrefix: string = "",
   elementSuffix: string = ""
 ): Promise<string> {
@@ -21,7 +31,7 @@ export function serializeArray(
     return (
       (await accumulate) +
       elementPrefix +
-      (await serializable.serialize(mode)) +
+      (await serializable.serialize(options)) +
       elementSuffix
     );
   }, Promise.resolve(""));

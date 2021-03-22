@@ -1,36 +1,27 @@
 import { IClass, IFunction, INamespace } from "./TypeInterfaces";
 import { HeaderParser } from "../io/HeaderParser";
-import { INameInputProvider } from "../INameInputProvider";
 import * as io from "../io";
 export class Namespace extends io.TextScope implements INamespace {
-  constructor(
-    name: string,
-    scope: io.TextScope,
-    nameInputProvider?: INameInputProvider
-  ) {
+  constructor(name: string, scope: io.TextScope) {
     super(scope.scopeStart, scope.scopeEnd);
     this.name = name;
     this.classes = [];
     this.functions = [];
     this.subnamespaces = [];
-    this._nameInputProvider = nameInputProvider;
   }
 
-  async serialize(mode: io.SerializableMode) {
+  async serialize(options: io.SerializationOptions) {
     let serial = "namespace " + this.name + " {\n\n";
-    serial += await io.serializeArray(this.subnamespaces, mode);
-    serial += await io.serializeArray(this.functions, mode);
-    serial += await io.serializeArray(this.classes, mode);
-    serial += "}";
+    serial += await io.serializeArray(this.subnamespaces, options);
+    serial += await io.serializeArray(this.functions, options);
+    serial += await io.serializeArray(this.classes, options);
+    serial += "}\n";
     return serial;
   }
 
   deserialize(data: io.TextFragment) {
-    this.subnamespaces = HeaderParser.parseNamespaces(
-      data,
-      this._nameInputProvider
-    );
-    this.classes = HeaderParser.parseClasses(data, this._nameInputProvider);
+    this.subnamespaces = HeaderParser.parseNamespaces(data);
+    this.classes = HeaderParser.parseClasses(data);
     this.functions = HeaderParser.parseStandaloneFunctiones(data);
   }
 
@@ -38,12 +29,10 @@ export class Namespace extends io.TextScope implements INamespace {
   classes: IClass[];
   functions: IFunction[];
   subnamespaces: INamespace[];
-
-  private readonly _nameInputProvider: INameInputProvider | undefined;
 }
 
 export class NoneNamespace extends io.TextScope implements INamespace {
-  constructor(scope: io.TextScope, nameInputProvider?: INameInputProvider) {
+  constructor(scope: io.TextScope) {
     super(scope.scopeStart, scope.scopeEnd);
     this.name = "";
     this.classes = [];
@@ -51,14 +40,14 @@ export class NoneNamespace extends io.TextScope implements INamespace {
     this.subnamespaces = [];
   }
 
-  async serialize(mode: io.SerializableMode) {
-    let serial: string = await io.serializeArray(this.functions, mode);
-    serial += await io.serializeArray(this.classes, mode);
+  async serialize(options: io.SerializationOptions) {
+    let serial: string = await io.serializeArray(this.functions, options);
+    serial += await io.serializeArray(this.classes, options);
     return serial;
   }
 
   deserialize(data: io.TextFragment) {
-    this.classes = HeaderParser.parseClasses(data, this._nameInputProvider);
+    this.classes = HeaderParser.parseClasses(data);
     this.functions = HeaderParser.parseStandaloneFunctiones(data);
   }
 
@@ -66,5 +55,5 @@ export class NoneNamespace extends io.TextScope implements INamespace {
   classes: IClass[];
   functions: IFunction[];
   subnamespaces: INamespace[];
-  private readonly _nameInputProvider: INameInputProvider | undefined;
+  private readonly _nameInputProvider: io.INameInputProvider | undefined;
 }

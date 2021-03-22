@@ -41,7 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
         const fileHandler = FileHandler.createFromHeaderFile(
           textEditor.document,
           {
-            askForInterfaceNames: true,
+            askForInterfaceImplementationNames: true,
             useClassNameAsFileName: Configuration.getDeduceFileNames(),
           }
         );

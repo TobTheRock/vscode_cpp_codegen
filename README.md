@@ -1,6 +1,6 @@
 # codegen-cpp README
 
-I grew tired of writing a lot a of c++ stubs, copying and altering interfaces, so I wrote my this is extension, which allows the generation of C++ stubs. 
+I grew tired of writing a lot a of c++ stubs, copying and altering interfaces, so I wrote this extension, which allows the generation of C++ stubs. 
 Still not perfect, but should work for the most common use cases.
 ## Features
 The extension is automatically loaded when using the C++ language. 
@@ -32,14 +32,12 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 * Updating existing header files is not supported
 * `using` statements are not evaluated
 * `struct`s are not supported
-* Generated source definitions for nested classes is missing the outer class name
 * Newly created folders are not detected for selection until reloading VS-Code window
 * cast operator not serialized properly
 * friend declarations parsed wrongly
 
 ## Possible features in future
-* Add config toggle for name space generation around/before definitions 
-* Generating only for selected text ranges
+* Generating code only for selected text ranges
 * Prettifing the generated output 
 * more configuration possibilities (e.g. for namespaces)
 * Generating abstract factories

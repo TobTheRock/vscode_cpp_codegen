@@ -11,12 +11,19 @@ export class StandaloneFunction extends io.TextScope implements IFunction {
     super(scope.scopeStart, scope.scopeEnd);
   }
 
-  serialize(mode: io.SerializableMode) {
+  serialize(options: io.SerializationOptions) {
     let serial = "";
 
-    switch (mode) {
+    switch (options.mode) {
       case io.SerializableMode.source:
-        serial = this.returnVal + " " + this.name + " (" + removeDefaultInitializersFromArgs(this.args) + " )" + " {\n";
+        serial =
+          this.returnVal +
+          " " +
+          this.name +
+          " (" +
+          removeDefaultInitializersFromArgs(this.args) +
+          " )" +
+          " {\n";
         if (this.returnVal !== "void") {
           serial =
             serial + this.returnVal + " returnValue;\n return returnValue;\n";

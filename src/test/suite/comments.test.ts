@@ -3,7 +3,6 @@ import { Done, describe, it, test } from "mocha";
 import { callItAsync } from "./utils";
 import { HeaderParser } from "../../io/HeaderParser";
 import { TextFragment } from "../../io";
-import { ClassNameGenerator, MemberFunction } from "../../cpp";
 
 const argData = [
   "",
@@ -14,14 +13,9 @@ const argData = [
 suite("Comments Tests", () => {
   test("ParseCommentedSingleMemberFunction", () => {
     const testContent = TextFragment.createFromString("//int fncName();");
-    const testClassName = "TestClass";
-    const classNameGen = new ClassNameGenerator(testClassName, false);
 
     HeaderParser.parseComments(testContent);
-    let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-      testContent,
-      classNameGen
-    );
+    let parsedFunctions = HeaderParser.parseClassMemberFunctions(testContent);
     assert.strictEqual(parsedFunctions.length, 0);
   });
 
@@ -33,13 +27,10 @@ suite("Comments Tests", () => {
         const testContent = TextFragment.createFromString(
           "/* int fncName(" + arg + "); */"
         );
-        const testClassName = "TestClass";
-        const classNameGen = new ClassNameGenerator(testClassName, false);
 
         HeaderParser.parseComments(testContent);
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent,
-          classNameGen
+          testContent
         );
         assert.strictEqual(parsedFunctions.length, 0);
       }
@@ -51,14 +42,9 @@ suite("Comments Tests", () => {
 		int fncName(); 
 		//void fncName2();
 		int fncName3();`);
-    const testClassName = "TestClass";
-    const classNameGen = new ClassNameGenerator(testClassName, false);
 
     HeaderParser.parseComments(testContent);
-    let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-      testContent,
-      classNameGen
-    );
+    let parsedFunctions = HeaderParser.parseClassMemberFunctions(testContent);
     assert.strictEqual(parsedFunctions.length, 2);
   });
 });

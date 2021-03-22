@@ -18,3 +18,15 @@ export function removeDefaultInitializersFromArgs(args: string): string {
   regexMatcher.match(tempFragment);
   return tempFragment.toString();
 }
+
+export function joinNameScopes(...nameScopes: (string | undefined)[]): string {
+  return nameScopes.reduce((acc: string, nameScope) => {
+    if (!nameScope?.length) {
+      return acc;
+    }
+    if (!acc.length) {
+      return nameScope;
+    }
+    return acc + "::" + nameScope;
+  }, "");
+}

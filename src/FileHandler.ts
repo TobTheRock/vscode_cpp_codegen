@@ -1,5 +1,4 @@
 import { workspaceDirectoryFinder } from "./WorkspaceDirectories";
-import { INameInputProvider } from "./INameInputProvider";
 import { SourceFileMerger } from "./SourceFileMerger";
 import * as cpp from "./cpp";
 import * as io from "./io";
@@ -32,7 +31,7 @@ export interface FileHandlerOptions {
   outputDirectory?: string;
   keepFileNameOnWrite?: boolean;
   useClassNameAsFileName?: boolean;
-  askForInterfaceNames?: boolean;
+  askForInterfaceImplementationNames?: boolean;
 }
 
 interface SerializedContent {
@@ -48,33 +47,24 @@ class FileHandlerContext {
 export class FileHandler {
   private constructor(
     private readonly _file: IFile,
-    private readonly _opt: FileHandlerOptions,
-    nameInputProvider?: INameInputProvider
-  ) {
-    if (nameInputProvider) {
-      nameInputProvider.getInterfaceName = this._opt.askForInterfaceNames
-        ? this.getInterfaceName.bind(this)
-        : undefined;
-    }
-  }
+    private readonly _opt: FileHandlerOptions
+  ) {}
 
   static createFromHeaderFile(
     vscDocument: vscode.TextDocument,
     opt: FileHandlerOptions = {}
   ): FileHandler | undefined {
-    const nameInputProvider = {};
     //TODO check file ending?
     try {
       var file = new cpp.HeaderFile(
         vscDocument.fileName,
-        vscDocument.getText(),
-        nameInputProvider
+        vscDocument.getText()
       );
     } catch (error) {
       vscode.window.showErrorMessage("Unable to parse header file: ", error);
       return;
     }
-    return new FileHandler(file, opt, nameInputProvider);
+    return new FileHandler(file, opt);
   }
 
   async writeFileAs(...modes: io.SerializableMode[]) {
@@ -220,9 +210,15 @@ export class FileHandler {
   }
 
   private async serializeAll(modes: io.SerializableMode[]) {
+    const nameInputProvider: io.INameInputProvider = {
+      getInterfaceName: this._opt.askForInterfaceImplementationNames
+        ? this.getInterfaceName.bind(this)
+        : undefined,
+    };
+
     return modes.reduce(async (accumulate, mode) => {
       await accumulate;
-      let content = await this._file.serialize(mode);
+      let content = await this._file.serialize({ mode, nameInputProvider });
       this._context.outputContent.push({ mode, content });
     }, Promise.resolve());
   }
@@ -293,7 +289,7 @@ export class FileHandler {
 
   private async getInterfaceName(origName: string): Promise<string> {
     let input = await vscode.window.showInputBox({
-      prompt: "Enter name for interface " + origName,
+      prompt: "Enter name for implementation of interface:" + origName,
       placeHolder: origName + "Impl",
     });
 
