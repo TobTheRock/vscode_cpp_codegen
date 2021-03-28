@@ -1,9 +1,5 @@
 import * as assert from "assert";
-import { Done, describe, it, test } from "mocha";
-
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
-import * as vscode from "vscode";
+import { describe, test } from "mocha";
 import { callItAsync } from "./utils";
 
 import { HeaderParser } from "../../io/HeaderParser";

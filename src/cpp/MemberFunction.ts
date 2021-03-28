@@ -19,7 +19,7 @@ export class MemberFunction extends io.TextScope implements IFunction {
     switch (options.mode) {
       case io.SerializableMode.source:
         serial = this.getHeading(options) + " {\n";
-        if (this.returnVal !== "void") {
+        if (this.returnVal.length && this.returnVal !== "void") {
           serial +=
             "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";
         }
