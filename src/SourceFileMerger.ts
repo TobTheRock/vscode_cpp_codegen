@@ -180,7 +180,7 @@ export class SourceFileMerger {
       edit.insert(
         textDocument.uri,
         textDocument.positionAt(insertedText.where),
-        "\n" + insertedText.content,
+        insertedText.content,
         { needsConfirmation: true, label: addedFunctionLabel }
       )
     );

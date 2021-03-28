@@ -200,7 +200,8 @@ class SourceFileNoneNamespace
 function parseSignaturesWithinNamespace(data: TextFragment): ISignaturable[] {
   const signatures: ISignaturable[] = [];
   let matcher = new RemovingRegexWithBodyMatcher(
-    ClassDestructorSignatureMatch.regexStr
+    ClassDestructorSignatureMatch.regexStr,
+    "\\s*"
   );
   matcher.match(data).forEach((regexMatch) => {
     const match = new ClassDestructorSignatureMatch(regexMatch);
@@ -214,7 +215,8 @@ function parseSignaturesWithinNamespace(data: TextFragment): ISignaturable[] {
   });
 
   matcher = new RemovingRegexWithBodyMatcher(
-    ClassConstructorSignatureMatch.regexStr
+    ClassConstructorSignatureMatch.regexStr,
+    "\\s*"
   );
   matcher.match(data).forEach((regexMatch) => {
     const match = new ClassConstructorSignatureMatch(regexMatch);
@@ -228,7 +230,10 @@ function parseSignaturesWithinNamespace(data: TextFragment): ISignaturable[] {
     signatures.push(signature);
   });
 
-  matcher = new RemovingRegexWithBodyMatcher(FunctionDefinitionMatch.regexStr);
+  matcher = new RemovingRegexWithBodyMatcher(
+    FunctionDefinitionMatch.regexStr,
+    "\\s*"
+  );
   matcher.match(data).forEach((regexMatch) => {
     const match = new FunctionDefinitionMatch(regexMatch);
     const funcDefinition: ISignaturable = {
