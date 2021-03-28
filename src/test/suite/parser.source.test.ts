@@ -181,16 +181,17 @@ suite("Parser Source Files Tests", () => {
         int TestClass::fncName(${arg}) {
             //FUNCTION BODY
         }
-        `;
+        
+        syncData TestClass::anotherFnc(){}`;
         const testData = TextFragment.createFromString(testDataStr);
         const namespaces = SourceParser.parseNamespaces(testData);
         const signatures = ([] as ISignaturable[]).concat(
           ...namespaces.map((ns) => ns.getAllSignatures())
         );
-        assert.strictEqual(signatures.length, 1);
+        assert.strictEqual(signatures.length, 2);
 
         const sigStart = testDataStr.indexOf("int");
-        const sigEnd = testDataStr.indexOf("}");
+        const sigEnd = testDataStr.indexOf("syncData") - 1;
         assert.strictEqual(signatures[0].textScope.scopeStart, sigStart);
         assert.strictEqual(signatures[0].textScope.scopeEnd, sigEnd);
       }
