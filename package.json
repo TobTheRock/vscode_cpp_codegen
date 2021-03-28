@@ -1,13 +1,13 @@
 {
 	"name": "codegen-cpp",
 	"displayName": "Stub Code Generator for C++",
-	"description": "Faciliates writing C++ by generating stub defintions from header files",
+	"description": "Facilitates writing C++ by generating stub definitions from header files",
 	"publisher": "HerrFroehlich",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/HerrFroehlich/vscode_cpp_codegen"
 	},
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"engines": {
 		"vscode": "^1.51.0"
 	},

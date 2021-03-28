@@ -1,6 +1,6 @@
 # codegen-cpp README
 
-I grew tired of writing a lot a of c++ stubs, copying and altering interfaces, so I wrote this extension, which allows the generation of C++ stubs. 
+I grew tired of "writing" C++ definition stubs by copying around declarations from (interface) header files. Thus I wrote this extension, which helps generating said stubs from a header file. Additionally it allows creating the necessary files for an implementation of a given interface. 
 Still not perfect, but should work for the most common use cases.
 ## Features
 The extension is automatically loaded when using the C++ language. 
@@ -27,7 +27,7 @@ The following settings are available:
     Else the file base name has to be entered via the UI.
 
 ## Issues
-Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issues). Contribution is also welcome in any form.
+Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issues). Contributions are also welcome in any form.
 ### Known
 * Updating existing header files is not supported
 * `using` statements are not evaluated
@@ -38,14 +38,18 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 
 ## Possible features in future
 * Generating code only for selected text ranges
-* Prettifing the generated output 
+* Prettifying the generated output 
 * more configuration possibilities (e.g. for namespaces)
 * Generating abstract factories
 * ...
 ## Release Notes
 
+### 0.1.1
+
+- fixed:  Serialization of nested classes
+- fixed:  Too many remaining new line feeds when merging source files
 ### 0.1.0
 
-Initial release for testing the two generator features: source stubs and generating interface implemention stubs
+Initial release for testing the two generator features: source stubs and generating interface implementing stubs
 
 -----------------------------------------------------------------------------------------------------------
