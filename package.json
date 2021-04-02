@@ -14,17 +14,17 @@
 	"categories": [
 		"Other"
 	],
-    "keywords": [
-        "c++",
-        "cpp",
-        "definition",
-        "generator",
-        "stub",
+	"keywords": [
+		"c++",
+		"cpp",
+		"definition",
+		"generator",
+		"stub",
 		"implementation",
 		"header",
 		"source",
 		"interface"
-    ],
+	],
 	"activationEvents": [
 		"onLanguage:cpp"
 	],
