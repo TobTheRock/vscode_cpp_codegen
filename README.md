@@ -1,6 +1,6 @@
 # codegen-cpp README
 
-I grew tired of "writing" C++ definition stubs by copying around declarations from (interface) header files. Thus I wrote this extension, which helps generating said stubs from a header file. Additionally it allows creating the necessary files for an implementation of a given interface. 
+I grew tired of "writing" C++ definition stubs by copying around declarations from (interface) header files. Thus I wrote this extension, which helps generating said stubs from a header file. Additionally it allows creating the necessary files for an implementation of a given interface.  Multiline declarations and nested classes/namespaces are supported.
 Still not perfect, but should work for the most common use cases.
 ## Features
 The extension is automatically loaded when using the C++ language. 
@@ -29,12 +29,17 @@ The following settings are available:
 ## Issues
 Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issues). Contributions are also welcome in any form.
 ### Known
+#### Major
 * Updating existing header files is not supported
 * `using` statements are not evaluated
 * `struct`s are not supported
 * Newly created folders are not detected for selection until reloading VS-Code window
-* cast operator not serialized properly
 * friend declarations parsed wrongly
+* preprocessor macros after `class` specifier are not working
+
+
+#### Minor, internal
+* enum classes are deserialized as classes 
 
 ## Possible features in future
 * Generating code only for selected text ranges
