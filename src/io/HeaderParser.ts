@@ -137,11 +137,14 @@ class MemberFunctionMatch {
 
   private static readonly mayHaveVirtualOrStaticRegex: string =
     "(?:(virtual|static)\\s*)?";
-  private static readonly returnValRegex: string = "(\\b(?:(?!static).)+?)";
+  private static readonly forbiddenReturnValues: string =
+    "\\bstatic\\b|\\boperator\\b";
+  private static readonly returnValRegex: string =
+    "(\\b(?:(?!" + MemberFunctionMatch.forbiddenReturnValues + ").)+?)";
   private static readonly funcNameRegex: string = "(\\S+)";
   private static readonly mayHaveConstSpecifierRegex: string = "(const)?";
   private static readonly mayHaveOverrideRegex: string = "(override)?";
-  private static readonly mayBePure: string = "(=\\s*0)?";
+  private static readonly mayBePureRegex: string = "(=\\s*0)?";
   static readonly regexStr: string = joinStringsWithWhiteSpace(
     MemberFunctionMatch.mayHaveVirtualOrStaticRegex +
       MemberFunctionMatch.returnValRegex +
@@ -151,7 +154,7 @@ class MemberFunctionMatch {
   static readonly postBracketRegexStr: string = joinStringsWithWhiteSpace(
     MemberFunctionMatch.mayHaveConstSpecifierRegex,
     MemberFunctionMatch.mayHaveOverrideRegex,
-    MemberFunctionMatch.mayBePure,
+    MemberFunctionMatch.mayBePureRegex,
     ";"
   );
 
@@ -162,6 +165,75 @@ class MemberFunctionMatch {
   readonly argsMatch: string;
   readonly constMatch: boolean;
   readonly pureMatch: boolean;
+}
+class ClassCastOperatorMatch {
+  constructor(regexMatch: io.TextMatch) {
+    this.virtualMatch = regexMatch.getGroupMatch(0) === "virtual";
+    this.nameMatch =
+      ClassCastOperatorMatch.opName + " " + regexMatch.getGroupMatch(1);
+    this.constMatch = regexMatch.getGroupMatch(2).length > 0;
+
+    this.virtualMatch =
+      this.virtualMatch || regexMatch.getGroupMatch(3).length > 0;
+    this.pureMatch = regexMatch.getGroupMatch(4).length > 0;
+    if (!this.virtualMatch && this.pureMatch) {
+      throw new Error(
+        "ParserError: Invalid specifier combination: '=0' missing virtual for function: " +
+          this.nameMatch
+      );
+    }
+  }
+
+  private static readonly mayHaveVirtualRegex: string = "(virtual)?";
+  private static readonly opName: string = "operator";
+  private static readonly castTypeRegex: string =
+    "\\s(\\b(?:(?!operator)[\\s\\S])*\\S)";
+  private static readonly mayHaveConstSpecifierRegex: string = "(const)?";
+  private static readonly mayHaveOverrideRegex: string = "(override)?";
+  private static readonly mayBePureRegex: string = "(=\\s*0)?";
+  static readonly regexStr: string = joinStringsWithWhiteSpace(
+    ClassCastOperatorMatch.mayHaveVirtualRegex,
+    ClassCastOperatorMatch.opName,
+    ClassCastOperatorMatch.castTypeRegex,
+    "\\(",
+    "\\)",
+    ClassCastOperatorMatch.mayHaveConstSpecifierRegex,
+    ClassCastOperatorMatch.mayHaveOverrideRegex,
+    ClassCastOperatorMatch.mayBePureRegex,
+    ";"
+  );
+
+  readonly virtualMatch: boolean;
+  readonly pureMatch: boolean;
+  readonly nameMatch: string;
+  readonly constMatch: boolean;
+}
+
+class ClassAllocatorOperatorMatch {
+  constructor(regexMatch: io.TextMatch) {
+    this.returnValMatch = regexMatch.getGroupMatch(0);
+    this.nameMatch =
+      ClassAllocatorOperatorMatch.opName + " " + regexMatch.getGroupMatch(1);
+    if (regexMatch.getGroupMatch(2).length > 0) {
+      this.nameMatch = this.nameMatch + "[]";
+    }
+    this.argsMatch = regexMatch.getGroupMatch(3);
+  }
+
+  private static readonly opName: string = "operator";
+  private static readonly returnValRegex: string = "(void|void\\*)";
+  private static readonly allocTypeRegex: string = "\\s(new|delete)";
+  private static readonly mayHaveArrayRegex: string = "(\\[\\s*\\])?";
+  static readonly regexStr: string = joinStringsWithWhiteSpace(
+    ClassAllocatorOperatorMatch.returnValRegex,
+    ClassAllocatorOperatorMatch.opName,
+    ClassAllocatorOperatorMatch.allocTypeRegex,
+    ClassAllocatorOperatorMatch.mayHaveArrayRegex
+  );
+  static readonly postBracketRegexStr: string = ";";
+  readonly nameMatch: string;
+  readonly argsMatch: string;
+  readonly returnValMatch: string;
 }
 
 export abstract class HeaderParser extends CommonParser {
@@ -248,62 +320,87 @@ export abstract class HeaderParser extends CommonParser {
 
   static parseClassMemberFunctions(data: io.TextFragment): cpp.IFunction[] {
     let memberFunctions: cpp.IFunction[] = [];
-    const matcher = new io.RemovingRegexWithBodyMatcher(
-      MemberFunctionMatch.regexStr,
-      MemberFunctionMatch.postBracketRegexStr,
-      "(",
-      ")"
-    );
-    matcher.match(data).forEach((regexMatch) => {
-      let match = new MemberFunctionMatch(regexMatch);
+
+    const createMemberFunction = function <MatchType>(
+      regexMatch: io.TextMatch,
+      type: { new (regexMatch: io.TextMatch): MatchType }
+    ) {
+      let match: any = new type(regexMatch);
 
       let newFunc: cpp.IFunction;
       if (match.virtualMatch) {
         if (match.pureMatch) {
           newFunc = new cpp.PureVirtualMemberFunction(
-            match.nameMatch,
-            match.returnValMatch,
-            match.argsMatch,
-            match.constMatch,
+            match.nameMatch ?? "",
+            match.returnValMatch ?? "",
+            match.argsMatch ?? "",
+            match.constMatch ?? "",
             regexMatch as io.TextScope
           );
         } else {
           newFunc = new cpp.VirtualMemberFunction(
-            match.nameMatch,
-            match.returnValMatch,
-            match.argsMatch,
-            match.constMatch,
+            match.nameMatch ?? "",
+            match.returnValMatch ?? "",
+            match.argsMatch ?? "",
+            match.constMatch ?? "",
             regexMatch as io.TextScope
           );
         }
       } else if (match.staticMatch) {
         newFunc = new cpp.StaticMemberFunction(
-          match.nameMatch,
-          match.returnValMatch,
-          match.argsMatch,
-          match.constMatch,
+          match.nameMatch ?? "",
+          match.returnValMatch ?? "",
+          match.argsMatch ?? "",
+          match.constMatch ?? "",
           regexMatch as io.TextScope
         );
       } else {
         newFunc = new cpp.MemberFunction(
-          match.nameMatch,
-          match.returnValMatch,
-          match.argsMatch,
-          match.constMatch,
+          match.nameMatch ?? "",
+          match.returnValMatch ?? "",
+          match.argsMatch ?? "",
+          match.constMatch ?? "",
           regexMatch as io.TextScope
         );
       }
 
       memberFunctions.push(newFunc);
-    });
+    };
+
+    new io.RemovingRegexMatcher(ClassCastOperatorMatch.regexStr)
+      .match(data)
+      .forEach((regexMatch) =>
+        createMemberFunction(regexMatch, ClassCastOperatorMatch)
+      );
+
+    let matcher = new io.RemovingRegexWithBodyMatcher(
+      ClassAllocatorOperatorMatch.regexStr,
+      ClassAllocatorOperatorMatch.postBracketRegexStr,
+      "(",
+      ")"
+    );
+    matcher
+      .match(data)
+      .forEach((regexMatch) =>
+        createMemberFunction(regexMatch, ClassAllocatorOperatorMatch)
+      );
+
+    matcher = new io.RemovingRegexWithBodyMatcher(
+      MemberFunctionMatch.regexStr,
+      MemberFunctionMatch.postBracketRegexStr,
+      "(",
+      ")"
+    );
+    matcher
+      .match(data)
+      .forEach((regexMatch) =>
+        createMemberFunction(regexMatch, MemberFunctionMatch)
+      );
 
     return memberFunctions;
   }
 
-  static parseNamespaces(
-    data: io.TextFragment,
-    nameInputProvider?: io.INameInputProvider
-  ): cpp.INamespace[] {
+  static parseNamespaces(data: io.TextFragment): cpp.INamespace[] {
     let namespaces: cpp.INamespace[] = [];
     const matcher = new io.RemovingRegexWithBodyMatcher(
       NamespaceMatch.regexStr
