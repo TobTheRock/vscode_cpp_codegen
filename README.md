@@ -29,15 +29,11 @@ The following settings are available:
 ## Issues
 Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issues). Contributions are also welcome in any form.
 ### Known
-#### Major
 * Updating existing header files is not supported
 * `using` statements are not evaluated
 * `struct`s are not supported
 * friend declarations parsed wrongly
 * preprocessor macros after `class` specifier are not working
-
-
-#### Minor, internal
 * enum classes are deserialized as classes 
 
 ## Possible features in future
@@ -48,10 +44,17 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 * ...
 ## Release Notes
 
-### 0.1.1
+### 0.1.2
+- fixed: Parsing of cast and (de)allocation operators
+- fixed: Updating folder quick pick choices on folder creation/deletion
+- added: settings to ignore certain folders (json array or from `.gitignore`)
+- added: setting to choose how output directories are selected (None/QuickPick/UI dialogue)
+- improved directory QuickPick handling
 
+### 0.1.1
 - fixed:  Serialization of nested classes
 - fixed:  Too many remaining new line feeds when merging source files
+
 ### 0.1.0
 
 Initial release for testing the two generator features: source stubs and generating interface implementing stubs
