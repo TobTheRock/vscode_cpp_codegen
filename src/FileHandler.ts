@@ -5,7 +5,7 @@ import * as io from "./io";
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { Configuration } from "./Configuration";
+import { Configuration, DirectorySelectorMode } from "./Configuration";
 
 // TODO move interfaces to seperate files
 export interface IFile extends io.ISerializable, io.IDeserializable {
@@ -73,9 +73,7 @@ export class FileHandler {
     if (this._opt.outputDirectory) {
       this._context.outputDirectory = this._opt.outputDirectory;
     } else {
-      let mayBeDirectory = await this.showDirectoryQuickPick(
-        this._file.directory
-      );
+      let mayBeDirectory = await this.selectDirectory(this._file.directory);
       if (!mayBeDirectory) {
         throw Error("No output directory was provided!");
       }
@@ -100,12 +98,41 @@ export class FileHandler {
     return;
   }
 
+  selectDirectory(initialDirectory: string) {
+    const mode = Configuration.getOutputDirectorySelectorMode();
+    switch (mode) {
+      case DirectorySelectorMode.quickPick:
+        return this.showDirectoryQuickPick(initialDirectory);
+
+      case DirectorySelectorMode.ui:
+        return vscode.window
+          .showOpenDialog({
+            canSelectFolders: true,
+            canSelectFiles: false,
+            canSelectMany: false,
+            defaultUri: vscode.Uri.file(initialDirectory),
+            openLabel: "Select",
+            title: "Select an output directory",
+          })
+          .then((uris) => {
+            if (uris?.length) {
+              return uris[0].fsPath;
+            }
+            return undefined;
+          });
+
+      case DirectorySelectorMode.disabled:
+      default:
+        return initialDirectory;
+    }
+  }
+
   async showDirectoryQuickPick(
     defaultValue: string = ""
   ): Promise<string | undefined> {
     const disposables: vscode.Disposable[] = [];
     try {
-      return await new Promise<string | undefined>((resolve, reject) => {
+      return await new Promise<string | undefined>((resolve) => {
         const workspaceDirs = workspaceDirectoryFinder.getDirectories();
         const workspaceRootDirs = workspaceDirectoryFinder.getRootDirectories();
 
@@ -127,13 +154,20 @@ export class FileHandler {
           quickPickInput.value = defaultValue;
         }
 
+        let lastItem = quickPickInput.items[0];
         disposables.push(
           quickPickInput.onDidChangeValue((value) => {
             return value;
           }),
-          quickPickInput.onDidChangeSelection((items) => {
+          quickPickInput.onDidChangeActive((items) => {
             const item = items[0];
-            resolve(item.absolutePath);
+            if (item && lastItem !== item) {
+              quickPickInput.value = item.label;
+              lastItem = item;
+            }
+          }),
+          quickPickInput.onDidAccept(() => {
+            resolve(quickPickInput.selectedItems[0].absolutePath);
             quickPickInput.hide();
           }),
           quickPickInput.onDidHide(() => {
@@ -144,7 +178,7 @@ export class FileHandler {
         quickPickInput.show();
       });
     } catch (error) {
-      console.error("Could not parse directory: ", error.message);
+      console.error("Could not open directory: ", error.message);
     } finally {
       disposables.forEach((d) => d.dispose());
     }

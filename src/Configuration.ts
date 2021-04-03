@@ -2,24 +2,24 @@ import * as vscode from "vscode";
 
 function getConfigArray<T>(section: string): T[] {
   const config = vscode.workspace.getConfiguration();
-  const value: T[] | undefined = config.get(section);
-  if (value) {
-    return value;
-  } else {
-    return [];
-  }
+  return config.get(section) ?? [];
 }
 
 function getConfigString(section: string): string {
   const config = vscode.workspace.getConfiguration();
-  const value: string | undefined = config.get(section);
-  if (value) {
-    return value;
-  } else {
-    return "";
-  }
+  return config.get(section) ?? "";
 }
 
+function getConfigBool(section: string): boolean {
+  const config = vscode.workspace.getConfiguration();
+  return config.get(section) ?? false;
+}
+
+export enum DirectorySelectorMode {
+  disabled = "Disabled",
+  quickPick = "QuickPick",
+  ui = "UI",
+}
 export module Configuration {
   export function getFileHeaderForCppSource(): string {
     const lines: string[] = getConfigArray(
@@ -44,15 +44,7 @@ export module Configuration {
   }
 
   export function getDeduceFileNames(): boolean {
-    const config = vscode.workspace.getConfiguration();
-    const deduceFilenames: boolean | undefined = config.get(
-      "codegen-cpp.deduceOutputFileNames"
-    );
-    if (deduceFilenames) {
-      return deduceFilenames;
-    } else {
-      return false;
-    }
+    return getConfigBool("codegen-cpp.deduceOutputFileNames");
   }
 
   export function getOutputFileExtensionForCppSource(): string {
@@ -61,5 +53,29 @@ export module Configuration {
 
   export function getOutputFileExtensionForCppHeader(): string {
     return getConfigString("codegen-cpp.OutputFileExtension.ForC++Header");
+  }
+
+  export function getOutputDirectorySelectorMode(): DirectorySelectorMode {
+    switch (getConfigString("codegen-cpp.OutputDirectorySelector.Mode")) {
+      case DirectorySelectorMode.quickPick:
+        return DirectorySelectorMode.quickPick;
+      case DirectorySelectorMode.ui:
+        return DirectorySelectorMode.ui;
+
+      case DirectorySelectorMode.disabled:
+      default:
+        return DirectorySelectorMode.disabled;
+        break;
+    }
+  }
+
+  export function getOutputDirectorySelectorIgnoredDirectories(): string[] {
+    return getConfigArray(
+      "codegen-cpp.OutputDirectorySelector.IgnoredDirectories"
+    );
+  }
+
+  export function getOutputDirectorySelectorUseGitIgnore(): boolean {
+    return getConfigBool("codegen-cpp.OutputDirectorySelector.UseGitIgnore");
   }
 }

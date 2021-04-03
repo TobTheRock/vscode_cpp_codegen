@@ -35,13 +35,13 @@
 			"properties": {
 				"codegen-cpp.FileHeader.ForC++Source": {
 					"type": "array",
-					"default": "",
+					"default": [],
 					"description": "File header which is added at the top of each generated C++ source file. Each element of the configuration value represents a new line.",
 					"scope": "resource"
 				},
 				"codegen-cpp.FileHeader.ForC++Header": {
 					"type": "array",
-					"default": "",
+					"default": [],
 					"description": "File header which is added at the top of each generated C++ header file. Each element of the configuration value represents a new line.",
 					"scope": "resource"
 				},
@@ -50,19 +50,52 @@
 					"default": "cpp",
 					"maxLength": "255",
 					"pattern": "^[^\\s]+$",
-					"markdownDescription": "File extension used when generating C++ source files"
+					"patternErrorMessage": "Must not contain whitespaces!",
+					"description": "File extension used when generating C++ source files"
 				},
 				"codegen-cpp.OutputFileExtension.ForC++Header": {
 					"type": "string",
 					"default": "hpp",
 					"maxLength": "255",
 					"pattern": "^[^\\s]+$",
-					"markdownDescription": "File extension used when generating C++ header files"
+					"patternErrorMessage": "Must not contain whitespaces!",
+					"description": "File extension used when generating C++ header files"
 				},
 				"codegen-cpp.deduceOutputFileNames": {
 					"type": "boolean",
 					"default": true,
 					"markdownDescription": "Whether the output file name(s) should be deduced when generating:\n* Source from Header: by keeping the base name\n* Interface implementations: by using the name of the (first) implementation \n\n\n Else the file base name has to be entered via the UI."
+				},
+				"codegen-cpp.OutputDirectorySelector.Mode": {
+					"type": "string",
+					"default": "QuickPick",
+					"enum": [
+						"Disabled",
+						"QuickPick",
+						"UI"
+					],
+					"enumDescriptions": [
+						"Disables the directory selector and created files are put in the directory of the root file.",
+						"Uses a quick pick selector with fuzzy find",
+						"Uses a UI window"
+					],
+					"description": "Sets how the output directory of generated files can be selected."
+				},
+				"codegen-cpp.OutputDirectorySelector.IgnoredDirectories": {
+					"type": "array",
+					"default": [],
+					"description": "Relative directory paths which are ignored for selection (anymatch-compatible definition). Needs a window reload to be applied.",
+					"examples": [
+						"path/to/",
+						"build/**/"
+					],
+					"scope": "resource",
+					"uniqueItems": true
+				},
+				"codegen-cpp.OutputDirectorySelector.UseGitIgnore": {
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Extracts ignored directories from the `.gitignore` file if available. Needs a window reload to be applied, as well when `.gitignore` is changed."
 				}
 			}
 		},
@@ -104,6 +137,7 @@
 		"vscode-test": "^1.4.0"
 	},
 	"dependencies": {
+		"chokidar": "^3.4.3",
 		"g2-bracket-parser": "^2.0.0"
 	}
 }
