@@ -33,7 +33,6 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 * Updating existing header files is not supported
 * `using` statements are not evaluated
 * `struct`s are not supported
-* Newly created folders are not detected for selection until reloading VS-Code window
 * friend declarations parsed wrongly
 * preprocessor macros after `class` specifier are not working
 
