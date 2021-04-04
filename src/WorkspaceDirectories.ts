@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as vscode from "vscode";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { FSWatcher } from "chokidar";
 import { Configuration } from "./Configuration";
 
@@ -11,8 +11,10 @@ class DirectoryItem implements vscode.QuickPickItem {
     public readonly absolutePath: string,
     public readonly rootDir: string
   ) {
-    this.label =
-      "." + path.sep + path.relative(rootDir, absolutePath) + path.sep;
+    this.label = "." + path.sep + path.relative(rootDir, absolutePath);
+    if (absolutePath !== rootDir) {
+      this.label = this.label + path.sep;
+    }
     this.description = rootDir;
   }
 }
@@ -43,7 +45,11 @@ class WorkspaceDirectoryFinder {
   }
 
   private parseGitIgnore(rootDirectory: string) {
-    return readFileSync(path.resolve(rootDirectory, ".gitignore"), "utf-8")
+    const pathToGitIgnore = path.resolve(rootDirectory, ".gitignore");
+    if (!existsSync(pathToGitIgnore)) {
+      return "";
+    }
+    return readFileSync(pathToGitIgnore, "utf-8")
       .split("\n")
       .map((line) => line.trim())
       .filter((line) => line.length && !line.startsWith("!"));
