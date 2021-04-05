@@ -1,6 +1,7 @@
 import * as io from ".";
 
-export function joinStringsWithFiller(
+// TODO => utils
+export function joinRegexStringsWithFiller(
   strings: string[],
   filler: string
 ): string {
@@ -12,27 +13,28 @@ export function joinStringsWithFiller(
   return joinedStrings + strings[strings.length - 1];
 }
 
-export function joinStringsWithWhiteSpace(...strings: string[]): string {
-  return joinStringsWithFiller(strings, "\\s*");
+export function joinRegexStringsWithWhiteSpace(...strings: string[]): string {
+  return joinRegexStringsWithFiller(strings, "\\s*");
 }
 
 export class NamespaceMatch {
   constructor(regexMatch: io.TextMatch) {
     this.nameMatch = regexMatch.getGroupMatch(0) as string;
-
     this.bodyMatch = regexMatch.getGroupMatchFragment(1) as io.TextFragment;
+    this.textScope = regexMatch as io.TextScope;
   }
 
   private static readonly namespaceSpecifierRegex: string = "namespace\\s";
   private static readonly namespaceNameRegex: string = "([\\S]+)";
 
-  static readonly regexStr: string = joinStringsWithWhiteSpace(
+  static readonly regex: string = joinRegexStringsWithWhiteSpace(
     NamespaceMatch.namespaceSpecifierRegex,
     NamespaceMatch.namespaceNameRegex
   );
 
   readonly nameMatch: string;
   readonly bodyMatch: io.TextFragment;
+  readonly textScope: io.TextScope;
 }
 
 class CommentMatch {

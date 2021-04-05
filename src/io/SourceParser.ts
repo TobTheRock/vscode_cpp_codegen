@@ -4,7 +4,7 @@ import { compareSignaturables, ISignaturable } from "./ISignaturable";
 import {
   NamespaceMatch,
   CommonParser,
-  joinStringsWithWhiteSpace,
+  joinRegexStringsWithWhiteSpace,
 } from "./CommonParser";
 import { IDeserializable } from "./Serialization";
 class FunctionDefinitionMatch {
@@ -20,7 +20,7 @@ class FunctionDefinitionMatch {
   private static readonly funcArgsRegex: string =
     "\\(((?:(?!\\()[\\s\\S])*?)\\)";
   private static readonly mayHaveConstSpecifierRegex: string = "(const)?";
-  static readonly regexStr: string = joinStringsWithWhiteSpace(
+  static readonly regexStr: string = joinRegexStringsWithWhiteSpace(
     FunctionDefinitionMatch.returnValRegex,
     FunctionDefinitionMatch.funcNameRegex,
     FunctionDefinitionMatch.funcArgsRegex,
@@ -48,7 +48,7 @@ class ClassConstructorSignatureMatch {
   private static readonly mayHaveInitializerListRegex: string =
     "(?::(?:(?!\\{)[\\s\\S])*)?";
 
-  static readonly regexStr: string = joinStringsWithWhiteSpace(
+  static readonly regexStr: string = joinRegexStringsWithWhiteSpace(
     ClassConstructorSignatureMatch.classNameRegex,
     ClassConstructorSignatureMatch.ctorArgsRegex,
     ClassConstructorSignatureMatch.mayHaveInitializerListRegex
@@ -256,7 +256,7 @@ function parseNamespacesFromSourceFile(
   data: TextFragment
 ): SourceFileNamespace[] {
   let namespaces: SourceFileNamespace[] = [];
-  const matcher = new RemovingRegexWithBodyMatcher(NamespaceMatch.regexStr);
+  const matcher = new RemovingRegexWithBodyMatcher(NamespaceMatch.regex);
   matcher.match(data).forEach((regexMatch) => {
     const match = new NamespaceMatch(regexMatch);
     const newNamespace = new SourceFileNamespace(

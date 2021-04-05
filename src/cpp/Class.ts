@@ -10,7 +10,6 @@ import * as io from "../io";
 import { joinNameScopes } from "./utils";
 import { ClassNameGenerator } from "./ClassNameGenerator";
 
-// TODO Nested class handling needs work: we need to pass the surround class name for serialization and signatures => new Class type
 export class ClassConstructor extends io.TextScope implements IConstructor {
   constructor(
     public readonly args: string,
@@ -74,31 +73,19 @@ export class ClassDestructor extends io.TextScope implements IDestructor {
   }
 }
 
-enum ClassScopeType {
-  private,
-  public,
-  protected,
-}
-class ClassScope implements IClassScope {
-  constructor(
-    public readonly type: ClassScopeType,
-    private readonly _className: string
-  ) {}
+class ClassScopeBase implements IClassScope {
+  constructor(private readonly _className: string) {}
+
+  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
+    throw new Error("Unimplemented!");
+  }
+
+  getScopeHeader(): string {
+    throw new Error("Unimplemented!");
+  }
 
   deserialize(data: io.TextFragment) {
-    let content: io.TextFragment;
-    switch (this.type) {
-      case ClassScopeType.protected:
-        content = HeaderParser.parseClassProtectedScope(data);
-        break;
-      case ClassScopeType.public:
-        content = HeaderParser.parseClassPublicScope(data);
-        break;
-      case ClassScopeType.private:
-      default:
-        content = HeaderParser.parseClassPrivateScope(data);
-        break;
-    }
+    let content: io.TextFragment = this.extractScopeTextFragment(data);
     this.nestedClasses.push(...HeaderParser.parseClasses(content)); //TODO pass prefix aka this._className
     this.constructors.push(
       ...HeaderParser.parseClassConstructor(content, this._className)
@@ -124,18 +111,7 @@ class ClassScope implements IClassScope {
       case io.SerializableMode.header:
       case io.SerializableMode.interfaceHeader:
       case io.SerializableMode.implHeader:
-        switch (this.type) {
-          case ClassScopeType.protected:
-            serial += "protected:\n";
-            break;
-          case ClassScopeType.public:
-            serial += "public:\n";
-            break;
-          case ClassScopeType.private:
-          default:
-            serial += "private:\n";
-            break;
-        }
+        serial += this.getScopeHeader();
         arrayPrefix = "\t";
         arraySuffix = "\n";
         break;
@@ -167,6 +143,77 @@ class ClassScope implements IClassScope {
   readonly constructors: IConstructor[] = [];
 }
 
+class ClassPrivateScope extends ClassScopeBase {
+  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
+    return HeaderParser.parseClassPrivateScope(data);
+  }
+
+  getScopeHeader(): string {
+    return "private:\n";
+  }
+}
+class ClassPublicScope extends ClassScopeBase {
+  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
+    return HeaderParser.parseClassPublicScope(data);
+  }
+
+  getScopeHeader(): string {
+    return "public:\n";
+  }
+}
+class ClassProtectedScope extends ClassScopeBase {
+  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
+    return HeaderParser.parseClassProtectedScope(data);
+  }
+
+  getScopeHeader(): string {
+    return "protected:\n";
+  }
+}
+
+class StructPrivateScope extends ClassScopeBase {
+  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
+    return HeaderParser.parseStructPrivateScope(data);
+  }
+
+  getScopeHeader(): string {
+    return "private:\n";
+  }
+}
+class StructPublicScope extends ClassScopeBase {
+  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
+    return HeaderParser.parseStructPublicScope(data);
+  }
+
+  getScopeHeader(): string {
+    return "public:\n";
+  }
+}
+class StructProtectedScope extends ClassScopeBase {
+  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
+    return HeaderParser.parseStructProtectedScope(data);
+  }
+
+  getScopeHeader(): string {
+    return "protected:\n";
+  }
+}
+
+class ClassScopeFactory {
+  constructor(readonly name: string) {}
+  createPrivateScope(): IClassScope {
+    return new ClassPrivateScope(this.name);
+  }
+
+  createPublicScope(): IClassScope {
+    return new ClassPublicScope(this.name);
+  }
+
+  createProtectedScope(): IClassScope {
+    return new ClassProtectedScope(this.name);
+  }
+}
+
 class ClassBase extends io.TextScope implements IClass {
   constructor(
     scope: io.TextScope,
@@ -175,10 +222,15 @@ class ClassBase extends io.TextScope implements IClass {
   ) {
     super(scope.scopeStart, scope.scopeEnd);
 
-    this.publicScope = new ClassScope(ClassScopeType.public, this.name);
-    this.privateScope = new ClassScope(ClassScopeType.private, this.name);
-    this.protectedScope = new ClassScope(ClassScopeType.protected, this.name);
+    const scopeFactory = this.getScopeFactory();
+    this.publicScope = scopeFactory.createPublicScope();
+    this.privateScope = scopeFactory.createPrivateScope();
+    this.protectedScope = scopeFactory.createProtectedScope();
     this._classNameGen = new ClassNameGenerator(name);
+  }
+
+  protected getScopeFactory() {
+    return new ClassScopeFactory(this.name);
   }
 
   deserialize(data: io.TextFragment) {
@@ -260,7 +312,7 @@ class ClassBase extends io.TextScope implements IClass {
   private readonly _classNameGen: ClassNameGenerator;
 }
 
-export class ClassImpl extends ClassBase {
+export class ClassImplementation extends ClassBase {
   constructor(
     scope: io.TextScope,
     public readonly name: string,
@@ -310,5 +362,47 @@ export class ClassInterface extends ClassBase {
         break;
     }
     return serial;
+  }
+}
+
+class StructScopeFactory extends ClassScopeFactory {
+  createPrivateScope(): IClassScope {
+    return new StructPrivateScope(this.name);
+  }
+
+  createPublicScope(): IClassScope {
+    return new StructPublicScope(this.name);
+  }
+
+  createProtectedScope(): IClassScope {
+    return new StructProtectedScope(this.name);
+  }
+}
+
+export class StructImplementation extends ClassImplementation {
+  constructor(
+    scope: io.TextScope,
+    public readonly name: string,
+    public readonly inheritance: string[]
+  ) {
+    super(scope, name, inheritance);
+  }
+
+  protected getScopeFactory() {
+    return new StructScopeFactory(this.name);
+  }
+}
+
+export class StructInterface extends ClassInterface {
+  constructor(
+    scope: io.TextScope,
+    public readonly name: string,
+    public readonly inheritance: string[]
+  ) {
+    super(scope, name, inheritance);
+  }
+
+  protected getScopeFactory() {
+    return new StructScopeFactory(this.name);
   }
 }

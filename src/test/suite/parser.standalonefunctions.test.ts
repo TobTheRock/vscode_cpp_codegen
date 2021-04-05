@@ -6,15 +6,9 @@ import * as vscode from "vscode";
 // import * as myExtension from '../../extension';
 import { HeaderParser } from "../../io/HeaderParser";
 import { IFunction } from "../../cpp";
-import {
-  TextFragment,
-  ISerializable,
-  TextScope,
-  ISignaturable,
-} from "../../io";
+import { TextFragment } from "../../io";
 
 suite("Parser Standalone Functions Tests", () => {
-
   test("ParseStandloneFunction", () => {
     const testContent = TextFragment.createFromString(
       `
