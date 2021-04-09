@@ -6,15 +6,15 @@ import * as vscode from "vscode";
 import { Done, describe } from "mocha";
 // import * as myExtension from '../../extension';
 import { HeaderParser } from "../../io/HeaderParser";
-import { IClass, ClassInterface, ClassImpl, IClassScope } from "../../cpp";
+import {
+  IClass,
+  ClassInterface,
+  ClassImplementation,
+  IClassScope,
+} from "../../cpp";
 import { callItAsync } from "./utils";
 
-import {
-  TextFragment,
-  TextScope,
-  compareSignaturables,
-  SerializableMode,
-} from "../../io";
+import { TextFragment, SerializableMode } from "../../io";
 
 const argData = [
   "",
@@ -74,8 +74,8 @@ function assertClassScopeEmpty(classScope: IClassScope) {
   assert.strictEqual(classScope.nestedClasses.length, 0);
 }
 
-suite("Parser GeneralClasses Tests", () => {
-  test("ParseClassWithoutMemberFunctions", () => {
+suite("Parser: Class tests", () => {
+  test("Parse class without member functions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass {       // The class
 			int myNum;        // Attribute (int variable)
@@ -92,10 +92,10 @@ suite("Parser GeneralClasses Tests", () => {
     assertClassScopeEmpty(classes[0].protectedScope);
     assert.strictEqual(classes[0].destructor, undefined);
     assert.strictEqual(classes[0].inheritance.length, 0);
-    assert.ok(classes[0] instanceof ClassImpl);
+    assert.ok(classes[0] instanceof ClassImplementation);
   });
 
-  test("ParseInterface", () => {
+  test("Parse interface", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass {       // The class
 			virtual const int* pureFnct() = 0  ;
@@ -117,7 +117,7 @@ suite("Parser GeneralClasses Tests", () => {
     assert.ok(classes[0] instanceof ClassInterface);
   });
 
-  test("ParseMultipleClassesWithoutMemberFunctions", () => {
+  test("Parse multiple classes without member functions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass1 {       // The class
 			int myNum;        // Attribute (int variable)
@@ -146,7 +146,7 @@ suite("Parser GeneralClasses Tests", () => {
     }
   });
 
-  test("ParseImplicitPrivateNestedClassesWithoutMemberFunctions", () => {
+  test("Parse implicit private nested classes without member functions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass { 	
 			class NestedClass { 
@@ -173,7 +173,7 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(nestedClass.inheritance.length, 0);
   });
 
-  test("ParseExplicitPrivateNestedClassesWithoutMemberFunctions", () => {
+  test("Parse explicit private nested classes without member functions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass { 
       private:
@@ -201,7 +201,7 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(nestedClass.inheritance.length, 0);
   });
 
-  test("ParsePublicNestedClassesWithoutMemberFunctions", () => {
+  test("Parse public nested classes without member functions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass { 
       public:
@@ -229,7 +229,7 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(nestedClass.inheritance.length, 0);
   });
 
-  test("ParseProtectedNestedClassesWithoutMemberFunctions", () => {
+  test("Parse protected nested classes without member functions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass { 
       protected:
@@ -257,7 +257,7 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(nestedClass.inheritance.length, 0);
   });
 
-  test("ParseNestedAndMultipleClassesWithoutMemberFunctions", () => {
+  test("Parse nested and multiple classes without member functions", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass {		
 			class NestedClass { 
@@ -293,7 +293,7 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(classes[1].inheritance.length, 0);
   });
 
-  describe("ParseClassWithImplicitPrivateMemberFunctions", function () {
+  describe("Parse class with implicit private member functions", function () {
     callItAsync(
       "With functions ${value}",
       functionData,
@@ -319,7 +319,7 @@ suite("Parser GeneralClasses Tests", () => {
     );
   });
 
-  describe("ParseClassWithExplicitPrivateMemberFunctions", function () {
+  describe("Parse class with explicit private member functions", function () {
     callItAsync(
       "With functions ${value}",
       functionData,
@@ -346,7 +346,7 @@ suite("Parser GeneralClasses Tests", () => {
     );
   });
 
-  describe("ParseClassWithPublicMemberFunctions", function () {
+  describe("Parse class with public member functions", function () {
     callItAsync(
       "With functions ${value}",
       functionData,
@@ -373,7 +373,7 @@ suite("Parser GeneralClasses Tests", () => {
     );
   });
 
-  describe("ParseClassWithProtectedMemberFunctions", function () {
+  describe("Parse class with protected member functions", function () {
     callItAsync(
       "With functions ${value}",
       functionData,
@@ -400,7 +400,7 @@ suite("Parser GeneralClasses Tests", () => {
     );
   });
 
-  describe("ParseClassWithVariousMemberFunctions", function () {
+  describe("Parse class with various member functions", function () {
     callItAsync(
       "With functions ${value}",
       functionData,
@@ -443,7 +443,7 @@ suite("Parser GeneralClasses Tests", () => {
     );
   });
 
-  describe("ParseClassWithConstructors", function () {
+  describe("Parse class with constructors", function () {
     callItAsync(
       "With constructors ${value}",
       ctorData,
@@ -473,7 +473,7 @@ suite("Parser GeneralClasses Tests", () => {
     );
   });
 
-  test("ParseClassWithDestructor", () => {
+  test("Parse class with destructor", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass {
 			public:
@@ -493,7 +493,7 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(classes[0].destructor?.virtual, false);
   });
 
-  test("ParseClassWithVirtualDestructor", () => {
+  test("Parse class with virtual destructor", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass {
 		//implicit private
@@ -513,7 +513,7 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(classes[0].destructor?.virtual, true);
   });
 
-  test("ParseClassWithOverrideDestructor", () => {
+  test("Parse class with override destructor", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass {
 		//implicit private
@@ -533,7 +533,7 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(classes[0].destructor?.virtual, true);
   });
 
-  test("ParseClassWithVirtualDefaultDestructorAndMemberFunction", () => {
+  test("Parse class with virtual default destructor and member function", () => {
     const testContent = TextFragment.createFromString(
       `class MyClass {
 			virtual ~MyClass () = default;
@@ -552,7 +552,7 @@ suite("Parser GeneralClasses Tests", () => {
     assert.strictEqual(classes[0].destructor, undefined);
   });
 
-  describe("ParseInheritance", function () {
+  describe("Parse inheritance", function () {
     callItAsync(
       "With inheritance ${value}",
       inheritData,
@@ -575,7 +575,7 @@ suite("Parser GeneralClasses Tests", () => {
     );
   });
 
-  describe("ParseInheritanceWithMemberFunctionWithInitializerList", function () {
+  describe("Parse inheritance with member function with initializer list", function () {
     callItAsync(
       "With inheritance ${value}",
       inheritData,
@@ -600,7 +600,7 @@ suite("Parser GeneralClasses Tests", () => {
     );
   });
 
-  test("DeserializeNestedClassAsSourceWithCorrectScope", async () => {
+  test("Deserialize nested class as source with correct scope", async () => {
     const testContent = TextFragment.createFromString(
       `class MyClass { 	
 			class NestedClass {
