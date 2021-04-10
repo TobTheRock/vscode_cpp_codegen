@@ -31,7 +31,6 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 ### Known
 * Updating existing header files is not supported
 * `using` statements are not evaluated
-* `struct`s are not supported
 * friend declarations parsed wrongly
 * preprocessor macros after `class` specifier are not working
 * enum classes are deserialized as classes 
