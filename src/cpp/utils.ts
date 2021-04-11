@@ -19,14 +19,25 @@ export function removeDefaultInitializersFromArgs(args: string): string {
   return tempFragment.toString();
 }
 
-export function joinNameScopes(...nameScopes: (string | undefined)[]): string {
-  return nameScopes.reduce((acc: string, nameScope) => {
-    if (!nameScope?.length) {
-      return acc;
-    }
-    if (!acc.length) {
-      return nameScope;
-    }
-    return acc + "::" + nameScope;
-  }, "");
+export function joinNameScopes(...nameScopes: (string | undefined)[]) {
+  return nameScopes.filter((nameScope) => nameScope?.length).join("::");
+}
+
+export function joinNameScopesWithFunctionName(
+  nameScopes: string[] | undefined,
+  functionName: string
+): string {
+  if (nameScopes) {
+    return [...nameScopes, functionName].join("::");
+  }
+  return functionName;
+}
+
+export function joinNameScopesWithMemberFunctionName(
+  nameScopes: string[] | undefined,
+  className: string,
+  functionName: string
+): string {
+  nameScopes = nameScopes ?? [];
+  return [...nameScopes, className, functionName].join("::");
 }

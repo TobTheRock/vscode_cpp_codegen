@@ -2,7 +2,7 @@ import * as assert from "assert";
 import { Done, describe, it, test } from "mocha";
 import { callItAsync } from "./utils";
 import { HeaderParser } from "../../io/HeaderParser";
-import { TextFragment } from "../../io";
+import { TextFragment, IClassNameProvider } from "../../io";
 
 const argData = [
   "",
@@ -10,12 +10,21 @@ const argData = [
   "int test1, const Class* test2, void* test3",
   "int \ttest1,\t\n const\n Class* test2\n, void* test3\n\t",
 ];
+
+const dummyClassNameProvider: IClassNameProvider = {
+  originalName: "",
+  getClassName: () => "",
+};
+
 suite("Comments Tests", () => {
   test("ParseCommentedSingleMemberFunction", () => {
     const testContent = TextFragment.createFromString("//int fncName();");
 
     HeaderParser.parseComments(testContent);
-    let parsedFunctions = HeaderParser.parseClassMemberFunctions(testContent);
+    let parsedFunctions = HeaderParser.parseClassMemberFunctions(
+      testContent,
+      dummyClassNameProvider
+    );
     assert.strictEqual(parsedFunctions.length, 0);
   });
 
@@ -30,7 +39,8 @@ suite("Comments Tests", () => {
 
         HeaderParser.parseComments(testContent);
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          dummyClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 0);
       }
@@ -44,7 +54,10 @@ suite("Comments Tests", () => {
 		int fncName3();`);
 
     HeaderParser.parseComments(testContent);
-    let parsedFunctions = HeaderParser.parseClassMemberFunctions(testContent);
+    let parsedFunctions = HeaderParser.parseClassMemberFunctions(
+      testContent,
+      dummyClassNameProvider
+    );
     assert.strictEqual(parsedFunctions.length, 2);
   });
 });

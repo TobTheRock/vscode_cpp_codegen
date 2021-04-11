@@ -8,8 +8,12 @@ import {
   PureVirtualMemberFunction,
   VirtualMemberFunction,
 } from "../../cpp";
-import { TextFragment, SerializableMode } from "../../io";
+import { TextFragment, SerializableMode, IClassNameProvider } from "../../io";
 
+const dummyClassNameProvider: IClassNameProvider = {
+  originalName: "",
+  getClassName: () => "TestClass",
+};
 class OperatorData {
   constructor(
     public type: string,
@@ -109,7 +113,10 @@ suite("HeaderParser: Class Operator Declarations", () => {
     callItAsync("With '${value}'", operatorData, async (data: OperatorData) => {
       const testContent = TextFragment.createFromString(data.toString() + ";");
 
-      let parsedFunctions = HeaderParser.parseClassMemberFunctions(testContent);
+      let parsedFunctions = HeaderParser.parseClassMemberFunctions(
+        testContent,
+        dummyClassNameProvider
+      );
       assert.strictEqual(parsedFunctions.length, 1);
       assert.strictEqual(parsedFunctions[0].name, data.funcName());
       assert.strictEqual(parsedFunctions[0].returnVal, data.returnVal);
@@ -127,7 +134,8 @@ suite("HeaderParser: Class Operator Declarations", () => {
         );
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          dummyClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
         assert.ok(parsedFunctions[0] instanceof VirtualMemberFunction);
@@ -148,7 +156,8 @@ suite("HeaderParser: Class Operator Declarations", () => {
         );
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          dummyClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
         assert.ok(parsedFunctions[0] instanceof PureVirtualMemberFunction);
@@ -168,7 +177,8 @@ suite("HeaderParser: Class Operator Declarations", () => {
         );
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          dummyClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
         const memberFunction = parsedFunctions[0] as MemberFunction;
@@ -190,7 +200,8 @@ suite("HeaderParser: Class Operator Declarations", () => {
         );
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          dummyClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
         assert.ok(parsedFunctions[0] instanceof VirtualMemberFunction);
@@ -213,7 +224,8 @@ suite("HeaderParser: Class Operator Declarations", () => {
         );
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          dummyClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
         assert.ok(parsedFunctions[0] instanceof PureVirtualMemberFunction);
@@ -236,7 +248,8 @@ suite("HeaderParser: Class Operator Declarations", () => {
         );
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          dummyClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
         let expectedSerial =
@@ -254,7 +267,6 @@ suite("HeaderParser: Class Operator Declarations", () => {
             : "}");
         const actualSerial = await parsedFunctions[0].serialize({
           mode: SerializableMode.source,
-          nameScope: "TestClass",
         });
         assert.strictEqual(expectedSerial, actualSerial);
       }
@@ -262,13 +274,16 @@ suite("HeaderParser: Class Operator Declarations", () => {
   });
 
   //TODO create a fuzzing test out of this?
-  test("Parsing multiple oeprators correctly", () => {
+  test("Parsing multiple operators correctly", () => {
     const testContent = TextFragment.createFromString(
       `void* operator new(std::size_t s);
        operator int();`
     );
 
-    let parsedFunctions = HeaderParser.parseClassMemberFunctions(testContent);
+    let parsedFunctions = HeaderParser.parseClassMemberFunctions(
+      testContent,
+      dummyClassNameProvider
+    );
     assert.strictEqual(parsedFunctions.length, 2);
     assert.strictEqual(parsedFunctions[0].name, "operator int");
     assert.strictEqual(parsedFunctions[0].returnVal, "");

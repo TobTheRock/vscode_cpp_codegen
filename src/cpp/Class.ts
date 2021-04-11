@@ -7,13 +7,30 @@ import {
 } from "./TypeInterfaces";
 import { HeaderParser } from "../io/HeaderParser";
 import * as io from "../io";
-import { joinNameScopes } from "./utils";
+import { joinNameScopesWithFunctionName, joinNameScopes } from "./utils";
 import { ClassNameGenerator } from "./ClassNameGenerator";
+
+function getCtorDtorImplName(
+  classNameProvider: io.IClassNameProvider,
+  options: io.SerializationOptions,
+  isDtor: boolean
+) {
+  const prefix = isDtor ? "~" : "";
+
+  const functionName =
+    prefix + classNameProvider.getClassName(options.mode, false);
+  const classNameScope = classNameProvider.getClassName(options.mode, true);
+  const scopes = options.nameScopes
+    ? [...options.nameScopes, classNameScope]
+    : [classNameScope];
+
+  return joinNameScopesWithFunctionName(scopes, functionName);
+}
 
 export class ClassConstructor extends io.TextScope implements IConstructor {
   constructor(
     public readonly args: string,
-    private readonly _className: string,
+    private readonly _classNameProvider: io.IClassNameProvider,
     scope: io.TextScope
   ) {
     super(scope.scopeStart, scope.scopeEnd);
@@ -23,13 +40,17 @@ export class ClassConstructor extends io.TextScope implements IConstructor {
     switch (options.mode) {
       case io.SerializableMode.header:
       case io.SerializableMode.implHeader:
-        serial = this._className + "(" + this.args + ");";
+        serial =
+          this._classNameProvider.getClassName(options.mode, true) +
+          "(" +
+          this.args +
+          ");";
         break;
 
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
         serial =
-          joinNameScopes(options.nameScope, this._className) +
+          getCtorDtorImplName(this._classNameProvider, options, false) +
           "(" +
           this.args +
           ") {\n}";
@@ -44,7 +65,7 @@ export class ClassConstructor extends io.TextScope implements IConstructor {
 export class ClassDestructor extends io.TextScope implements IDestructor {
   constructor(
     public readonly virtual: boolean,
-    private readonly _className: string,
+    private readonly _classNameProvider: io.IClassNameProvider,
     scope: io.TextScope
   ) {
     super(scope.scopeStart, scope.scopeEnd);
@@ -55,18 +76,24 @@ export class ClassDestructor extends io.TextScope implements IDestructor {
       case io.SerializableMode.header:
       case io.SerializableMode.interfaceHeader:
         serial += this.virtual ? "virtual " : "";
-        serial += "~" + this._className + "();";
+        serial +=
+          "~" +
+          this._classNameProvider.getClassName(options.mode, true) +
+          "();";
         break;
       case io.SerializableMode.implHeader:
-        serial = "~" + this._className + " ()";
+        serial =
+          "~" +
+          this._classNameProvider.getClassName(options.mode, true) +
+          " ()";
         serial += this.virtual ? " override;\n" : ";\n";
         break;
 
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
         serial =
-          joinNameScopes(options.nameScope, "~" + this._className) +
-          "() {\n}\n\n";
+          getCtorDtorImplName(this._classNameProvider, options, true) +
+          "() {\n}";
         break;
     }
     return serial;
@@ -74,7 +101,7 @@ export class ClassDestructor extends io.TextScope implements IDestructor {
 }
 
 class ClassScopeBase implements IClassScope {
-  constructor(private readonly _className: string) {}
+  constructor(private readonly _classNameProvider: io.IClassNameProvider) {}
 
   extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
     throw new Error("Unimplemented!");
@@ -86,12 +113,17 @@ class ClassScopeBase implements IClassScope {
 
   deserialize(data: io.TextFragment) {
     let content: io.TextFragment = this.extractScopeTextFragment(data);
-    this.nestedClasses.push(...HeaderParser.parseClasses(content)); //TODO pass prefix aka this._className
+    this.nestedClasses.push(
+      ...HeaderParser.parseClasses(content, this._classNameProvider)
+    );
     this.constructors.push(
-      ...HeaderParser.parseClassConstructor(content, this._className)
+      ...HeaderParser.parseClassConstructor(content, this._classNameProvider)
     );
     this.memberFunctions.push(
-      ...HeaderParser.parseClassMemberFunctions(content)
+      ...HeaderParser.parseClassMemberFunctions(
+        content,
+        this._classNameProvider
+      )
     );
   }
 
@@ -200,17 +232,17 @@ class StructProtectedScope extends ClassScopeBase {
 }
 
 class ClassScopeFactory {
-  constructor(readonly name: string) {}
+  constructor(readonly classNameProvider: io.IClassNameProvider) {}
   createPrivateScope(): IClassScope {
-    return new ClassPrivateScope(this.name);
+    return new ClassPrivateScope(this.classNameProvider);
   }
 
   createPublicScope(): IClassScope {
-    return new ClassPublicScope(this.name);
+    return new ClassPublicScope(this.classNameProvider);
   }
 
   createProtectedScope(): IClassScope {
-    return new ClassProtectedScope(this.name);
+    return new ClassProtectedScope(this.classNameProvider);
   }
 }
 
@@ -218,23 +250,30 @@ class ClassBase extends io.TextScope implements IClass {
   constructor(
     scope: io.TextScope,
     public readonly name: string,
-    public readonly inheritance: string[]
+    public readonly inheritance: string[],
+    outerClassNameProvider?: io.IClassNameProvider
   ) {
     super(scope.scopeStart, scope.scopeEnd);
 
-    const scopeFactory = this.getScopeFactory();
+    this._classNameGen = new ClassNameGenerator(name);
+    this._classNameProvider = this._classNameGen.getClassNameProvider(
+      outerClassNameProvider
+    );
+    const scopeFactory = this.getScopeFactory(this._classNameProvider);
     this.publicScope = scopeFactory.createPublicScope();
     this.privateScope = scopeFactory.createPrivateScope();
     this.protectedScope = scopeFactory.createProtectedScope();
-    this._classNameGen = new ClassNameGenerator(name);
   }
 
-  protected getScopeFactory() {
-    return new ClassScopeFactory(this.name);
+  protected getScopeFactory(classNameProvider: io.IClassNameProvider) {
+    return new ClassScopeFactory(classNameProvider);
   }
 
   deserialize(data: io.TextFragment) {
-    const dtors = HeaderParser.parseClassDestructors(data, this.name);
+    const dtors = HeaderParser.parseClassDestructors(
+      data,
+      this._classNameProvider
+    );
     if (dtors.length > 1) {
       throw new Error("Class " + this.name + " has multiple destructors!");
     } else if (dtors.length === 1) {
@@ -249,7 +288,7 @@ class ClassBase extends io.TextScope implements IClass {
     let serial = "";
     let suffix = "";
 
-    const serializedName = await this._classNameGen.createName(options);
+    const serializedName = await this._classNameGen.generate(options);
 
     switch (options.mode) {
       case io.SerializableMode.header:
@@ -269,18 +308,12 @@ class ClassBase extends io.TextScope implements IClass {
         break;
     }
 
-    const newOptions: io.SerializationOptions = {
-      mode: options.mode,
-      nameScope: joinNameScopes(options.nameScope, serializedName),
-      nameInputProvider: options.nameInputProvider,
-    };
-
     if (this.destructor) {
-      serial += await this.destructor.serialize(newOptions);
+      serial += (await this.destructor.serialize(options)) + "\n\n";
     }
-    serial += await this.publicScope.serialize(newOptions);
-    serial += await this.protectedScope.serialize(newOptions);
-    serial += await this.privateScope.serialize(newOptions);
+    serial += await this.publicScope.serialize(options);
+    serial += await this.protectedScope.serialize(options);
+    serial += await this.privateScope.serialize(options);
     serial += suffix;
     return serial;
   }
@@ -310,15 +343,17 @@ class ClassBase extends io.TextScope implements IClass {
   readonly protectedScope: IClassScope;
   destructor: IDestructor | undefined;
   private readonly _classNameGen: ClassNameGenerator;
+  private _classNameProvider: io.IClassNameProvider;
 }
 
 export class ClassImplementation extends ClassBase {
   constructor(
     scope: io.TextScope,
-    public readonly name: string,
-    public readonly inheritance: string[]
+    name: string,
+    inheritance: string[],
+    outerClassNameProvider?: io.IClassNameProvider
   ) {
-    super(scope, name, inheritance);
+    super(scope, name, inheritance, outerClassNameProvider);
   }
 
   async serialize(options: io.SerializationOptions) {
@@ -341,10 +376,11 @@ export class ClassImplementation extends ClassBase {
 export class ClassInterface extends ClassBase {
   constructor(
     scope: io.TextScope,
-    public readonly name: string,
-    public readonly inheritance: string[]
+    name: string,
+    inheritance: string[],
+    outerClassNameProvider?: io.IClassNameProvider
   ) {
-    super(scope, name, inheritance);
+    super(scope, name, inheritance, outerClassNameProvider);
   }
 
   async serialize(options: io.SerializationOptions) {
@@ -367,42 +403,44 @@ export class ClassInterface extends ClassBase {
 
 class StructScopeFactory extends ClassScopeFactory {
   createPrivateScope(): IClassScope {
-    return new StructPrivateScope(this.name);
+    return new StructPrivateScope(this.classNameProvider);
   }
 
   createPublicScope(): IClassScope {
-    return new StructPublicScope(this.name);
+    return new StructPublicScope(this.classNameProvider);
   }
 
   createProtectedScope(): IClassScope {
-    return new StructProtectedScope(this.name);
+    return new StructProtectedScope(this.classNameProvider);
   }
 }
 
 export class StructImplementation extends ClassImplementation {
   constructor(
     scope: io.TextScope,
-    public readonly name: string,
-    public readonly inheritance: string[]
+    name: string,
+    inheritance: string[],
+    outerClassNameProvider?: io.IClassNameProvider
   ) {
-    super(scope, name, inheritance);
+    super(scope, name, inheritance, outerClassNameProvider);
   }
 
-  protected getScopeFactory() {
-    return new StructScopeFactory(this.name);
+  protected getScopeFactory(classNameProvider: io.IClassNameProvider) {
+    return new StructScopeFactory(classNameProvider);
   }
 }
 
 export class StructInterface extends ClassInterface {
   constructor(
     scope: io.TextScope,
-    public readonly name: string,
-    public readonly inheritance: string[]
+    name: string,
+    inheritance: string[],
+    outerClassNameProvider?: io.IClassNameProvider
   ) {
-    super(scope, name, inheritance);
+    super(scope, name, inheritance, outerClassNameProvider);
   }
 
-  protected getScopeFactory() {
-    return new StructScopeFactory(this.name);
+  protected getScopeFactory(classNameProvider: io.IClassNameProvider) {
+    return new StructScopeFactory(classNameProvider);
   }
 }

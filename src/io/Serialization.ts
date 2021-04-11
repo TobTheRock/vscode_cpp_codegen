@@ -7,13 +7,18 @@ export enum SerializableMode {
   interfaceHeader, // interface header file (respective to current file, which has a class with  virtual functions => pure virtual ones are generated)
 }
 
+export interface IClassNameProvider {
+  getClassName(mode: SerializableMode, withOuterScope: boolean): string;
+  originalName: string;
+}
+
 export interface INameInputProvider {
   getInterfaceName?(origName: string): string | Promise<string>;
 }
 
 export interface SerializationOptions {
   mode: SerializableMode;
-  nameScope?: string;
+  nameScopes?: string[];
   nameInputProvider?: INameInputProvider;
 }
 
