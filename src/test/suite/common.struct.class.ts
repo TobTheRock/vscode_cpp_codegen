@@ -564,6 +564,6 @@ export function structAndClassTests(specifier: string) {
     const serialized = await classLike[0].serialize({
       mode: SerializableMode.source,
     });
-    assert.ok(serialized.includes("TestClass::NestedClass"));
+    assert.ok(serialized.includes("TestClass::NestedClass::fncName"));
   });
 }

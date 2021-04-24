@@ -6,6 +6,7 @@ import {
   CommonParser,
 } from "./CommonParser";
 import { TextScope } from "./Text";
+import { IClassNameProvider } from "./Serialization";
 
 class ClassMatchBase {
   constructor(regexMatch: io.TextMatch) {
@@ -172,7 +173,7 @@ class MemberFunctionMatch implements IFunctionMatch {
   private static readonly mayHaveVirtualOrStaticRegex: string =
     "(?:(virtual|static)\\s*)?";
   private static readonly forbiddenReturnValues: string =
-    "\\bstatic\\b|\\boperator\\b";
+    "\\bstatic\\b|\\boperator\\b|\\bfriend\\b";
   private static readonly returnValRegex: string =
     "(\\b(?:(?!" + MemberFunctionMatch.forbiddenReturnValues + ").)+?)";
   private static readonly funcNameRegex: string = "(\\S+)";
@@ -199,6 +200,36 @@ class MemberFunctionMatch implements IFunctionMatch {
   readonly argsMatch: string;
   readonly constMatch: boolean;
   readonly pureMatch: boolean;
+  readonly textScope: io.TextScope;
+}
+class FriendFunctionMatch implements IFunctionMatch {
+  constructor(regexMatch: io.TextMatch) {
+    this.textScope = regexMatch as io.TextScope;
+    this.returnValMatch = regexMatch.getGroupMatch(0);
+
+    this.nameMatch = regexMatch.getGroupMatch(1);
+    this.argsMatch = regexMatch.getGroupMatch(2);
+    this.constMatch = regexMatch.getGroupMatch(3).length > 0;
+  }
+
+  private static readonly friendName: string = "friend";
+  private static readonly returnValRegex: string = "(\\b(?:(?!friend).)+?)";
+  private static readonly funcNameRegex: string = "(\\S+)";
+  private static readonly mayHaveConstSpecifierRegex: string = "(const)?";
+  static readonly regex: string = joinRegexStringsWithWhiteSpace(
+    FriendFunctionMatch.friendName,
+    FriendFunctionMatch.returnValRegex,
+    FriendFunctionMatch.funcNameRegex
+  );
+  static readonly postBracketRegex: string = joinRegexStringsWithWhiteSpace(
+    FriendFunctionMatch.mayHaveConstSpecifierRegex,
+    ";"
+  );
+
+  readonly returnValMatch: string;
+  readonly nameMatch: string;
+  readonly argsMatch: string;
+  readonly constMatch: boolean;
   readonly textScope: io.TextScope;
 }
 class ClassCastOperatorMatch implements IFunctionMatch {
@@ -332,11 +363,11 @@ export abstract class HeaderParser extends CommonParser {
 
   static parseClassConstructor(
     data: io.TextFragment,
-    className: string
+    classNameProvider: IClassNameProvider
   ): cpp.ClassConstructor[] {
     let ctors: cpp.ClassConstructor[] = [];
     const matcher = new io.RemovingRegexWithBodyMatcher(
-      ClassConstructorMatch.getRegexStr(className),
+      ClassConstructorMatch.getRegexStr(classNameProvider.originalName),
       ClassConstructorMatch.postBracketRegex,
       "(",
       ")"
@@ -346,7 +377,7 @@ export abstract class HeaderParser extends CommonParser {
       ctors.push(
         new cpp.ClassConstructor(
           match.argsMatch,
-          className,
+          classNameProvider,
           regexMatch as io.TextScope
         )
       );
@@ -356,18 +387,18 @@ export abstract class HeaderParser extends CommonParser {
 
   static parseClassDestructors(
     data: io.TextFragment,
-    className: string
+    classNameProvider: IClassNameProvider
   ): cpp.ClassDestructor[] {
     let deconstructors: cpp.ClassDestructor[] = [];
     const matcher = new io.RemovingRegexMatcher(
-      ClassDestructorMatch.getRegexStr(className)
+      ClassDestructorMatch.getRegexStr(classNameProvider.originalName)
     );
     matcher.match(data).forEach((regexMatch) => {
       let match = new ClassDestructorMatch(regexMatch);
       deconstructors.push(
         new cpp.ClassDestructor(
           match.isVirtual,
-          className,
+          classNameProvider,
           regexMatch as io.TextScope
         )
       );
@@ -375,7 +406,10 @@ export abstract class HeaderParser extends CommonParser {
     return deconstructors;
   }
 
-  static parseClassMemberFunctions(data: io.TextFragment): cpp.IFunction[] {
+  static parseClassMemberFunctions(
+    data: io.TextFragment,
+    classNameProvider: IClassNameProvider
+  ): cpp.IFunction[] {
     let memberFunctions: cpp.IFunction[] = [];
 
     const createMemberFunction = function <MatchType extends IFunctionMatch>(
@@ -389,7 +423,8 @@ export abstract class HeaderParser extends CommonParser {
             match.returnValMatch ?? "",
             match.argsMatch ?? "",
             match.constMatch ?? false,
-            match.textScope
+            match.textScope,
+            classNameProvider
           );
         } else {
           newFunc = new cpp.VirtualMemberFunction(
@@ -397,7 +432,8 @@ export abstract class HeaderParser extends CommonParser {
             match.returnValMatch ?? "",
             match.argsMatch ?? "",
             match.constMatch ?? false,
-            match.textScope
+            match.textScope,
+            classNameProvider
           );
         }
       } else if (match.staticMatch) {
@@ -406,7 +442,8 @@ export abstract class HeaderParser extends CommonParser {
           match.returnValMatch ?? "",
           match.argsMatch ?? "",
           match.constMatch ?? false,
-          match.textScope
+          match.textScope,
+          classNameProvider
         );
       } else {
         newFunc = new cpp.MemberFunction(
@@ -414,7 +451,8 @@ export abstract class HeaderParser extends CommonParser {
           match.returnValMatch ?? "",
           match.argsMatch ?? "",
           match.constMatch ?? false,
-          match.textScope
+          match.textScope,
+          classNameProvider
         );
       }
 
@@ -428,11 +466,25 @@ export abstract class HeaderParser extends CommonParser {
       createMemberFunction
     );
     this.forEachCallableRegexMatch(
+      FriendFunctionMatch,
+      data,
+      (match: FriendFunctionMatch) => {
+        const newFunc = new cpp.FriendFunction(
+          match.nameMatch,
+          match.returnValMatch,
+          match.argsMatch,
+          match.constMatch,
+          match.textScope
+        );
+        memberFunctions.push(newFunc);
+      }
+    );
+
+    this.forEachCallableRegexMatch(
       MemberFunctionMatch,
       data,
       createMemberFunction
     );
-
     return memberFunctions;
   }
 
@@ -470,19 +522,24 @@ export abstract class HeaderParser extends CommonParser {
     return standaloneFunctions;
   }
 
-  static parseClasses(data: io.TextFragment): cpp.IClass[] {
+  static parseClasses(
+    data: io.TextFragment,
+    classNameProvider?: io.IClassNameProvider
+  ): cpp.IClass[] {
     let classes: cpp.IClass[] = [];
     this.forEachScopeRegexMatch(ClassMatch, data, (match) => {
       const newClass = match.isInterface
         ? new cpp.ClassInterface(
             match.textScope,
             match.nameMatch,
-            match.inheritanceMatch
+            match.inheritanceMatch,
+            classNameProvider
           )
         : new cpp.ClassImplementation(
             match.textScope,
             match.nameMatch,
-            match.inheritanceMatch
+            match.inheritanceMatch,
+            classNameProvider
           );
       newClass.deserialize(match.bodyMatch);
       classes.push(newClass);
@@ -493,12 +550,14 @@ export abstract class HeaderParser extends CommonParser {
         ? new cpp.StructInterface(
             match.textScope,
             match.nameMatch,
-            match.inheritanceMatch
+            match.inheritanceMatch,
+            classNameProvider
           )
         : new cpp.StructImplementation(
             match.textScope,
             match.nameMatch,
-            match.inheritanceMatch
+            match.inheritanceMatch,
+            classNameProvider
           );
       newStruct.deserialize(match.bodyMatch);
       classes.push(newStruct);

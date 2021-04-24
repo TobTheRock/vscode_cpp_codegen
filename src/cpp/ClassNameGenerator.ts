@@ -1,45 +1,63 @@
 import * as io from "../io";
+import { joinNameScopes } from "./utils";
 export class ClassNameGenerator {
-  constructor(private readonly _origName: string) {}
+  constructor(private readonly _origName: string) {
+    this._createdNames = new Map([
+      [io.SerializableMode.header, _origName],
+      [io.SerializableMode.source, _origName],
+    ]);
+  }
 
-  async createName(options: io.SerializationOptions): Promise<string> {
-    let createdName = "";
-
-    switch (options.mode) {
-      case io.SerializableMode.header:
-      case io.SerializableMode.source:
-        createdName = this._origName;
-        break;
-      case io.SerializableMode.implHeader:
-      case io.SerializableMode.implSource:
-        createdName = await this.createImplName(options);
-        break;
-      case io.SerializableMode.interfaceHeader:
-        createdName = this.createInterfaceName();
-        break;
-      default:
-        break;
+  async generate(options: io.SerializationOptions): Promise<string> {
+    const createdName = this._createdNames.get(options.mode);
+    if (createdName) {
+      return createdName;
     }
 
-    return createdName;
+    switch (options.mode) {
+      case io.SerializableMode.implHeader:
+      case io.SerializableMode.implSource:
+        return await this.createImplName(options);
+      case io.SerializableMode.interfaceHeader:
+        return this.createInterfaceName();
+      default:
+        return ""; // TODO warning? throw?
+    }
+  }
+
+  getClassNameProvider(
+    outerClassNameProvider?: io.IClassNameProvider
+  ): io.IClassNameProvider {
+    return {
+      originalName: this._origName,
+      getClassName: (mode: io.SerializableMode, withOuterScope: boolean) => {
+        const outerNameScope = withOuterScope
+          ? outerClassNameProvider?.getClassName(mode, withOuterScope)
+          : undefined;
+        return joinNameScopes(outerNameScope, this._createdNames.get(mode));
+      },
+    };
   }
 
   private async createImplName(options: io.SerializationOptions) {
-    if (!this._implName.length) {
+    let implName = this._createdNames.get(options.mode);
+    if (!implName) {
       if (options.nameInputProvider?.getInterfaceName) {
-        this._implName = await options.nameInputProvider.getInterfaceName(
+        implName = await options.nameInputProvider.getInterfaceName(
           this._origName
         );
       }
       // TODO naming conventions config
       else if (this._origName.startsWith("I")) {
-        this._implName = this._origName.substring(1);
+        implName = this._origName.substring(1);
       } else {
-        this._implName = this._origName + "Impl";
+        implName = this._origName + "Impl";
       }
+      this._createdNames.set(io.SerializableMode.implHeader, implName);
+      this._createdNames.set(io.SerializableMode.implSource, implName);
     }
 
-    return this._implName;
+    return implName;
   }
 
   private createInterfaceName() {
@@ -47,5 +65,5 @@ export class ClassNameGenerator {
     return "I" + this._origName;
   }
 
-  private _implName = "";
+  private _createdNames: Map<io.SerializableMode, string>;
 }

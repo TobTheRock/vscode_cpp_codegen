@@ -25,13 +25,17 @@ The following settings are available:
     * Source from Header: by keeping the base name
     * Interface implementations: by using the name of the (first) implementation
     Else the file base name has to be entered via the UI.
-
+* `codegen-cpp.OutputDirectorySelector.Mode`: Sets how the output directory of generated files can be selected, either:
+    * `Disabled`: Disables the directory selector and created files are put in the directory of the root file.
+    * `QuickPick`: Uses a quick pick selector with fuzzy find
+    * `UI`: Uses a UI window
+ * `codegen-cpp.OutputDirectorySelector.IgnoredDirectories`: Relative directory paths which are ignored for selection (anymatch-compatible definition)
+ * `codegen-cpp.OutputDirectorySelector.UseGitIgnore`: Extracts ignored directories from the `.gitignore` file if available. Needs a window reload to be applied, as well when `.gitignore` is changed
 ## Issues
 Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issues). Contributions are also welcome in any form.
 ### Known
 * Updating existing header files is not supported
 * `using` statements are not evaluated
-* friend declarations parsed wrongly
 * preprocessor macros after `class` specifier are not working
 * enum classes are deserialized as classes 
 

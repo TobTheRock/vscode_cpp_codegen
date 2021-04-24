@@ -3,8 +3,8 @@ import { describe, test } from "mocha";
 import { callItAsync } from "./utils";
 
 import { HeaderParser } from "../../io/HeaderParser";
-import { MemberFunction } from "../../cpp";
-import { TextFragment, SerializableMode } from "../../io";
+import { MemberFunction, FriendFunction } from "../../cpp";
+import { TextFragment, SerializableMode, IClassNameProvider } from "../../io";
 
 const args = [
   "",
@@ -38,6 +38,37 @@ const testData = Array.from(args, (arg, idx) => {
   return new TestData(arg, argsWoInit[idx]);
 });
 
+const testClassName = "TestClass";
+const testInterfaceName = "ITestClass";
+const testClassNameProvider: IClassNameProvider = {
+  originalName: testClassName,
+  getClassName: (mode: SerializableMode) => {
+    switch (mode) {
+      case SerializableMode.implHeader:
+      case SerializableMode.implSource:
+        return testClassName;
+      case SerializableMode.interfaceHeader:
+        return testInterfaceName;
+      default:
+        return testClassName;
+    }
+  },
+};
+const testInterfaceNameProvider: IClassNameProvider = {
+  originalName: testInterfaceName,
+  getClassName: (mode: SerializableMode) => {
+    switch (mode) {
+      case SerializableMode.implHeader:
+      case SerializableMode.implSource:
+        return testClassName;
+      case SerializableMode.interfaceHeader:
+        return testInterfaceName;
+      default:
+        return testInterfaceName;
+    }
+  },
+};
+
 suite("Full Member Function Tests", () => {
   describe("ParseAndSerializeSingle", function () {
     callItAsync(
@@ -47,10 +78,10 @@ suite("Full Member Function Tests", () => {
         const testContent = TextFragment.createFromString(
           "int fncName(" + data.arg + ");"
         );
-        const testClassName = "TestClass";
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          testClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
 
@@ -63,14 +94,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "int fncName (" + data.arg + ");"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           "int TestClass::fncName (" +
             data.argWoInit +
@@ -81,14 +110,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           ""
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: testClassName,
           }),
           ""
         );
@@ -110,10 +137,10 @@ suite("Full Member Function Tests", () => {
         const testContent = TextFragment.createFromString(
           "const int* fncName(" + data.arg + ");"
         );
-        const testClassName = "TestClass";
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          testClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
 
@@ -126,14 +153,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "const int* fncName (" + data.arg + ");"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           "const int* TestClass::fncName (" +
             data.argWoInit +
@@ -144,14 +169,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           ""
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: testClassName,
           }),
           ""
         );
@@ -173,10 +196,10 @@ suite("Full Member Function Tests", () => {
         const testContent = TextFragment.createFromString(
           "std::pair<int, void*> fncName(" + data.arg + ");"
         );
-        const testClassName = "TestClass";
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          testClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
 
@@ -189,14 +212,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "std::pair<int, void*> fncName (" + data.arg + ");"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           "std::pair<int, void*> TestClass::fncName (" +
             data.argWoInit +
@@ -207,14 +228,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           ""
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: testClassName,
           }),
           ""
         );
@@ -236,10 +255,10 @@ suite("Full Member Function Tests", () => {
         const testContent = TextFragment.createFromString(
           "int fncName(" + data.arg + ") const;"
         );
-        const testClassName = "TestClass";
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          testClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
 
@@ -252,14 +271,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "int fncName (" + data.arg + ") const;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           "int TestClass::fncName (" +
             data.argWoInit +
@@ -270,14 +287,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           ""
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: testClassName,
           }),
           ""
         );
@@ -299,10 +314,10 @@ suite("Full Member Function Tests", () => {
         const testContent = TextFragment.createFromString(
           "virtual int fncName(" + data.arg + ")  ;"
         );
-        const testClassName = "TestClass";
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          testClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
 
@@ -315,14 +330,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "int fncName (" + data.arg + ") override;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           "int TestClass::fncName (" +
             data.argWoInit +
@@ -333,14 +346,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           ""
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: testClassName,
           }),
           ""
         );
@@ -362,10 +373,10 @@ suite("Full Member Function Tests", () => {
         const testContent = TextFragment.createFromString(
           "int fncName(" + data.arg + ")  override;"
         );
-        const testClassName = "TestClass";
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          testClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
 
@@ -378,14 +389,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "int fncName (" + data.arg + ") override;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           "int TestClass::fncName (" +
             data.argWoInit +
@@ -396,14 +405,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           ""
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: testClassName,
           }),
           ""
         );
@@ -425,10 +432,10 @@ suite("Full Member Function Tests", () => {
         const testContent = TextFragment.createFromString(
           "virtual int fncName(" + data.arg + ")   const;"
         );
-        const testClassName = "TestClass";
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          testClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
 
@@ -441,14 +448,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "int fncName (" + data.arg + ") const override;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           "int TestClass::fncName (" +
             data.argWoInit +
@@ -459,14 +464,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           ""
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: testClassName,
           }),
           ""
         );
@@ -488,10 +491,10 @@ suite("Full Member Function Tests", () => {
         const testContent = TextFragment.createFromString(
           "virtual int fncName(" + data.arg + ") =0;"
         );
-        const testClassName = "ITestClass";
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          testInterfaceNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
 
@@ -504,14 +507,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "virtual int fncName (" + data.arg + ") =0;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           ""
         );
@@ -519,14 +520,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           "int fncName (" + data.arg + ") override;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: "TestClass",
           }),
           "int TestClass::fncName (" +
             data.argWoInit +
@@ -551,10 +550,10 @@ suite("Full Member Function Tests", () => {
         const testContent = TextFragment.createFromString(
           "virtual int fncName(" + data.arg + ")   const = 0;"
         );
-        const testClassName = "ITestClass";
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          testClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
 
@@ -567,14 +566,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "virtual int fncName (" + data.arg + ") const =0;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           ""
         );
@@ -582,14 +579,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           "int fncName (" + data.arg + ") const override;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: "TestClass",
           }),
           "int TestClass::fncName (" +
             data.argWoInit +
@@ -614,10 +609,10 @@ suite("Full Member Function Tests", () => {
         const testContent = TextFragment.createFromString(
           "static int fncName(" + data.arg + "); "
         );
-        const testClassName = "TestClass";
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          testClassNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 1);
 
@@ -630,14 +625,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "static int fncName (" + data.arg + ");"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           "int TestClass::fncName (" +
             data.argWoInit +
@@ -648,14 +641,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           ""
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: testClassName,
           }),
           ""
         );
@@ -681,10 +672,9 @@ suite("Full Member Function Tests", () => {
 		void fncName4(${data.arg}) const;
 		virtual int fncName5(${data.arg});
 		`);
-        const testClassName = "ITestClass";
-
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
-          testContent
+          testContent,
+          testInterfaceNameProvider
         );
         assert.strictEqual(parsedFunctions.length, 5);
 
@@ -696,28 +686,24 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "virtual int fncName (" + data.arg + ") const =0;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           ""
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           "int fncName (" + data.arg + ") const override;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: "TestClass",
           }),
           "int TestClass::fncName (" +
             data.argWoInit +
@@ -739,28 +725,24 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "virtual int fncName2 (" + data.arg + ") =0;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           ""
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           "int fncName2 (" + data.arg + ") override;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: "TestClass",
           }),
           "int TestClass::fncName2 (" +
             data.argWoInit +
@@ -782,14 +764,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "std::shared_ptr<Test> fncName3 (" + data.arg + ");"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           "std::shared_ptr<Test> ITestClass::fncName3 (" +
             data.argWoInit +
@@ -799,14 +779,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           ""
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: testClassName,
           }),
           ""
         );
@@ -825,28 +803,24 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "void fncName4 (" + data.arg + ") const;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           "void ITestClass::fncName4 (" + data.argWoInit + ") const {\n}"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           ""
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: testClassName,
           }),
           ""
         );
@@ -865,14 +839,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.header,
-            nameScope: testClassName,
           }),
           "int fncName5 (" + data.arg + ") override;"
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.source,
-            nameScope: testClassName,
           }),
           "int ITestClass::fncName5 (" +
             data.argWoInit +
@@ -882,14 +854,12 @@ suite("Full Member Function Tests", () => {
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implHeader,
-            nameScope: testClassName,
           }),
           ""
         );
         assert.strictEqual(
           await memberFnct.serialize({
             mode: SerializableMode.implSource,
-            nameScope: testClassName,
           }),
           ""
         );
@@ -898,6 +868,126 @@ suite("Full Member Function Tests", () => {
             mode: SerializableMode.interfaceHeader,
           }),
           "virtual int fncName5 (" + data.arg + ") =0;"
+        );
+      }
+    );
+  });
+
+  describe("parse and serialize single friend function", function () {
+    callItAsync(
+      "With function arguments ${value}",
+      testData,
+      async function (data: TestData) {
+        const testContent = TextFragment.createFromString(
+          "friend int fncName(" + data.arg + ");"
+        );
+
+        let parsedFunctions = HeaderParser.parseClassMemberFunctions(
+          testContent,
+          testClassNameProvider
+        );
+        assert.strictEqual(parsedFunctions.length, 1);
+        assert.ok(parsedFunctions[0] instanceof FriendFunction);
+
+        let memberFnct: FriendFunction = parsedFunctions[0] as FriendFunction;
+        assert.strictEqual(memberFnct.name, "fncName");
+        assert.strictEqual(memberFnct.args, data.arg);
+        assert.strictEqual(memberFnct.returnVal, "int");
+        assert.strictEqual(memberFnct.isConst, false);
+
+        assert.strictEqual(
+          await memberFnct.serialize({
+            mode: SerializableMode.header,
+          }),
+          "friend int fncName (" + data.arg + ");"
+        );
+        assert.strictEqual(
+          await memberFnct.serialize({
+            mode: SerializableMode.source,
+          }),
+          "friend int fncName (" +
+            data.argWoInit +
+            ") {\n" +
+            "\tint returnValue;\n\treturn returnValue;\n}"
+        );
+
+        assert.strictEqual(
+          await memberFnct.serialize({
+            mode: SerializableMode.implHeader,
+          }),
+          ""
+        );
+        assert.strictEqual(
+          await memberFnct.serialize({
+            mode: SerializableMode.implSource,
+          }),
+          ""
+        );
+        assert.strictEqual(
+          await memberFnct.serialize({
+            mode: SerializableMode.interfaceHeader,
+          }),
+          ""
+        );
+      }
+    );
+  });
+
+  describe("parse and serialize single friend function", function () {
+    callItAsync(
+      "With function arguments ${value}",
+      testData,
+      async function (data: TestData) {
+        const testContent = TextFragment.createFromString(
+          "friend int fncName (" + data.arg + ") const;"
+        );
+
+        let parsedFunctions = HeaderParser.parseClassMemberFunctions(
+          testContent,
+          testClassNameProvider
+        );
+        assert.strictEqual(parsedFunctions.length, 1);
+        assert.ok(parsedFunctions[0] instanceof FriendFunction);
+
+        let memberFnct: FriendFunction = parsedFunctions[0] as FriendFunction;
+        assert.strictEqual(memberFnct.name, "fncName");
+        assert.strictEqual(memberFnct.args, data.arg);
+        assert.strictEqual(memberFnct.returnVal, "int");
+        assert.strictEqual(memberFnct.isConst, true);
+
+        assert.strictEqual(
+          await memberFnct.serialize({
+            mode: SerializableMode.header,
+          }),
+          "friend int fncName (" + data.arg + ") const;"
+        );
+        assert.strictEqual(
+          await memberFnct.serialize({
+            mode: SerializableMode.source,
+          }),
+          "friend int fncName (" +
+            data.argWoInit +
+            ") const {\n" +
+            "\tint returnValue;\n\treturn returnValue;\n}"
+        );
+
+        assert.strictEqual(
+          await memberFnct.serialize({
+            mode: SerializableMode.implHeader,
+          }),
+          ""
+        );
+        assert.strictEqual(
+          await memberFnct.serialize({
+            mode: SerializableMode.implSource,
+          }),
+          ""
+        );
+        assert.strictEqual(
+          await memberFnct.serialize({
+            mode: SerializableMode.interfaceHeader,
+          }),
+          ""
         );
       }
     );
