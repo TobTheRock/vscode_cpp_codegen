@@ -1,4 +1,4 @@
-import { workspaceDirectoryFinder } from "./WorkspaceDirectories";
+import { WorkspaceDirectoryFinder } from "./WorkspaceDirectories";
 import { SourceFileMerger } from "./SourceFileMerger";
 import * as cpp from "./cpp";
 import * as io from "./io";
@@ -47,11 +47,13 @@ class FileHandlerContext {
 export class FileHandler {
   private constructor(
     private readonly _file: IFile,
+    private readonly _workspaceDirectoryFinder: WorkspaceDirectoryFinder,
     private readonly _opt: FileHandlerOptions
   ) {}
 
   static createFromHeaderFile(
     vscDocument: vscode.TextDocument,
+    workspaceDirectoryFinder: WorkspaceDirectoryFinder,
     opt: FileHandlerOptions = {}
   ): FileHandler | undefined {
     //TODO check file ending?
@@ -64,7 +66,7 @@ export class FileHandler {
       vscode.window.showErrorMessage("Unable to parse header file: ", error);
       return;
     }
-    return new FileHandler(file, opt);
+    return new FileHandler(file, workspaceDirectoryFinder, opt);
   }
 
   async writeFileAs(...modes: io.SerializableMode[]) {
@@ -133,8 +135,8 @@ export class FileHandler {
     const disposables: vscode.Disposable[] = [];
     try {
       return await new Promise<string | undefined>((resolve) => {
-        const workspaceDirs = workspaceDirectoryFinder.getDirectories();
-        const workspaceRootDirs = workspaceDirectoryFinder.getRootDirectories();
+        const workspaceDirs = this._workspaceDirectoryFinder.getDirectories();
+        const workspaceRootDirs = this._workspaceDirectoryFinder.getRootDirectories();
 
         const quickPickInput = vscode.window.createQuickPick<DirectoryItem>();
         quickPickInput.placeholder = "Select output directory...";
