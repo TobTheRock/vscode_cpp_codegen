@@ -1,9 +1,5 @@
-import { INamespace } from "./TypeInterfaces";
 import { FileBase } from "./FileBase";
 import * as io from "../io";
-
-import { Configuration } from "../Configuration";
-import { IFile } from "../FileHandler";
 
 export class SourceFile extends FileBase {
   constructor(filePath: string, content: string) {
@@ -15,9 +11,10 @@ export class SourceFile extends FileBase {
 
   static generateFileHeader(
     outputFilePath: string,
+    fileHeader: string,
     ...fileIncludePaths: string[]
   ): string {
-    let fileHeader = Configuration.getFileHeaderForCppSource();
+    fileHeader += "\n";
     fileHeader += super.createIncludeStatements(
       outputFilePath,
       ...fileIncludePaths

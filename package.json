@@ -84,7 +84,7 @@
 				"codegen-cpp.OutputDirectorySelector.IgnoredDirectories": {
 					"type": "array",
 					"default": [],
-					"description": "Relative directory paths which are ignored for selection (anymatch-compatible definition). Needs a window reload to be applied.",
+					"description": "Relative directory paths which are ignored for selection (anymatch-compatible definition). ",
 					"examples": [
 						"path/to/",
 						"build/**/"
@@ -95,7 +95,7 @@
 				"codegen-cpp.OutputDirectorySelector.UseGitIgnore": {
 					"type": "boolean",
 					"default": true,
-					"markdownDescription": "Extracts ignored directories from the `.gitignore` file if available. Needs a window reload to be applied, as well when `.gitignore` is changed."
+					"markdownDescription": "Extracts ignored directories from the `.gitignore` file if available. Needs a window reload when `.gitignore` is changed."
 				}
 			}
 		},

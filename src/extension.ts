@@ -8,9 +8,26 @@ import { WorkspaceDirectoryFinder } from "./WorkspaceDirectories";
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log("Activating code-gen.cpp!"); // TODO logger!
+  let config = Configuration.get();
+  let workspaceDirectoryFinder = await WorkspaceDirectoryFinder.createAndScan(
+    config
+  );
 
-  const workspaceDirectoryFinder = new WorkspaceDirectoryFinder();
-  await workspaceDirectoryFinder.scan();
+  context.subscriptions.push(
+    Configuration.registerOnChanged(async (updatedConfig) => {
+      if (
+        config.outputDirectorySelector.ignoredDirectories !==
+          updatedConfig.outputDirectorySelector.ignoredDirectories &&
+        config.outputDirectorySelector.useGitIgnore !==
+          updatedConfig.outputDirectorySelector.useGitIgnore
+      ) {
+        workspaceDirectoryFinder = await WorkspaceDirectoryFinder.createAndScan(
+          updatedConfig
+        );
+      }
+      config = updatedConfig;
+    })
+  );
 
   context.subscriptions.push(
     vscode.commands.registerTextEditorCommand(
@@ -19,7 +36,7 @@ export async function activate(context: vscode.ExtensionContext) {
         const fileHandler = FileHandler.createFromHeaderFile(
           textEditor.document,
           workspaceDirectoryFinder,
-          { keepFileNameOnWrite: Configuration.getDeduceFileNames() }
+          config
         );
         if (!fileHandler) {
           console.error("Could not create file handler");
@@ -46,7 +63,7 @@ export async function activate(context: vscode.ExtensionContext) {
           workspaceDirectoryFinder,
           {
             askForInterfaceImplementationNames: true,
-            useClassNameAsFileName: Configuration.getDeduceFileNames(),
+            ...config,
           }
         );
         if (!fileHandler) {

@@ -2,7 +2,6 @@ import { INamespace } from "./TypeInterfaces";
 import { HeaderParser } from "../io/HeaderParser";
 import * as io from "../io";
 import { FileBase } from "./FileBase";
-import { Configuration } from "../Configuration";
 import { IFile } from "../FileHandler";
 
 export class HeaderFile extends FileBase implements IFile {
@@ -24,10 +23,10 @@ export class HeaderFile extends FileBase implements IFile {
 
   static generateFileHeader(
     outputFilePath: string,
+    fileHeader: string,
     ...fileIncludePaths: string[]
   ): string {
-    let fileHeader = Configuration.getFileHeaderForCppHeader();
-    fileHeader += "#pragma once\n\n"; // TODO config for include guards
+    fileHeader += "\n#pragma once\n\n"; // TODO config for include guards
     fileHeader += super.createIncludeStatements(
       outputFilePath,
       ...fileIncludePaths

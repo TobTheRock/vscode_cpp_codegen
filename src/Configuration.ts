@@ -1,3 +1,4 @@
+import { config } from "node:process";
 import * as vscode from "vscode";
 
 function getConfigArray<T>(section: string): T[] {
@@ -20,62 +21,93 @@ export enum DirectorySelectorMode {
   quickPick = "QuickPick",
   ui = "UI",
 }
-export module Configuration {
-  export function getFileHeaderForCppSource(): string {
-    const lines: string[] = getConfigArray(
-      "codegen-cpp.FileHeader.ForC++Source"
-    );
-    let header = "";
-    for (const line of lines) {
-      header += line + "\n";
+interface IFileHeaderSection {
+  forCppSource: string;
+  forCppHeader: string;
+}
+interface IOutputFileExtensionSection {
+  forCppSource: string;
+  forCppHeader: string;
+}
+interface IOutputDirectorySelectorSection {
+  mode: DirectorySelectorMode;
+  ignoredDirectories: string[];
+  useGitIgnore: boolean;
+}
+
+function getOutputDirectorySelectorMode(): DirectorySelectorMode {
+  switch (getConfigString("codegen-cpp.OutputDirectorySelector.Mode")) {
+    case DirectorySelectorMode.quickPick:
+      return DirectorySelectorMode.quickPick;
+    case DirectorySelectorMode.ui:
+      return DirectorySelectorMode.ui;
+
+    case DirectorySelectorMode.disabled:
+    default:
+      return DirectorySelectorMode.disabled;
+  }
+}
+export interface IExtensionConfiguration {
+  fileHeader: IFileHeaderSection;
+  outputFileExtension: IOutputFileExtensionSection;
+  outputDirectorySelector: IOutputDirectorySelectorSection;
+  deduceOutputFileNames: boolean;
+}
+
+export class Configuration {
+  static get(): IExtensionConfiguration {
+    if (!this._config) {
+      this._config = this.read();
     }
-    return header;
+
+    return this._config;
   }
 
-  export function getFileHeaderForCppHeader(): string {
-    const lines: string[] = getConfigArray(
-      "codegen-cpp.FileHeader.ForC++Header"
-    );
-    let header = "";
-    for (const line of lines) {
-      header += line + "\n";
-    }
-    return header;
+  static registerOnChanged(
+    callback: (updatedConfig: IExtensionConfiguration) => void | Promise<void>
+  ): vscode.Disposable {
+    return vscode.workspace.onDidChangeConfiguration(async (event) => {
+      if (event.affectsConfiguration("codegen-cpp")) {
+        this._config = this.read();
+        await callback(this._config);
+      }
+    });
+  }
+  private static read(): IExtensionConfiguration {
+    const fileHeader: IFileHeaderSection = {
+      forCppSource: getConfigArray("codegen-cpp.FileHeader.ForC++Source").join(
+        "\n"
+      ),
+      forCppHeader: getConfigArray("codegen-cpp.FileHeader.ForC++Header").join(
+        "\n"
+      ),
+    };
+
+    const outputFileExtension: IOutputFileExtensionSection = {
+      forCppSource: getConfigString(
+        "codegen-cpp.OutputFileExtension.ForC++Source"
+      ),
+      forCppHeader: getConfigString(
+        "codegen-cpp.OutputFileExtension.ForC++Header"
+      ),
+    };
+
+    const outputDirectorySelector: IOutputDirectorySelectorSection = {
+      mode: getOutputDirectorySelectorMode(),
+      ignoredDirectories: getConfigArray(
+        "codegen-cpp.OutputDirectorySelector.IgnoredDirectories"
+      ),
+      useGitIgnore: getConfigBool(
+        "codegen-cpp.OutputDirectorySelector.UseGitIgnore"
+      ),
+    };
+    return {
+      fileHeader,
+      outputFileExtension,
+      outputDirectorySelector,
+      deduceOutputFileNames: getConfigBool("codegen-cpp.deduceOutputFileNames"),
+    };
   }
 
-  export function getDeduceFileNames(): boolean {
-    return getConfigBool("codegen-cpp.deduceOutputFileNames");
-  }
-
-  export function getOutputFileExtensionForCppSource(): string {
-    return getConfigString("codegen-cpp.OutputFileExtension.ForC++Source");
-  }
-
-  export function getOutputFileExtensionForCppHeader(): string {
-    return getConfigString("codegen-cpp.OutputFileExtension.ForC++Header");
-  }
-
-  export function getOutputDirectorySelectorMode(): DirectorySelectorMode {
-    switch (getConfigString("codegen-cpp.OutputDirectorySelector.Mode")) {
-      case DirectorySelectorMode.quickPick:
-        return DirectorySelectorMode.quickPick;
-      case DirectorySelectorMode.ui:
-        return DirectorySelectorMode.ui;
-
-      case DirectorySelectorMode.disabled:
-      default:
-        return DirectorySelectorMode.disabled;
-        break;
-    }
-  }
-
-  export function getOutputDirectorySelectorIgnoredDirectories(): string[] {
-    return getConfigArray(
-      "codegen-cpp.OutputDirectorySelector.IgnoredDirectories"
-    );
-  }
-
-  export function getOutputDirectorySelectorUseGitIgnore(): boolean {
-    return getConfigBool("codegen-cpp.OutputDirectorySelector.UseGitIgnore");
-  }
+  private static _config: IExtensionConfiguration | undefined;
 }

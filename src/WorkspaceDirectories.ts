@@ -2,7 +2,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { readFileSync, existsSync } from "fs";
 import { FSWatcher } from "chokidar";
-import { Configuration } from "./Configuration";
+import { IExtensionConfiguration } from "./Configuration";
 
 // TODO utils
 async function asyncForEach<Type>(
@@ -35,11 +35,17 @@ class DirectoryItem implements vscode.QuickPickItem {
   }
 }
 export class WorkspaceDirectoryFinder {
-  constructor() {
+  static async createAndScan(
+    config: IExtensionConfiguration
+  ): Promise<WorkspaceDirectoryFinder> {
+    const finder = new WorkspaceDirectoryFinder(config);
+    await finder.scan();
+    return finder;
+  }
+  private constructor(private readonly _config: IExtensionConfiguration) {
     this._workSpaceFoldersChangedSubscription = vscode.workspace.onDidChangeWorkspaceFolders(
       this.workSpaceFoldersChanged.bind(this)
     );
-    this._workspaceRootDirectoryWatchers = new Map();
   }
 
   async scan(): Promise<void> {
@@ -94,8 +100,9 @@ export class WorkspaceDirectoryFinder {
   }
 
   private async createNewDirectoryWatcher(rootDirectory: string) {
-    const relIgnoredPaths = Configuration.getOutputDirectorySelectorIgnoredDirectories();
-    if (Configuration.getOutputDirectorySelectorUseGitIgnore()) {
+    const relIgnoredPaths = this._config.outputDirectorySelector
+      .ignoredDirectories;
+    if (this._config.outputDirectorySelector.useGitIgnore) {
       relIgnoredPaths.push(...this.parseGitIgnore(rootDirectory));
     }
     const absIgnoredPaths = relIgnoredPaths.map((ignoredDirectory) =>
@@ -147,6 +154,6 @@ export class WorkspaceDirectoryFinder {
   }
 
   private _workSpaceFoldersChangedSubscription: vscode.Disposable;
-  private _workspaceRootDirectoryWatchers: Map<string, FSWatcher>;
+  private _workspaceRootDirectoryWatchers: Map<string, FSWatcher> = new Map();
   private _workspaceDirectories: DirectoryItem[] = [];
 }
