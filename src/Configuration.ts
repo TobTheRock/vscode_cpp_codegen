@@ -75,12 +75,10 @@ export class Configuration {
   }
   private static read(): IExtensionConfiguration {
     const fileHeader: IFileHeaderSection = {
-      forCppSource: getConfigArray("codegen-cpp.FileHeader.ForC++Source").join(
-        "\n"
-      ),
-      forCppHeader: getConfigArray("codegen-cpp.FileHeader.ForC++Header").join(
-        "\n"
-      ),
+      forCppSource:
+        getConfigArray("codegen-cpp.FileHeader.ForC++Source").join("\n") + "\n",
+      forCppHeader:
+        getConfigArray("codegen-cpp.FileHeader.ForC++Header").join("\n") + "\n",
     };
 
     const outputFileExtension: IOutputFileExtensionSection = {

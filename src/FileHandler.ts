@@ -10,14 +10,6 @@ import {
   DirectorySelectorMode,
 } from "./Configuration";
 
-// TODO move interfaces to seperate files
-export interface IFile extends io.ISerializable, io.IDeserializable {
-  getPath(): string;
-  readonly directory: string;
-  readonly basename: string;
-  readonly extension: string;
-}
-
 class DirectoryItem implements vscode.QuickPickItem {
   label: string;
   description: string;
@@ -50,7 +42,7 @@ class FileHandlerContext {
 }
 export class FileHandler {
   private constructor(
-    private readonly _file: IFile,
+    private readonly _file: io.IFile,
     private readonly _workspaceDirectoryFinder: WorkspaceDirectoryFinder,
     private readonly _opt: FileHandlerOptions
   ) {}
@@ -208,8 +200,11 @@ export class FileHandler {
       );
       //TODO pretify output (configurable?)
       const outputContent =
-        this.generateFileHeader(serialized.mode, outputFilePath) +
-        serialized.content;
+        this.createFileHeader(
+          serialized.mode,
+          this._context.outputDirectory,
+          this._context.outputFilename
+        ) + serialized.content;
       if (!fs.existsSync(outputFilePath)) {
         await this.writeAndOpenFile(outputFilePath, outputContent);
       } else {
@@ -232,6 +227,56 @@ export class FileHandler {
 
       return vscode.workspace.applyEdit(this._context.edit);
     });
+  }
+
+  private createFileHeader(
+    mode: io.SerializableMode,
+    outputDirectory: string,
+    outputFileName: string
+  ): string {
+    let fileHeader: string;
+    switch (mode) {
+      case io.SerializableMode.implHeader:
+        fileHeader = this._opt.fileHeader.forCppHeader;
+        fileHeader += this.createIncludeStatements(
+          outputDirectory,
+          this._file.getPath()
+        );
+        break;
+      case io.SerializableMode.header:
+      case io.SerializableMode.interfaceHeader:
+        fileHeader = this._opt.fileHeader.forCppHeader;
+        break;
+      case io.SerializableMode.source:
+        fileHeader = this._opt.fileHeader.forCppSource;
+        fileHeader += this.createIncludeStatements(
+          outputDirectory,
+          this._file.getPath()
+        );
+        break;
+      case io.SerializableMode.implSource:
+        fileHeader = this._opt.fileHeader.forCppSource;
+        const include = path.join(
+          outputDirectory,
+          outputFileName + "." + this._opt.outputFileExtension.forCppHeader
+        );
+        fileHeader += this.createIncludeStatements(outputDirectory, include);
+        break;
+    }
+    return fileHeader;
+  }
+
+  private createIncludeStatements(
+    outputDirectory: string,
+    ...fileIncludePaths: string[]
+  ): string {
+    let fileHeader = "";
+    fileIncludePaths.forEach((include) => {
+      let relFilePath = path.relative(outputDirectory, include);
+      fileHeader += '#include "' + relFilePath + '"\n';
+    });
+    fileHeader += "\n";
+    return fileHeader;
   }
 
   private async writeAndOpenFile(
@@ -278,50 +323,6 @@ export class FileHandler {
         break;
     }
     return deductedFilename;
-  }
-
-  // TODO move this to HeaderFile.serialize
-  private generateFileHeader(
-    mode: io.SerializableMode,
-    outputFilePath: string
-  ): string {
-    let fileHeader = "";
-    switch (mode) {
-      case io.SerializableMode.header:
-      case io.SerializableMode.interfaceHeader:
-        fileHeader = cpp.HeaderFile.generateFileHeader(
-          outputFilePath,
-          this._opt.fileHeader.forCppHeader
-        );
-        break;
-      case io.SerializableMode.implHeader:
-        fileHeader = cpp.HeaderFile.generateFileHeader(
-          outputFilePath,
-          this._opt.fileHeader.forCppHeader,
-          this._file.getPath()
-        );
-        break;
-      case io.SerializableMode.source:
-        fileHeader = cpp.SourceFile.generateFileHeader(
-          outputFilePath,
-          this._opt.fileHeader.forCppSource,
-          this._file.getPath()
-        );
-        break;
-      case io.SerializableMode.implSource:
-        // TODO find a nicer way to provide the path of the header path
-        const headerOutputFilePath = path.join(
-          path.dirname(outputFilePath),
-          this.getOutputFilename(io.SerializableMode.implHeader)
-        );
-        fileHeader = cpp.SourceFile.generateFileHeader(
-          outputFilePath,
-          this._opt.fileHeader.forCppSource,
-          headerOutputFilePath
-        );
-        break;
-    }
-    return fileHeader;
   }
 
   private async getInterfaceName(origName: string): Promise<string> {

@@ -26,6 +26,13 @@ export interface ISerializable {
   serialize: (options: SerializationOptions) => string | Promise<string>;
 }
 
+export interface IFile extends ISerializable, IDeserializable {
+  getPath(): string;
+  readonly directory: string;
+  readonly basename: string;
+  readonly extension: string;
+}
+
 export function serializeArray(
   serializableArray: Array<ISerializable>,
   options: SerializationOptions,
