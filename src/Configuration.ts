@@ -16,11 +16,6 @@ function getConfigBool(section: string): boolean {
   return config.get(section) ?? false;
 }
 
-export enum DirectorySelectorMode {
-  disabled = "Disabled",
-  quickPick = "QuickPick",
-  ui = "UI",
-}
 interface IFileHeaderSection {
   forCppSource: string;
   forCppHeader: string;
@@ -47,11 +42,33 @@ function getOutputDirectorySelectorMode(): DirectorySelectorMode {
       return DirectorySelectorMode.disabled;
   }
 }
+
+function getSourceFileNamespaceSerialization() {
+  switch (getConfigString("codegen-cpp.SourceFileNamespace.Serialization")) {
+    case SourceFileNamespaceSerialization.prepended:
+      return SourceFileNamespaceSerialization.prepended;
+    case SourceFileNamespaceSerialization.named:
+    default:
+      return SourceFileNamespaceSerialization.named;
+  }
+}
+
+export enum DirectorySelectorMode {
+  disabled = "Disabled",
+  quickPick = "QuickPick",
+  ui = "UI",
+}
+
+export enum SourceFileNamespaceSerialization {
+  named = "Named",
+  prepended = "Prepended",
+}
 export interface IExtensionConfiguration {
   fileHeader: IFileHeaderSection;
   outputFileExtension: IOutputFileExtensionSection;
   outputDirectorySelector: IOutputDirectorySelectorSection;
   deduceOutputFileNames: boolean;
+  sourceFileNamespaceSerialization: SourceFileNamespaceSerialization;
 }
 
 export class Configuration {
@@ -99,11 +116,15 @@ export class Configuration {
         "codegen-cpp.OutputDirectorySelector.UseGitIgnore"
       ),
     };
+
+    const sourceFileNamespaceSerialization = getSourceFileNamespaceSerialization();
+
     return {
       fileHeader,
       outputFileExtension,
       outputDirectorySelector,
       deduceOutputFileNames: getConfigBool("codegen-cpp.deduceOutputFileNames"),
+      sourceFileNamespaceSerialization,
     };
   }
 

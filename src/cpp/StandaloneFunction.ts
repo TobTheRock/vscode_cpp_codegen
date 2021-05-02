@@ -1,6 +1,9 @@
 import * as io from "../io";
 import { IFunction } from "./TypeInterfaces";
-import { removeDefaultInitializersFromArgs } from "./utils";
+import {
+  joinNameScopesWithFunctionName,
+  removeDefaultInitializersFromArgs,
+} from "./utils";
 export class StandaloneFunction extends io.TextScope implements IFunction {
   constructor(
     public readonly name: string,
@@ -19,7 +22,7 @@ export class StandaloneFunction extends io.TextScope implements IFunction {
         serial =
           this.returnVal +
           " " +
-          this.name +
+          joinNameScopesWithFunctionName(options.nameScopes, this.name) +
           " (" +
           removeDefaultInitializersFromArgs(this.args) +
           " )" +
