@@ -37,6 +37,7 @@ export class HeaderFile extends FileBase implements io.IFile {
     this._namespaces = [];
     this.deserialize(io.TextFragment.createFromString(content));
   }
+
   deserialize(fileContent: io.TextFragment) {
     HeaderParser.parseComments(fileContent);
     this._namespaces.push(...HeaderParser.parseNamespaces(fileContent));
@@ -44,7 +45,7 @@ export class HeaderFile extends FileBase implements io.IFile {
   }
 
   async serialize(options: io.SerializationOptions): Promise<string> {
-    return await io.serializeArray(this._namespaces, options);
+    return await io.serializeArray(this._namespaces, options, undefined, "\n");
   }
 
   private readonly _namespaces: INamespace[];

@@ -36,7 +36,7 @@ export class Namespace extends io.TextScope implements INamespace {
       config.sourceFileNamespaceSerialization ===
       SourceFileNamespaceSerialization.named
     ) {
-      serial = "namespace " + this.name + " {\n\n";
+      serial = "namespace " + this.name + " {\n";
       suffix = "}\n";
     } else {
       options = this.addNamespaceToOptions(options);
