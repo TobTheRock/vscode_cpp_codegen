@@ -244,7 +244,6 @@ export class FriendFunction extends io.TextScope implements IFunction {
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
         return (
-          friendPrefix +
           this.returnVal +
           " " +
           joinNameScopesWithFunctionName(options.nameScopes, this.name) +
