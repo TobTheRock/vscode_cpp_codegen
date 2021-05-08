@@ -905,7 +905,7 @@ suite("Full Member Function Tests", () => {
           await memberFnct.serialize({
             mode: SerializableMode.source,
           }),
-          "friend int fncName (" +
+          "int fncName (" +
             data.argWoInit +
             ") {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -933,7 +933,7 @@ suite("Full Member Function Tests", () => {
     );
   });
 
-  describe("parse and serialize single friend function", function () {
+  describe("parse and serialize single const friend function", function () {
     callItAsync(
       "With function arguments ${value}",
       testData,
@@ -965,7 +965,7 @@ suite("Full Member Function Tests", () => {
           await memberFnct.serialize({
             mode: SerializableMode.source,
           }),
-          "friend int fncName (" +
+          "int fncName (" +
             data.argWoInit +
             ") const {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
