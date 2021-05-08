@@ -22,8 +22,8 @@ The following settings are available:
 * `codegen-cpp.OutputFileExtension.ForC++Header`: File extension used when generating C++ header files
 * `codegen-cpp.OutputFileExtension.ForC++Source`: File extension used when generating C++ source files
 * `codegen-cpp.deduceOutputFileNames`: Whether the output file name(s) should be deduced when generating:
-    * Source from Header: by keeping the base name
-    * Interface implementations: by using the name of the (first) implementation
+    * *Source from Header*: by keeping the base name
+    * *Interface implementations*: by using the name of the (first) implementation
     Else the file base name has to be entered via the UI.
 * `codegen-cpp.OutputDirectorySelector.Mode`: Sets how the output directory of generated files can be selected, either:
     * `Disabled`: Disables the directory selector and created files are put in the directory of the root file.
@@ -31,6 +31,9 @@ The following settings are available:
     * `UI`: Uses a UI window
  * `codegen-cpp.OutputDirectorySelector.IgnoredDirectories`: Relative directory paths which are ignored for selection (anymatch-compatible definition)
  * `codegen-cpp.OutputDirectorySelector.UseGitIgnore`: Extracts ignored directories from the `.gitignore` file if available. Needs a window reload to be applied, as well when `.gitignore` is changed
+ * `codegen-cpp.SourceFileNamespace.Serialization`: Sets how namespaces are serialized in generated source files
+   * *Named*: Serialized with an explicit named definition, e.g. `namespace myNamespace{...}`
+   * *Prepended*: Serialized prepended in front of function definitions, e.g. `void myNamespace::MyClass::funct()`
 ## Issues
 Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issues). Contributions are also welcome in any form.
 ### Known
@@ -46,7 +49,12 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 * Generating abstract factories
 * ...
 ## Release Notes
-
+### 0.1.3
+- added: configuration for the namespace serialization mode
+- added: support for structs
+- fixed: new line artificats when merging source files
+- fixed: serialization of friend functions
+- fixed: window reload no longer required for certain configurations
 ### 0.1.2
 - fixed: Parsing of cast and (de)allocation operators
 - fixed: Updating folder quick pick choices on folder creation/deletion

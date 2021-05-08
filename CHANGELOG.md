@@ -1,14 +1,27 @@
 # Change Log
 
 All notable changes to the "codegen-cpp" extension will be documented in this file.
+## [0.1.3]
+### Added
+- configuration for the namespace serialization mode
+-  support for structs, (child class of `ClassBase`)
+### Changed
+- refactored configuration handling
+  - added singleton
+  - update on change
+- common tests for structs and classes
+- handling new line artificats when merging source files (due to empty serialzed namespaces)
+- `HeaderParser`: serialization of friend functions, added a matcher class for this
+- updated node dependencies
+- `WorkspaceDirectoryFinder`: removed singleton
 ## [0.1.2]
 ### Added
 - settings to ignore certain folders (json array or from `.gitignore`)
 - setting to choose how output directories are selected (None/QuickPick/UI dialogue) 
 ### Changed
 
-- HeaderParser: extended matchers, so that cast and (de)allocation operators are parsed correctly
-- Improved `WorkspaceDirectoryFinder
+- `HeaderParser`: extended matchers, so that cast and (de)allocation operators are parsed correctly
+- Improved `WorkspaceDirectoryFinder`
     - using `chokidar` for FS events (folder added/deleted)
     - fixed added/removed workspace root folders handling
     - parsing  `.gitignore` files
