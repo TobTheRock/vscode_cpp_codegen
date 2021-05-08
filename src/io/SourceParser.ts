@@ -173,9 +173,13 @@ class SourceFileNoneNamespace
   }
 
   removeContaining(signatures: ISignaturable[]): void {
+    if (!signatures.length) {
+      return;
+    }
+
     this.signatures = this.signatures.filter((containingSignature) => {
-      signatures.some((signature) =>
-        compareSignaturables(containingSignature, signature)
+      return signatures.every(
+        (signature) => !compareSignaturables(containingSignature, signature)
       );
     });
   }

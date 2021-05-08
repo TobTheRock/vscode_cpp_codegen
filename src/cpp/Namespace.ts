@@ -1,6 +1,11 @@
 import { IClass, IFunction, INamespace } from "./TypeInterfaces";
 import { HeaderParser } from "../io/HeaderParser";
 import * as io from "../io";
+import {
+  Configuration,
+  SourceFileNamespaceSerialization,
+} from "../Configuration";
+import clone = require("clone");
 export class Namespace extends io.TextScope implements INamespace {
   constructor(name: string, scope: io.TextScope) {
     super(scope.scopeStart, scope.scopeEnd);
@@ -10,12 +15,39 @@ export class Namespace extends io.TextScope implements INamespace {
     this.subnamespaces = [];
   }
 
+  private addNamespaceToOptions(
+    options: io.SerializationOptions
+  ): io.SerializationOptions {
+    const newOptions = clone(options);
+
+    newOptions.nameScopes
+      ? newOptions.nameScopes.push(this.name)
+      : (newOptions.nameScopes = [this.name]);
+
+    return newOptions;
+  }
+
   async serialize(options: io.SerializationOptions) {
-    let serial = "namespace " + this.name + " {\n\n";
+    const config = Configuration.get();
+
+    let serial = "";
+    let suffix = "";
+    if (
+      config.sourceFileNamespaceSerialization ===
+      SourceFileNamespaceSerialization.named
+    ) {
+      serial = "namespace " + this.name + " {\n";
+      suffix = "}\n";
+    } else {
+      options = this.addNamespaceToOptions(options);
+    }
+
     serial += await io.serializeArray(this.subnamespaces, options);
     serial += await io.serializeArray(this.functions, options);
     serial += await io.serializeArray(this.classes, options);
-    serial += "}\n";
+
+    serial += suffix;
+
     return serial;
   }
 

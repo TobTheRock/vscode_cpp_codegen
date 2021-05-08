@@ -409,20 +409,22 @@ export class RemovingRegexWithBodyMatcher implements IMatcher {
         break;
       }
       const bracketIdx = regexMatch.scopeEnd;
-      textFragForMatching = textFragment.slice(new TextScope(bracketIdx, fragmentEnd));
-      const bodyMatch = this._bodyMatcher
-        .match(textFragForMatching)
-        .pop();
+      textFragForMatching = textFragment.slice(
+        new TextScope(bracketIdx, fragmentEnd)
+      );
+      const bodyMatch = this._bodyMatcher.match(textFragForMatching).pop();
 
       if (!bodyMatch) {
-        continue;
+        break;
       }
 
       let newMatch = regexMatch.concat(bodyMatch);
 
       if (newMatch && this._postRegexMatcher) {
         const bracketIdx = newMatch.scopeEnd;
-        textFragForMatching = textFragment.slice(new TextScope(bracketIdx, fragmentEnd));
+        textFragForMatching = textFragment.slice(
+          new TextScope(bracketIdx, fragmentEnd)
+        );
         const postRegexMatch = this._postRegexMatcher
           .match(textFragForMatching)
           .pop();
@@ -437,9 +439,10 @@ export class RemovingRegexWithBodyMatcher implements IMatcher {
         continue;
       }
       matches.push(newMatch);
-      textFragment.remove(newMatch);
+      textFragForMatching.remove(newMatch);
     }
 
+    textFragment.remove(...matches);
     return matches;
   }
 

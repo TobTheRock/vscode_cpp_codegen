@@ -30,7 +30,7 @@ export class SourceFileMerger {
     const textDocument = await vscode.workspace.openTextDocument(
       this._filePath
     );
-    const textDocumentUri = textDocument.uri;
+
     const text = textDocument.getText();
     const existingSourceFile = new cpp.SourceFile(this._filePath, text);
 
@@ -72,19 +72,18 @@ export class SourceFileMerger {
 
     const namespacesWithAddedSignatures: ISourceFileNamespace[] = [
       ...this._generatedSourceFile.namespaces,
-    ];
-    namespacesWithAddedSignatures.forEach((generatedNamespace) =>
-      generatedNamespace.removeContaining(existingSignatures)
-    );
+    ].filter((generatedNamespace) => {
+      generatedNamespace.removeContaining(existingSignatures);
+      return !generatedNamespace.isEmpty();
+    });
+
     this.mergeOrAddNamespaces(
       edit,
       textDocument,
       namespacesWithAddedSignatures,
       existingSourceFile.namespaces,
-      text.length - 1
+      text.length
     );
-
-    return true;
   }
 
   private mergeOrAddNamespaces(
@@ -125,7 +124,7 @@ export class SourceFileMerger {
         ...mergedNamespacePair.generated.signatures.map((signature) => {
           return {
             where: mergedNamespacePair.existing.scopeEnd,
-            content: signature.content,
+            content: `\n${signature.content}`,
           };
         })
       );
@@ -147,7 +146,7 @@ export class SourceFileMerger {
       textDocument,
       ...addedFunctionContent,
       ...addedNamespaces.map((namespace) => {
-        return { where: addContentAt, content: namespace.serialize() };
+        return { where: addContentAt, content: `\n${namespace.serialize()}` };
       })
     );
   }
@@ -158,16 +157,18 @@ export class SourceFileMerger {
     ...textScopes: io.TextScope[]
   ) {
     const removedFunctionLabel = "Removed from file " + textDocument.fileName;
-    textScopes.forEach((textScope) =>
-      edit.delete(
-        textDocument.uri,
-        new vscode.Range(
-          textDocument.positionAt(textScope.scopeStart),
-          textDocument.positionAt(textScope.scopeEnd + 1)
-        ),
-        { needsConfirmation: true, label: removedFunctionLabel }
-      )
-    );
+    textScopes
+      .filter((textScope) => textScope.scopeEnd !== textScope.scopeStart)
+      .forEach((textScope) =>
+        edit.delete(
+          textDocument.uri,
+          new vscode.Range(
+            textDocument.positionAt(textScope.scopeStart),
+            textDocument.positionAt(textScope.scopeEnd + 1)
+          ),
+          { needsConfirmation: true, label: removedFunctionLabel }
+        )
+      );
   }
 
   private addTextScopeContent(
@@ -176,14 +177,16 @@ export class SourceFileMerger {
     ...insertedTexts: InsertedText[]
   ) {
     const addedFunctionLabel = "Added to file " + textDocument.fileName;
-    insertedTexts.forEach((insertedText) =>
-      edit.insert(
-        textDocument.uri,
-        textDocument.positionAt(insertedText.where),
-        insertedText.content,
-        { needsConfirmation: true, label: addedFunctionLabel }
-      )
-    );
+    insertedTexts
+      .filter((insertedText) => insertedText.content.length)
+      .forEach((insertedText) =>
+        edit.insert(
+          textDocument.uri,
+          textDocument.positionAt(insertedText.where),
+          insertedText.content,
+          { needsConfirmation: true, label: addedFunctionLabel }
+        )
+      );
   }
 
   private _generatedSourceFile: cpp.SourceFile;

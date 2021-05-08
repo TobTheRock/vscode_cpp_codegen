@@ -4,11 +4,27 @@ import * as vscode from "vscode";
 import * as io from "./io";
 import { FileHandler } from "./FileHandler";
 import { Configuration } from "./Configuration";
+import { WorkspaceDirectoryFinder } from "./WorkspaceDirectories";
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   console.log("Activating code-gen.cpp!"); // TODO logger!
+  let config = Configuration.get();
+  let workspaceDirectoryFinder = new WorkspaceDirectoryFinder(config);
+
+  context.subscriptions.push(
+    Configuration.registerOnChanged(async (updatedConfig) => {
+      if (
+        config.outputDirectorySelector.ignoredDirectories !==
+          updatedConfig.outputDirectorySelector.ignoredDirectories &&
+        config.outputDirectorySelector.useGitIgnore !==
+          updatedConfig.outputDirectorySelector.useGitIgnore
+      ) {
+        workspaceDirectoryFinder = new WorkspaceDirectoryFinder(updatedConfig);
+        await workspaceDirectoryFinder.scan();
+      }
+      config = updatedConfig;
+    })
+  );
 
   context.subscriptions.push(
     vscode.commands.registerTextEditorCommand(
@@ -16,7 +32,8 @@ export function activate(context: vscode.ExtensionContext) {
       async (textEditor, edit) => {
         const fileHandler = FileHandler.createFromHeaderFile(
           textEditor.document,
-          { keepFileNameOnWrite: Configuration.getDeduceFileNames() }
+          workspaceDirectoryFinder,
+          config
         );
         if (!fileHandler) {
           console.error("Could not create file handler");
@@ -40,9 +57,10 @@ export function activate(context: vscode.ExtensionContext) {
       async (textEditor, edit) => {
         const fileHandler = FileHandler.createFromHeaderFile(
           textEditor.document,
+          workspaceDirectoryFinder,
           {
             askForInterfaceImplementationNames: true,
-            useClassNameAsFileName: Configuration.getDeduceFileNames(),
+            ...config,
           }
         );
         if (!fileHandler) {
@@ -64,6 +82,8 @@ export function activate(context: vscode.ExtensionContext) {
       }
     )
   );
+
+  await workspaceDirectoryFinder.scan();
 }
 
 // this method is called when your extension is deactivated

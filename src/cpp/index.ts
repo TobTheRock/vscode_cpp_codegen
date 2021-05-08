@@ -3,5 +3,4 @@ export * from "./Class";
 export * from "./MemberFunction";
 export * from "./Namespace";
 export * from "./StandaloneFunction";
-export * from "./HeaderFile";
-export * from "./SourceFile";
+export * from "./Files";
