@@ -13,7 +13,9 @@ All notable changes to the "codegen-cpp" extension will be documented in this fi
 - handling new line artificats when merging source files (due to empty serialzed namespaces)
 - `HeaderParser`: serialization of friend functions, added a matcher class for this
 - updated node dependencies
-- `WorkspaceDirectoryFinder`: removed singleton
+- `WorkspaceDirectoryFinder`: 
+  - removed singleton
+  - improved performance by only watching directory changes
 ## [0.1.2]
 ### Added
 - settings to ignore certain folders (json array or from `.gitignore`)

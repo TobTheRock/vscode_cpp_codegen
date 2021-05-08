@@ -9,9 +9,7 @@ import { WorkspaceDirectoryFinder } from "./WorkspaceDirectories";
 export async function activate(context: vscode.ExtensionContext) {
   console.log("Activating code-gen.cpp!"); // TODO logger!
   let config = Configuration.get();
-  let workspaceDirectoryFinder = await WorkspaceDirectoryFinder.createAndScan(
-    config
-  );
+  let workspaceDirectoryFinder = new WorkspaceDirectoryFinder(config);
 
   context.subscriptions.push(
     Configuration.registerOnChanged(async (updatedConfig) => {
@@ -21,9 +19,8 @@ export async function activate(context: vscode.ExtensionContext) {
         config.outputDirectorySelector.useGitIgnore !==
           updatedConfig.outputDirectorySelector.useGitIgnore
       ) {
-        workspaceDirectoryFinder = await WorkspaceDirectoryFinder.createAndScan(
-          updatedConfig
-        );
+        workspaceDirectoryFinder = new WorkspaceDirectoryFinder(updatedConfig);
+        await workspaceDirectoryFinder.scan();
       }
       config = updatedConfig;
     })
@@ -85,6 +82,8 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     )
   );
+
+  await workspaceDirectoryFinder.scan();
 }
 
 // this method is called when your extension is deactivated

@@ -55,6 +55,7 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 - fixed: new line artificats when merging source files
 - fixed: serialization of friend functions
 - fixed: window reload no longer required for certain configurations
+- fixed: directory scan for large folders
 ### 0.1.2
 - fixed: Parsing of cast and (de)allocation operators
 - fixed: Updating folder quick pick choices on folder creation/deletion

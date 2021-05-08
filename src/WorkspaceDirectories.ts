@@ -1,8 +1,9 @@
 import * as path from "path";
 import * as vscode from "vscode";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, Stats, stat } from "fs";
 import { FSWatcher } from "chokidar";
 import { IExtensionConfiguration } from "./Configuration";
+import anymatch from "anymatch";
 
 // TODO utils
 async function asyncForEach<Type>(
@@ -35,14 +36,7 @@ class DirectoryItem implements vscode.QuickPickItem {
   }
 }
 export class WorkspaceDirectoryFinder {
-  static async createAndScan(
-    config: IExtensionConfiguration
-  ): Promise<WorkspaceDirectoryFinder> {
-    const finder = new WorkspaceDirectoryFinder(config);
-    await finder.scan();
-    return finder;
-  }
-  private constructor(private readonly _config: IExtensionConfiguration) {
+  constructor(private readonly _config: IExtensionConfiguration) {
     this._workSpaceFoldersChangedSubscription = vscode.workspace.onDidChangeWorkspaceFolders(
       this.workSpaceFoldersChanged.bind(this)
     );
@@ -109,12 +103,18 @@ export class WorkspaceDirectoryFinder {
       path.resolve(rootDirectory, ignoredDirectory)
     );
 
+    const ignoreFiles = (path: string, stats?: Stats) => {
+      if (stats?.isFile()) {
+        return true;
+      }
+      return false;
+    };
     const newWatcher = new FSWatcher({
       ignorePermissionErrors: true,
       ignoreInitial: false,
       followSymlinks: true,
       persistent: true,
-      ignored: absIgnoredPaths,
+      ignored: [ignoreFiles, ...absIgnoredPaths],
       depth: 100,
     });
     newWatcher.on("addDir", this.onDirectoryAdded.bind(this, rootDirectory));
