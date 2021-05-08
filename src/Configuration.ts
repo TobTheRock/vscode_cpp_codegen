@@ -1,4 +1,3 @@
-import { config } from "node:process";
 import * as vscode from "vscode";
 
 function getConfigArray<T>(section: string): T[] {
