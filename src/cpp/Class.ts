@@ -9,6 +9,7 @@ import { HeaderParser } from "../io/HeaderParser";
 import * as io from "../io";
 import { joinNameScopesWithFunctionName, joinNameScopes } from "./utils";
 import { ClassNameGenerator } from "./ClassNameGenerator";
+import * as vscode from "vscode";
 
 function getCtorDtorImplName(
   classNameProvider: io.IClassNameProvider,
@@ -274,11 +275,16 @@ class ClassBase extends io.TextScope implements IClass {
       data,
       this._classNameProvider
     );
-    if (dtors.length > 1) {
-      throw new Error("Class " + this.name + " has multiple destructors!");
-    } else if (dtors.length === 1) {
+
+    if (dtors.length >= 1) {
+      if (dtors.length > 1) {
+        vscode.window.showWarningMessage(
+          "Class " + this.name + " has multiple destructors!"
+        );
+      }
       this.destructor = dtors[0];
     }
+
     this.publicScope.deserialize(data);
     this.privateScope.deserialize(data);
     this.protectedScope.deserialize(data);

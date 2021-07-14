@@ -59,7 +59,9 @@ export class FileHandler {
         vscDocument.getText()
       );
     } catch (error) {
-      vscode.window.showErrorMessage("Unable to parse header file: ", error);
+      vscode.window.showErrorMessage(
+        "Unable to parse header file: " + error.message
+      );
       return;
     }
     return new FileHandler(file, workspaceDirectoryFinder, opt);
@@ -133,7 +135,8 @@ export class FileHandler {
     try {
       return await new Promise<string | undefined>((resolve) => {
         const workspaceDirs = this._workspaceDirectoryFinder.getDirectories();
-        const workspaceRootDirs = this._workspaceDirectoryFinder.getRootDirectories();
+        const workspaceRootDirs =
+          this._workspaceDirectoryFinder.getRootDirectories();
 
         const quickPickInput = vscode.window.createQuickPick<DirectoryItem>();
         quickPickInput.placeholder = "Select output directory...";
