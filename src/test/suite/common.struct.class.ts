@@ -566,4 +566,30 @@ export function structAndClassTests(specifier: string) {
     });
     assert.ok(serialized.includes("TestClass::NestedClass::fncName"));
   });
+
+  describe(`Parse ${specifier} with final specifier`, () => {
+    callItAsync(
+      "With inheritance ${value}",
+      inheritData,
+      function (inheritData: TestData) {
+        const testContent = TextFragment.createFromString(
+          `${specifier} TestClass final ${inheritData.content}  {
+          public:
+              void function(int x = {});
+            };
+          `
+        );
+
+        let classLike: IClass[] = HeaderParser.parseClasses(testContent);
+
+        assert.strictEqual(classLike.length, 1);
+        assert.strictEqual(classLike[0].name, "TestClass");
+        assertClassScopeEmpty(classLike[0].privateScope);
+        assert.strictEqual(classLike[0].publicScope.memberFunctions.length, 1);
+        assertClassScopeEmpty(classLike[0].protectedScope);
+        assert.strictEqual(classLike[0].destructor, undefined);
+        assert.strictEqual(classLike[0].inheritance.length, inheritData.nDates);
+      }
+    );
+  });
 }

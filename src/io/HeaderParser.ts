@@ -26,6 +26,7 @@ class ClassMatchBase {
   }
 
   protected static readonly classNameRegex: string = "([\\S]+)";
+  protected static readonly mayHaveFinalRegex: string = "(?:final)?";
   protected static readonly inheritanceRegex: string =
     "(?::\\s*((?:(?!{)[\\S\\s])+))?";
   private static readonly pureVirtualMemberRegex =
@@ -45,6 +46,7 @@ class ClassMatch extends ClassMatchBase {
   static readonly regex: string = joinRegexStringsWithWhiteSpace(
     ClassMatch.classSpecifierRegex,
     ClassMatch.classNameRegex,
+    ClassMatch.mayHaveFinalRegex,
     ClassMatch.inheritanceRegex
   );
 }
@@ -53,6 +55,7 @@ class StructMatch extends ClassMatchBase {
   static readonly regex: string = joinRegexStringsWithWhiteSpace(
     StructMatch.classSpecifierRegex,
     StructMatch.classNameRegex,
+    StructMatch.mayHaveFinalRegex,
     StructMatch.inheritanceRegex
   );
 }
