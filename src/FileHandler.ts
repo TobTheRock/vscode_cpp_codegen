@@ -196,6 +196,13 @@ export class FileHandler {
   }
 
   private async generateHeaderAndTryWriteAll() {
+    if (!this._context.outputContent.length) {
+      vscode.window.showWarningMessage(
+        "Nothing to generate. Please check for typos."
+      );
+      return;
+    }
+
     this._context.outputContent.forEach(async (serialized) => {
       const outputFilePath = path.join(
         this._context.outputDirectory,
@@ -308,7 +315,10 @@ export class FileHandler {
     return modes.reduce(async (accumulate, mode) => {
       await accumulate;
       let content = await this._file.serialize({ mode, nameInputProvider });
-      this._context.outputContent.push({ mode, content });
+      content = content.trim();
+      if (content) {
+        this._context.outputContent.push({ mode, content });
+      }
     }, Promise.resolve());
   }
 

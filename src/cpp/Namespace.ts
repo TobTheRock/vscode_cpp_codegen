@@ -31,12 +31,13 @@ export class Namespace extends io.TextScope implements INamespace {
     const config = Configuration.get();
 
     let serial = "";
+    let prefix = "";
     let suffix = "";
     if (
       config.sourceFileNamespaceSerialization ===
       SourceFileNamespaceSerialization.named
     ) {
-      serial = "namespace " + this.name + " {\n";
+      prefix = "namespace " + this.name + " {\n";
       suffix = "}\n";
     } else {
       options = this.addNamespaceToOptions(options);
@@ -46,9 +47,11 @@ export class Namespace extends io.TextScope implements INamespace {
     serial += await io.serializeArray(this.functions, options);
     serial += await io.serializeArray(this.classes, options);
 
-    serial += suffix;
+    if (!serial.length) {
+      return "";
+    }
 
-    return serial;
+    return prefix + serial + suffix;
   }
 
   deserialize(data: io.TextFragment) {
