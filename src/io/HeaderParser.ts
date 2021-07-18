@@ -7,6 +7,7 @@ import {
 } from "./CommonParser";
 import { TextScope } from "./Text";
 import { IClassNameProvider } from "./Serialization";
+import * as vscode from "vscode";
 
 class ClassMatchBase {
   constructor(regexMatch: io.TextMatch) {
@@ -26,6 +27,7 @@ class ClassMatchBase {
   }
 
   protected static readonly classNameRegex: string = "([\\S]+)";
+  protected static readonly mayHaveFinalRegex: string = "(?:final)?";
   protected static readonly inheritanceRegex: string =
     "(?::\\s*((?:(?!{)[\\S\\s])+))?";
   private static readonly pureVirtualMemberRegex =
@@ -45,6 +47,7 @@ class ClassMatch extends ClassMatchBase {
   static readonly regex: string = joinRegexStringsWithWhiteSpace(
     ClassMatch.classSpecifierRegex,
     ClassMatch.classNameRegex,
+    ClassMatch.mayHaveFinalRegex,
     ClassMatch.inheritanceRegex
   );
 }
@@ -53,6 +56,7 @@ class StructMatch extends ClassMatchBase {
   static readonly regex: string = joinRegexStringsWithWhiteSpace(
     StructMatch.classSpecifierRegex,
     StructMatch.classNameRegex,
+    StructMatch.mayHaveFinalRegex,
     StructMatch.inheritanceRegex
   );
 }
@@ -121,6 +125,7 @@ class ClassDestructorMatch {
 }
 
 interface IFunctionMatch {
+  readonly hasInvalidSignature?: boolean;
   readonly virtualMatch?: boolean;
   readonly staticMatch?: boolean;
   readonly returnValMatch?: string;
@@ -162,12 +167,7 @@ class MemberFunctionMatch implements IFunctionMatch {
     this.virtualMatch =
       this.virtualMatch || regexMatch.getGroupMatch(5).length > 0;
     this.pureMatch = regexMatch.getGroupMatch(6).length > 0;
-    if (!this.virtualMatch && this.pureMatch) {
-      throw new Error(
-        "ParserError: Invalid specifier combination: '=0' missing virtual for function: " +
-          this.nameMatch
-      );
-    }
+    this.hasInvalidSignature = !this.virtualMatch && this.pureMatch;
   }
 
   private static readonly mayHaveVirtualOrStaticRegex: string =
@@ -193,6 +193,7 @@ class MemberFunctionMatch implements IFunctionMatch {
     ";"
   );
 
+  readonly hasInvalidSignature: boolean;
   readonly virtualMatch: boolean;
   readonly staticMatch: boolean;
   readonly returnValMatch: string;
@@ -243,12 +244,7 @@ class ClassCastOperatorMatch implements IFunctionMatch {
     this.virtualMatch =
       this.virtualMatch || regexMatch.getGroupMatch(3).length > 0;
     this.pureMatch = regexMatch.getGroupMatch(4).length > 0;
-    if (!this.virtualMatch && this.pureMatch) {
-      throw new Error(
-        "ParserError: Invalid specifier combination: '=0' missing virtual for function: " +
-          this.nameMatch
-      );
-    }
+    this.hasInvalidSignature = !this.virtualMatch && this.pureMatch;
   }
 
   private static readonly mayHaveVirtualRegex: string = "(virtual)?";
@@ -270,6 +266,7 @@ class ClassCastOperatorMatch implements IFunctionMatch {
     ";"
   );
 
+  readonly hasInvalidSignature: boolean;
   readonly virtualMatch: boolean;
   readonly pureMatch: boolean;
   readonly nameMatch: string;
@@ -416,7 +413,15 @@ export abstract class HeaderParser extends CommonParser {
       match: MatchType
     ) {
       let newFunc: cpp.IFunction;
-      if (match.virtualMatch) {
+      if (match.hasInvalidSignature) {
+        // TODO add a logger with summarizes the warnings, if there are multiple
+        vscode.window.showWarningMessage(
+          "Parser: Ignoring function " +
+            match.nameMatch +
+            " as it has an invalid signature!"
+        );
+        return;
+      } else if (match.virtualMatch) {
         if (match.pureMatch) {
           newFunc = new cpp.PureVirtualMemberFunction(
             match.nameMatch ?? "",

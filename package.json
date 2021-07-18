@@ -1,158 +1,158 @@
 {
-	"name": "codegen-cpp",
-	"displayName": "Stub Code Generator for C++",
-	"description": "Facilitates writing C++ by generating stub definitions from header files",
-	"publisher": "HerrFroehlich",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/HerrFroehlich/vscode_cpp_codegen"
-	},
-	"version": "0.1.3",
-	"engines": {
-		"vscode": "^1.51.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"keywords": [
-		"c++",
-		"cpp",
-		"definition",
-		"generator",
-		"stub",
-		"implementation",
-		"header",
-		"source",
-		"interface"
-	],
-	"activationEvents": [
-		"onLanguage:cpp"
-	],
-	"main": "./out/extension.js",
-	"contributes": {
-		"configuration": {
-			"title": "Codegen C++",
-			"properties": {
-				"codegen-cpp.FileHeader.ForC++Source": {
-					"type": "array",
-					"default": [],
-					"description": "File header which is added at the top of each generated C++ source file. Each element of the configuration value represents a new line.",
-					"scope": "resource"
-				},
-				"codegen-cpp.FileHeader.ForC++Header": {
-					"type": "array",
-					"default": [],
-					"description": "File header which is added at the top of each generated C++ header file. Each element of the configuration value represents a new line.",
-					"scope": "resource"
-				},
-				"codegen-cpp.OutputFileExtension.ForC++Source": {
-					"type": "string",
-					"default": "cpp",
-					"maxLength": "255",
-					"pattern": "^[^\\s]+$",
-					"patternErrorMessage": "Must not contain whitespaces!",
-					"description": "File extension used when generating C++ source files"
-				},
-				"codegen-cpp.OutputFileExtension.ForC++Header": {
-					"type": "string",
-					"default": "hpp",
-					"maxLength": "255",
-					"pattern": "^[^\\s]+$",
-					"patternErrorMessage": "Must not contain whitespaces!",
-					"description": "File extension used when generating C++ header files"
-				},
-				"codegen-cpp.deduceOutputFileNames": {
-					"type": "boolean",
-					"default": true,
-					"markdownDescription": "Whether the output file name(s) should be deduced when generating:\n* Source from Header: by keeping the base name\n* Interface implementations: by using the name of the (first) implementation \n\n\n Else the file base name has to be entered via the UI."
-				},
-				"codegen-cpp.OutputDirectorySelector.Mode": {
-					"type": "string",
-					"default": "QuickPick",
-					"enum": [
-						"Disabled",
-						"QuickPick",
-						"UI"
-					],
-					"enumDescriptions": [
-						"Disables the directory selector and created files are put in the directory of the root file.",
-						"Uses a quick pick selector with fuzzy find",
-						"Uses a UI window"
-					],
-					"description": "Sets how the output directory of generated files can be selected."
-				},
-				"codegen-cpp.OutputDirectorySelector.IgnoredDirectories": {
-					"type": "array",
-					"default": [],
-					"description": "Relative directory paths which are ignored for selection (anymatch-compatible definition). ",
-					"examples": [
-						"path/to/",
-						"build/**/"
-					],
-					"scope": "resource",
-					"uniqueItems": true
-				},
-				"codegen-cpp.OutputDirectorySelector.UseGitIgnore": {
-					"type": "boolean",
-					"default": true,
-					"markdownDescription": "Extracts ignored directories from the `.gitignore` file if available. Needs a window reload when `.gitignore` is changed."
-				},
-				"codegen-cpp.SourceFileNamespace.Serialization": {
-					"type": "string",
-					"default": "Named",
-					"enum": [
-						"Named",
-						"Prepended"
-					],
-					"markdownEnumDescriptions": [
-						"Serialized with an explicit named definition, e.g. `namespace myNamespace{...}`",
-						"Serialized prepended in front of function definitions, e.g. `void myNamespace::MyClass::funct()`"
-					],
-					"description": "Sets how namespaces are serialized in generated source files"
-				}
-			}
-		},
-		"commands": [
-			{
-				"command": "codegen-cpp.cppSourceFromHeader",
-				"title": "codegen-cpp: Generate source file from header",
-				"when": "editorLangId == cpp",
-				"enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
-			},
-			{
-				"command": "codegen-cpp.cppInterfaceImplFromHeader",
-				"title": "codegen-cpp:  Generate interface implementation source/header files",
-				"when": "editorLangId == cpp",
-				"enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
-			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile && npm run lint",
-		"lint": "eslint src --ext ts",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/clone": "^2.1.0",
-		"@types/glob": "^7.1.3",
-		"@types/mocha": "^8.0.0",
-		"@types/node": "^12.20.12",
-		"@types/vscode": "^1.51.0",
-		"@typescript-eslint/eslint-plugin": "^4.22.1",
-		"@typescript-eslint/parser": "^4.22.1",
-		"eslint": "^7.26.0",
-		"glob": "^7.1.7",
-		"mocha": "^8.4.0",
-		"mocha-param": "^2.0.1",
-		"typescript": "^4.2.4",
-		"vscode-test": "^1.4.0"
-	},
-	"dependencies": {
-		"chokidar": "^3.4.3",
-		"clone": "^2.1.2",
-		"g2-bracket-parser": "^2.0.0"
-	}
+  "name": "codegen-cpp",
+  "displayName": "Stub Code Generator for C++",
+  "description": "Facilitates writing C++ by generating stub definitions from header files",
+  "publisher": "HerrFroehlich",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HerrFroehlich/vscode_cpp_codegen"
+  },
+  "version": "0.1.4",
+  "engines": {
+    "vscode": "^1.51.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "c++",
+    "cpp",
+    "definition",
+    "generator",
+    "stub",
+    "implementation",
+    "header",
+    "source",
+    "interface"
+  ],
+  "activationEvents": [
+    "onLanguage:cpp"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Codegen C++",
+      "properties": {
+        "codegen-cpp.FileHeader.ForC++Source": {
+          "type": "array",
+          "default": [],
+          "description": "File header which is added at the top of each generated C++ source file. Each element of the configuration value represents a new line.",
+          "scope": "resource"
+        },
+        "codegen-cpp.FileHeader.ForC++Header": {
+          "type": "array",
+          "default": [],
+          "description": "File header which is added at the top of each generated C++ header file. Each element of the configuration value represents a new line.",
+          "scope": "resource"
+        },
+        "codegen-cpp.OutputFileExtension.ForC++Source": {
+          "type": "string",
+          "default": "cpp",
+          "maxLength": "255",
+          "pattern": "^[^\\s]+$",
+          "patternErrorMessage": "Must not contain whitespaces!",
+          "description": "File extension used when generating C++ source files"
+        },
+        "codegen-cpp.OutputFileExtension.ForC++Header": {
+          "type": "string",
+          "default": "hpp",
+          "maxLength": "255",
+          "pattern": "^[^\\s]+$",
+          "patternErrorMessage": "Must not contain whitespaces!",
+          "description": "File extension used when generating C++ header files"
+        },
+        "codegen-cpp.deduceOutputFileNames": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Whether the output file name(s) should be deduced when generating:\n* Source from Header: by keeping the base name\n* Interface implementations: by using the name of the (first) implementation \n\n\n Else the file base name has to be entered via the UI."
+        },
+        "codegen-cpp.OutputDirectorySelector.Mode": {
+          "type": "string",
+          "default": "QuickPick",
+          "enum": [
+            "Disabled",
+            "QuickPick",
+            "UI"
+          ],
+          "enumDescriptions": [
+            "Disables the directory selector and created files are put in the directory of the root file.",
+            "Uses a quick pick selector with fuzzy find",
+            "Uses a UI window"
+          ],
+          "description": "Sets how the output directory of generated files can be selected."
+        },
+        "codegen-cpp.OutputDirectorySelector.IgnoredDirectories": {
+          "type": "array",
+          "default": [],
+          "description": "Relative directory paths which are ignored for selection (anymatch-compatible definition). ",
+          "examples": [
+            "path/to/",
+            "build/**/"
+          ],
+          "scope": "resource",
+          "uniqueItems": true
+        },
+        "codegen-cpp.OutputDirectorySelector.UseGitIgnore": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Extracts ignored directories from the `.gitignore` file if available. Needs a window reload when `.gitignore` is changed."
+        },
+        "codegen-cpp.SourceFileNamespace.Serialization": {
+          "type": "string",
+          "default": "Named",
+          "enum": [
+            "Named",
+            "Prepended"
+          ],
+          "markdownEnumDescriptions": [
+            "Serialized with an explicit named definition, e.g. `namespace myNamespace{...}`",
+            "Serialized prepended in front of function definitions, e.g. `void myNamespace::MyClass::funct()`"
+          ],
+          "description": "Sets how namespaces are serialized in generated source files"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "codegen-cpp.cppSourceFromHeader",
+        "title": "codegen-cpp: Generate source file from header",
+        "when": "editorLangId == cpp",
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+      },
+      {
+        "command": "codegen-cpp.cppInterfaceImplFromHeader",
+        "title": "codegen-cpp:  Generate interface implementation source/header files",
+        "when": "editorLangId == cpp",
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/clone": "^2.1.0",
+    "@types/glob": "^7.1.3",
+    "@types/mocha": "^8.0.0",
+    "@types/node": "^12.20.12",
+    "@types/vscode": "^1.51.0",
+    "@typescript-eslint/eslint-plugin": "^4.22.1",
+    "@typescript-eslint/parser": "^4.22.1",
+    "eslint": "^7.26.0",
+    "glob": "^7.1.7",
+    "mocha": "^8.4.0",
+    "mocha-param": "^2.0.1",
+    "typescript": "^4.2.4",
+    "@vscode/test-electron": "^1.4.0"
+  },
+  "dependencies": {
+    "chokidar": "^3.4.3",
+    "clone": "^2.1.2",
+    "g2-bracket-parser": "^2.0.0"
+  }
 }

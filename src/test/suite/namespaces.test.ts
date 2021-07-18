@@ -4,7 +4,7 @@ import { Done, describe } from "mocha";
 // import * as myExtension from '../../extension';
 import { HeaderParser } from "../../io/HeaderParser";
 import { INamespace, Namespace, NoneNamespace } from "../../cpp";
-import { TextFragment, compareSignaturables, TextScope } from "../../io";
+import { TextFragment, SerializableMode } from "../../io";
 import { callItAsync } from "./utils";
 class TestData {
   constructor(
@@ -36,7 +36,7 @@ const namespacesData: TestData[] = (function () {
   return data;
 })();
 
-suite("Parser Namespace Tests", () => {
+suite("Namespace Tests", () => {
   // vscode.window.showInformationMessage('Start all tests.');
 
   describe("ParseSingleNamespace", function () {
@@ -64,7 +64,7 @@ suite("Parser Namespace Tests", () => {
     );
   });
 
-  describe("ParseMultipleNamespaces", function () {
+  describe("Pars eMultiple Namespaces", function () {
     callItAsync(
       "With content ${value}",
       namespacesData,
@@ -92,7 +92,7 @@ suite("Parser Namespace Tests", () => {
     );
   });
 
-  describe("ParseMultipleNestedNamespaces", function () {
+  describe("Parse Multiple Nested Namespaces", function () {
     callItAsync(
       "With content ${value}",
       namespacesData,
@@ -134,7 +134,7 @@ suite("Parser Namespace Tests", () => {
     );
   });
 
-  describe("ParseNestedMultipleNamespaces", function () {
+  describe("Parse NestedMultiple Namespaces", function () {
     callItAsync(
       "With content ${value}",
       namespacesData,
@@ -177,7 +177,7 @@ suite("Parser Namespace Tests", () => {
     );
   });
 
-  describe("ParseNestedNamespaceCpp17", function () {
+  describe("Parse Nested Namespace Cpp17", function () {
     callItAsync(
       "With content ${value}",
       namespacesData,
@@ -202,7 +202,7 @@ suite("Parser Namespace Tests", () => {
     );
   });
 
-  test("ParseNonNamespaceSeparatedByComments", () => {
+  test("Parse NonNamespace Separated By Comments", () => {
     const testData = TextFragment.createFromString(
       `
 			class MyClass {       // The class
@@ -219,5 +219,24 @@ suite("Parser Namespace Tests", () => {
     assert.strictEqual(namespaces[0].functions.length, 0);
     assert.strictEqual(namespaces[0].subnamespaces.length, 0);
     assert.ok(namespaces[0] instanceof NoneNamespace);
+  });
+
+  test("Don't serialize empty namespaces", async () => {
+    const testData = TextFragment.createFromString(
+      `
+        namespace namespaceName
+        {
+        }
+		  `
+    );
+    let namespaces: INamespace[] = HeaderParser.parseNamespaces(testData);
+
+    assert.strictEqual(namespaces.length, 1);
+    const namespace = namespaces[0];
+    const deserializedString = await namespace.serialize({
+      mode: SerializableMode.header,
+    });
+
+    assert.strictEqual(deserializedString.length, 0);
   });
 });

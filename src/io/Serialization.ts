@@ -40,11 +40,13 @@ export function serializeArray(
   elementSuffix: string = ""
 ): Promise<string> {
   return serializableArray.reduce(async (accumulate, serializable) => {
+    let acummulatedSerialized = await accumulate;
+    let serializedElement = await serializable.serialize(options);
+    if (!serializedElement.length) {
+      return acummulatedSerialized;
+    }
     return (
-      (await accumulate) +
-      elementPrefix +
-      (await serializable.serialize(options)) +
-      elementSuffix
+      acummulatedSerialized + elementPrefix + serializedElement + elementSuffix
     );
   }, Promise.resolve(""));
 }
