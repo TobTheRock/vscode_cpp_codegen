@@ -1,4 +1,8 @@
-import { WorkspaceDirectoryFinder } from "./WorkspaceDirectories";
+import {
+  WorkspaceDirectoryFinder,
+  DirectoryItem,
+  GoBackItem,
+} from "./WorkspaceDirectories";
 import { SourceFileMerger } from "./SourceFileMerger";
 import * as cpp from "./cpp";
 import * as io from "./io";
@@ -9,18 +13,6 @@ import {
   IExtensionConfiguration,
   DirectorySelectorMode,
 } from "./Configuration";
-
-class DirectoryItem implements vscode.QuickPickItem {
-  label: string;
-  description: string;
-  constructor(
-    public readonly absolutePath: string,
-    public readonly rootDir: string
-  ) {
-    this.label = "." + path.sep + path.relative(rootDir, absolutePath);
-    this.description = rootDir;
-  }
-}
 
 // TODO Get rid of this interface
 // Add configuration for a fixed output directory
@@ -138,9 +130,13 @@ export class FileHandler {
         const workspaceRootDirs =
           this._workspaceDirectoryFinder.getRootDirectories();
 
-        const quickPickInput = vscode.window.createQuickPick<DirectoryItem>();
+        const quickPickInput = vscode.window.createQuickPick<
+          DirectoryItem | GoBackItem
+        >();
         quickPickInput.placeholder = "Select output directory...";
-        quickPickInput.items = workspaceDirs; //TODO large directories
+
+        const goBackItem = new GoBackItem();
+        quickPickInput.items = [goBackItem, ...workspaceDirs]; //TODO large directories
         if (path.isAbsolute(defaultValue)) {
           for (let index = 0; index < workspaceRootDirs.length; index++) {
             const rootDir = workspaceRootDirs[index];
@@ -156,21 +152,29 @@ export class FileHandler {
           quickPickInput.value = defaultValue;
         }
 
-        let lastItem = quickPickInput.items[0];
+        quickPickInput.items;
+
         disposables.push(
-          quickPickInput.onDidChangeValue((value) => {
-            return value;
-          }),
-          quickPickInput.onDidChangeActive((items) => {
-            const item = items[0];
-            if (item && lastItem !== item) {
-              quickPickInput.value = item.label;
-              lastItem = item;
+          quickPickInput.onDidChangeSelection((items) => {
+            let item = items[0];
+            if (!item) {
+              return;
             }
-          }),
-          quickPickInput.onDidAccept(() => {
-            resolve(quickPickInput.selectedItems[0].absolutePath);
-            quickPickInput.hide();
+
+            let newLabel = item.label;
+            if (item instanceof GoBackItem) {
+              newLabel = item.goBack(quickPickInput.value);
+            }
+
+            if (newLabel !== quickPickInput.value) {
+              quickPickInput.value = newLabel;
+              const triggerFilterByResettingItems = quickPickInput.items;
+              quickPickInput.items = [];
+              quickPickInput.items = triggerFilterByResettingItems;
+            } else if (item instanceof DirectoryItem) {
+              resolve(item.absolutePath);
+              quickPickInput.hide();
+            }
           }),
           quickPickInput.onDidHide(() => {
             resolve(undefined);

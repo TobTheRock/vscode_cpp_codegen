@@ -75,7 +75,8 @@ export async function activate(context: vscode.ExtensionContext) {
           );
         } catch (error) {
           vscode.window.showErrorMessage(
-            "Unable to create implentation source/header file: " + error.message
+            "Unable to create implementation source/header file: " +
+              error.message
           );
           return;
         }

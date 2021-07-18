@@ -21,25 +21,42 @@ async function asyncForEach<Type>(
   await allPromise;
 }
 
-class DirectoryItem implements vscode.QuickPickItem {
-  label: string;
-  description: string;
+const RELATIVE_ROOT = "." + path.sep;
+
+function addEndingSlashToPath(dirPath: string): string {
+  return dirPath.endsWith(path.sep) ? dirPath : dirPath + path.sep;
+}
+export class DirectoryItem implements vscode.QuickPickItem {
+  public readonly label: string;
+  public readonly description: string;
   constructor(
     public readonly absolutePath: string,
     public readonly rootDir: string
   ) {
-    this.label = "." + path.sep + path.relative(rootDir, absolutePath);
-    if (absolutePath !== rootDir) {
-      this.label = this.label + path.sep;
-    }
+    this.label = addEndingSlashToPath(
+      RELATIVE_ROOT + path.relative(rootDir, absolutePath)
+    );
+
     this.description = rootDir;
+  }
+}
+
+export class GoBackItem implements vscode.QuickPickItem {
+  public readonly label: string = "..";
+  public readonly description: string = "Go back";
+  public alwaysShow = true;
+  goBack(childPath: string): string {
+    const parentPath =
+      childPath === RELATIVE_ROOT ? childPath : path.join(childPath, "..");
+    return addEndingSlashToPath(parentPath);
   }
 }
 export class WorkspaceDirectoryFinder {
   constructor(private readonly _config: IExtensionConfiguration) {
-    this._workSpaceFoldersChangedSubscription = vscode.workspace.onDidChangeWorkspaceFolders(
-      this.workSpaceFoldersChanged.bind(this)
-    );
+    this._workSpaceFoldersChangedSubscription =
+      vscode.workspace.onDidChangeWorkspaceFolders(
+        this.workSpaceFoldersChanged.bind(this)
+      );
   }
 
   async scan(): Promise<void> {
@@ -94,8 +111,8 @@ export class WorkspaceDirectoryFinder {
   }
 
   private async createNewDirectoryWatcher(rootDirectory: string) {
-    const relIgnoredPaths = this._config.outputDirectorySelector
-      .ignoredDirectories;
+    const relIgnoredPaths =
+      this._config.outputDirectorySelector.ignoredDirectories;
     if (this._config.outputDirectorySelector.useGitIgnore) {
       relIgnoredPaths.push(...this.parseGitIgnore(rootDirectory));
     }
