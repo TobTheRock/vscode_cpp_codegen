@@ -23,10 +23,24 @@ function createHeaderFile(
   }
 }
 
+function getSelection(textEditor: vscode.TextEditor): io.TextScope | undefined {
+  const selectionStart = textEditor.document.offsetAt(
+    textEditor.selection.start
+  );
+  const selectionEnd = textEditor.document.offsetAt(textEditor.selection.end);
+
+  if (selectionEnd === selectionStart) {
+    return;
+  }
+
+  return new io.TextScope(selectionStart, selectionEnd);
+}
+
 async function generateStubsFromHeader(
   headerFile: cpp.HeaderFile,
   workspaceDirectoryFinder: WorkspaceDirectoryFinder,
   config: IExtensionConfiguration,
+  selection?: io.TextScope,
   ...modes: io.SerializableMode[]
 ) {
   const fileHandler = new HeaderFileHandler(
@@ -36,7 +50,11 @@ async function generateStubsFromHeader(
     config
   );
   try {
-    await fileHandler.writeFileAs(...modes);
+    if (selection) {
+      await fileHandler.writeFileSelectionAs(selection, ...modes);
+    } else {
+      await fileHandler.writeFileAs(...modes);
+    }
   } catch (error) {
     vscode.window.showErrorMessage(
       "Unable to generate stubs: " + error.message
@@ -74,6 +92,26 @@ export async function activate(context: vscode.ExtensionContext) {
             headerFile,
             workspaceDirectoryFinder,
             config,
+            undefined,
+            io.SerializableMode.source
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerTextEditorCommand(
+      "codegen-cpp.cppSourceFromHeaderSelection",
+      async (textEditor, edit) => {
+        const headerFile = createHeaderFile(textEditor);
+        if (headerFile) {
+          const selection = getSelection(textEditor);
+          generateStubsFromHeader(
+            headerFile,
+            workspaceDirectoryFinder,
+            config,
+            selection,
             io.SerializableMode.source
           );
         }
@@ -91,8 +129,29 @@ export async function activate(context: vscode.ExtensionContext) {
             headerFile,
             workspaceDirectoryFinder,
             config,
+            undefined,
             io.SerializableMode.implHeader,
             io.SerializableMode.implSource
+          );
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerTextEditorCommand(
+      "codegen-cpp.cppInterfaceImplFromHeaderSelection",
+      async (textEditor, edit) => {
+        const headerFile = createHeaderFile(textEditor);
+        if (headerFile) {
+          const selection = getSelection(textEditor);
+          generateStubsFromHeader(
+            headerFile,
+            workspaceDirectoryFinder,
+            config,
+            selection,
+            io.SerializableMode.implSource,
+            io.SerializableMode.implHeader
           );
         }
       }

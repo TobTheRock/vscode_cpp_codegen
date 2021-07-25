@@ -1,4 +1,4 @@
-import { TextFragment } from "./Text";
+import { TextFragment, TextScope } from "./Text";
 import { flatten } from "lodash";
 
 export enum SerializableMode {
@@ -46,6 +46,7 @@ export interface SerializationOptions {
   mode: SerializableMode;
   nameScopes?: string[];
   nameInputProvider?: INameInputProvider;
+  range?: TextScope;
 }
 
 export interface ISerializable {
@@ -60,7 +61,7 @@ export interface IFile extends ISerializable, IDeserializable {
 }
 
 export function serializeArray(
-  serializableArray: Array<ISerializable>,
+  serializableArray: ISerializable[],
   options: SerializationOptions,
   elementPrefix: string = "",
   elementSuffix: string = ""
@@ -79,4 +80,23 @@ export function serializeArray(
 
 export interface IDeserializable {
   deserialize: (data: TextFragment) => void;
+}
+
+class ISerializeDummyImpl implements ISerializable {
+  serialize(options: SerializationOptions): string {
+    throw new Error("This class should not be used directly");
+  }
+}
+type Constructor<T = {}> = new (...args: any[]) => T;
+export function makeRangedSerializable<
+  TBase extends Constructor<TextScope & ISerializeDummyImpl>
+>(base: TBase) {
+  return class RangedSerializable extends base {
+    serialize(options: SerializationOptions): string {
+      if (options.range && !this.contains(options.range)) {
+        return "";
+      }
+      return super.serialize(options);
+    }
+  };
 }

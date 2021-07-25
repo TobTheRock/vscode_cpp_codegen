@@ -5,8 +5,12 @@ import {
   joinNameScopesWithFunctionName,
 } from "./utils";
 import * as io from "../io";
+import { type } from "os";
 
-export class MemberFunction extends io.TextScope implements IFunction {
+class MemberFunctionBase
+  extends io.TextScope
+  implements IFunction, io.ISerializable
+{
   constructor(
     public readonly name: string,
     public readonly returnVal: string,
@@ -84,8 +88,10 @@ export class MemberFunction extends io.TextScope implements IFunction {
     }
   }
 }
-
-export class VirtualMemberFunction extends MemberFunction {
+export class MemberFunction extends io.makeRangedSerializable(
+  MemberFunctionBase
+) {}
+class VirtualMemberFunctionUnranged extends MemberFunctionBase {
   constructor(
     name: string,
     returnVal: string,
@@ -117,7 +123,10 @@ export class VirtualMemberFunction extends MemberFunction {
     return serial;
   }
 }
-export class StaticMemberFunction extends MemberFunction {
+export class VirtualMemberFunction extends io.makeRangedSerializable(
+  VirtualMemberFunctionUnranged
+) {}
+class StaticMemberFunctionUnranged extends MemberFunctionBase {
   constructor(
     name: string,
     returnVal: string,
@@ -154,7 +163,11 @@ export class StaticMemberFunction extends MemberFunction {
   }
 }
 
-export class PureVirtualMemberFunction extends MemberFunction {
+export class StaticMemberFunction extends io.makeRangedSerializable(
+  StaticMemberFunctionUnranged
+) {}
+
+export class PureVirtualMemberFunctionUnranged extends MemberFunctionBase {
   constructor(
     name: string,
     returnVal: string,
@@ -198,7 +211,11 @@ export class PureVirtualMemberFunction extends MemberFunction {
   }
 }
 
-export class FriendFunction extends io.TextScope implements IFunction {
+export class PureVirtualMemberFunction extends io.makeRangedSerializable(
+  PureVirtualMemberFunctionUnranged
+) {}
+
+class FriendFunctionUnranged extends io.TextScope implements IFunction {
   constructor(
     public readonly name: string,
     public readonly returnVal: string,
@@ -273,3 +290,6 @@ export class FriendFunction extends io.TextScope implements IFunction {
     }
   }
 }
+export class FriendFunction extends io.makeRangedSerializable(
+  FriendFunctionUnranged
+) {}

@@ -2,7 +2,11 @@ import * as cpp from "./cpp";
 import * as io from "./io";
 import * as vscode from "vscode";
 import { ISourceFileNamespace } from "./io";
-import { CommonFileMerger, InsertedText } from "./CommonFileMerger";
+import {
+  CommonFileMerger,
+  FileMergerOptions,
+  InsertedText,
+} from "./CommonFileMerger";
 
 //TODO => utils.ts
 function flatten2dArray<T>(array: T[][]): T[] {
@@ -14,29 +18,64 @@ interface NamespacePair {
   existing: ISourceFileNamespace;
 }
 
+//TODO options
 export class SourceFileMerger extends CommonFileMerger {
-  constructor(private _filePath: string, generatedSourceFileContent: string) {
-    super({});
+  constructor(
+    options: FileMergerOptions,
+    private _filePath: string,
+    generatedSourceFileContent: string
+  ) {
+    super(options);
     this._generatedSourceFile = new cpp.SourceFile(
       _filePath,
       generatedSourceFileContent
     );
   }
 
-  async merge(
-    existingDocument: vscode.TextDocument,
-    edit: vscode.WorkspaceEdit
-  ) {
+  merge(existingDocument: vscode.TextDocument, edit: vscode.WorkspaceEdit) {
     const text = existingDocument.getText();
     const existingSourceFile = new cpp.SourceFile(this._filePath, text);
 
-    const generatedSignatures = flatten2dArray(
-      this._generatedSourceFile.namespaces.map((ns) => ns.getAllSignatures())
-    );
     const existingSignatures = flatten2dArray(
       existingSourceFile.namespaces.map((ns) => ns.getAllSignatures())
     );
 
+    const generatedSignatures = flatten2dArray(
+      this._generatedSourceFile.namespaces.map((ns) => ns.getAllSignatures())
+    );
+
+    if (!this._options.disableRemoving) {
+      this.checkRemovedDefinitions(
+        existingSignatures,
+        generatedSignatures,
+        existingSourceFile,
+        existingDocument,
+        edit
+      );
+    }
+    const namespacesWithAddedSignatures: ISourceFileNamespace[] = [
+      ...this._generatedSourceFile.namespaces,
+    ].filter((generatedNamespace) => {
+      generatedNamespace.removeContaining(existingSignatures);
+      return !generatedNamespace.isEmpty();
+    });
+
+    this.mergeOrAddNamespaces(
+      edit,
+      existingDocument,
+      namespacesWithAddedSignatures,
+      existingSourceFile.namespaces,
+      text.length
+    );
+  }
+
+  private checkRemovedDefinitions(
+    existingSignatures: io.ISignaturable[],
+    generatedSignatures: io.ISignaturable[],
+    existingSourceFile: cpp.SourceFile,
+    existingDocument: vscode.TextDocument,
+    edit: vscode.WorkspaceEdit
+  ) {
     let removedSignatures = existingSignatures.filter(
       (existingSignature) =>
         !generatedSignatures.some((generatedSignature) =>
@@ -64,21 +103,6 @@ export class SourceFileMerger extends CommonFileMerger {
       existingDocument,
       ...namespacesToBeRemoved,
       ...removedSignatures.map((signature) => signature.textScope)
-    );
-
-    const namespacesWithAddedSignatures: ISourceFileNamespace[] = [
-      ...this._generatedSourceFile.namespaces,
-    ].filter((generatedNamespace) => {
-      generatedNamespace.removeContaining(existingSignatures);
-      return !generatedNamespace.isEmpty();
-    });
-
-    this.mergeOrAddNamespaces(
-      edit,
-      existingDocument,
-      namespacesWithAddedSignatures,
-      existingSourceFile.namespaces,
-      text.length
     );
   }
 

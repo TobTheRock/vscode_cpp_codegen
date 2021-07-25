@@ -6,7 +6,7 @@ import * as vscode from "vscode";
 // import * as myExtension from '../../extension';
 import { HeaderParser } from "../../io/HeaderParser";
 import { IFunction } from "../../cpp";
-import { TextFragment } from "../../io";
+import { SerializableMode, TextFragment, TextScope } from "../../io";
 
 suite("Parser Standalone Functions Tests", () => {
   test("ParseStandloneFunction", () => {
@@ -15,9 +15,8 @@ suite("Parser Standalone Functions Tests", () => {
 void fncName (int argument);
 		`
     );
-    let functions: IFunction[] = HeaderParser.parseStandaloneFunctiones(
-      testContent
-    );
+    let functions: IFunction[] =
+      HeaderParser.parseStandaloneFunctiones(testContent);
 
     assert.strictEqual(functions.length, 1);
     assert.strictEqual(functions[0].name, "fncName");
@@ -32,9 +31,8 @@ void fncName (int argument,
 	std::shared_ptr<XYZ> argument2);
 		`
     );
-    let functions: IFunction[] = HeaderParser.parseStandaloneFunctiones(
-      testContent
-    );
+    let functions: IFunction[] =
+      HeaderParser.parseStandaloneFunctiones(testContent);
 
     assert.strictEqual(functions.length, 1);
     assert.strictEqual(functions[0].name, "fncName");
@@ -53,9 +51,8 @@ std::shared_ptr<XYZ> fncName2 (int args2,
 	void* arg3);
 		`
     );
-    let functions: IFunction[] = HeaderParser.parseStandaloneFunctiones(
-      testContent
-    );
+    let functions: IFunction[] =
+      HeaderParser.parseStandaloneFunctiones(testContent);
 
     assert.strictEqual(functions.length, 2);
     assert.strictEqual(functions[0].name, "fncName");
@@ -73,13 +70,47 @@ const XYZ* fncName (int arg1,
 	void* arg2);
 		`
     );
-    let functions: IFunction[] = HeaderParser.parseStandaloneFunctiones(
-      testContent
-    );
+    let functions: IFunction[] =
+      HeaderParser.parseStandaloneFunctiones(testContent);
 
     assert.strictEqual(functions.length, 1);
     assert.strictEqual(functions[0].name, "fncName");
     assert.strictEqual(functions[0].args, "int arg1,\n\tvoid* arg2");
     assert.strictEqual(functions[0].returnVal, "const XYZ*");
+  });
+
+  test("Do not serialize if not in selection", async function () {
+    const testString = `void fncName ();`;
+    const testContent = TextFragment.createFromString(testString);
+    const range = new TextScope(testString.length, testString.length * 2);
+    const parsedFunctions = HeaderParser.parseStandaloneFunctiones(testContent);
+    assert.strictEqual(parsedFunctions.length, 1);
+    const serial = await parsedFunctions[0].serialize({
+      mode: SerializableMode.source,
+      range,
+    });
+    assert.strictEqual(serial.length, 0);
+  });
+
+  test("Serialize if in selection", function () {
+    const testString = `void fncName ();`;
+    const testContent = TextFragment.createFromString(testString);
+    const rangeFull = new TextScope(0, testString.length - 1);
+    const rangePartialStart = new TextScope(0, testString.length / 2);
+    const rangePartialEnd = new TextScope(
+      testString.length / 2,
+      testString.length - 1
+    );
+
+    [rangeFull, rangePartialStart, rangePartialEnd].forEach(async (range) => {
+      const parsedFunctions =
+        HeaderParser.parseStandaloneFunctiones(testContent);
+      assert.strictEqual(parsedFunctions.length, 1);
+      const serial = await parsedFunctions[0].serialize({
+        mode: SerializableMode.source,
+        range,
+      });
+      assert.ok(serial.length);
+    });
   });
 });

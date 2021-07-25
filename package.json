@@ -121,9 +121,54 @@
       },
       {
         "command": "codegen-cpp.cppInterfaceImplFromHeader",
-        "title": "codegen-cpp:  Generate interface implementation source/header files",
+        "title": "codegen-cpp: Generate interface implementation source/header files",
         "when": "editorLangId == cpp",
         "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+      },
+      {
+        "command": "codegen-cpp.cppSourceFromHeaderSelection",
+        "title": "codegen-cpp: Generate source stub(s) for selection",
+        "when": "editorLangId == cpp && editorHasSelection",
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+      },
+      {
+        "command": "codegen-cpp.cppInterfaceImplFromHeaderSelection",
+        "title": "codegen-cpp: Generate interface implementation source/header stub(s) for selection",
+        "when": "editorLangId == cpp",
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "codegen-cpp/context/generate",
+          "group": "1_modification",
+          "when": "editorLangId == cpp && resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+        }
+      ],
+      "codegen-cpp/context/generate": [
+        {
+          "command": "codegen-cpp.cppSourceFromHeader",
+          "when": "!editorHasSelection"
+        },
+        {
+          "command": "codegen-cpp.cppInterfaceImplFromHeader",
+          "when": "!editorHasSelection"
+        },
+        {
+          "command": "codegen-cpp.cppSourceFromHeaderSelection",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "codegen-cpp.cppInterfaceImplFromHeaderSelection",
+          "when": "editorHasSelection"
+        }
+      ]
+    },
+    "submenus": [
+      {
+        "label": "Generate Stubs...",
+        "id": "codegen-cpp/context/generate"
       }
     ]
   },

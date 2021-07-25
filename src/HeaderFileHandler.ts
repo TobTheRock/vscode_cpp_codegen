@@ -17,6 +17,7 @@ import { asyncForEach, awaitMapEntries } from "./utils";
 import { flatten, compact } from "lodash";
 import { resolve } from "dns";
 import { HeaderFileMerger } from "./HeaderFileMerger";
+import { FileMergerOptions } from "./CommonFileMerger";
 
 interface SerializedContent {
   mode: io.SerializableMode;
@@ -70,6 +71,7 @@ class ImplementationNameHelper
 
 export class HeaderFileHandler {
   private _userInput: ui.UserInput;
+  private _disableRemoveOnMerge = false;
 
   constructor(
     private readonly _headerFile: cpp.HeaderFile,
@@ -81,6 +83,21 @@ export class HeaderFileHandler {
   }
 
   async writeFileAs(...modes: io.SerializableMode[]) {
+    await this._writeFileAs(modes);
+  }
+
+  async writeFileSelectionAs(
+    selection: io.TextScope,
+    ...modes: io.SerializableMode[]
+  ) {
+    this._disableRemoveOnMerge = true;
+    await this._writeFileAs(modes, selection);
+  }
+
+  private async _writeFileAs(
+    modes: io.SerializableMode[],
+    selection?: io.TextScope
+  ) {
     const outputDirectoryPromise = this.pickOutputDirectory();
     const helper = await this.pickInterfaceImplementationNames(modes);
     const fileNamePromiseMap = this.getFileNameForMode(
@@ -95,7 +112,8 @@ export class HeaderFileHandler {
     const outputContent = this.serializeContent(
       modes,
       outputDirectory,
-      fileNameMap
+      fileNameMap,
+      selection
     );
     if (!outputContent.length) {
       vscode.window.showWarningMessage(
@@ -104,7 +122,7 @@ export class HeaderFileHandler {
       return;
     }
 
-    await this.writeNewContent(outputContent);
+    await this.writeNewContent(outputContent, selection);
     await vscode.workspace.applyEdit(this._edit);
     for (const serialized of outputContent) {
       await vscode.window.showTextDocument(serialized.outputUri);
@@ -180,7 +198,8 @@ export class HeaderFileHandler {
   private serializeContent(
     modes: io.SerializableMode[],
     outputDirectory: vscode.Uri,
-    fileNameMap: Map<io.SerializableMode, string>
+    fileNameMap: Map<io.SerializableMode, string>,
+    selection?: io.TextScope
   ): SerializedContent[] {
     const modesWithFilenames = compact(
       modes.map((mode) => {
@@ -199,7 +218,7 @@ export class HeaderFileHandler {
           outputDirectory.fsPath,
           zip.fileName
         );
-        const fileBody = this._headerFile.serialize({ mode });
+        const fileBody = this._headerFile.serialize({ mode, range: selection });
         if (!fileBody) {
           return;
         }
@@ -283,7 +302,10 @@ export class HeaderFileHandler {
     return fileHeader;
   }
 
-  private async writeNewContent(outputContent: SerializedContent[]) {
+  private async writeNewContent(
+    outputContent: SerializedContent[],
+    selection?: io.TextScope
+  ) {
     await asyncForEach(outputContent, async (serialized) => {
       let existingDocument: vscode.TextDocument | undefined;
       try {
@@ -295,7 +317,7 @@ export class HeaderFileHandler {
       }
 
       if (existingDocument) {
-        this.mergeFiles(existingDocument, serialized);
+        this.mergeFiles(existingDocument, serialized, selection);
       } else {
         this.createNewFile(serialized);
       }
@@ -313,12 +335,17 @@ export class HeaderFileHandler {
 
   private mergeFiles(
     existingDocument: vscode.TextDocument,
-    serialized: SerializedContent
+    serialized: SerializedContent,
+    selection?: io.TextScope
   ) {
+    const mergerOptions: FileMergerOptions = {
+      disableRemoving: this._disableRemoveOnMerge,
+    };
     switch (serialized.mode) {
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
         const sourceFileMerger = new SourceFileMerger(
+          mergerOptions,
           serialized.outputUri.fsPath,
           serialized.content
         );
@@ -328,9 +355,14 @@ export class HeaderFileHandler {
       case io.SerializableMode.header:
       case io.SerializableMode.implHeader:
       case io.SerializableMode.interfaceHeader:
-        const headerFileMerger = new HeaderFileMerger({}, this._headerFile, {
-          mode: serialized.mode,
-        });
+        const headerFileMerger = new HeaderFileMerger(
+          mergerOptions,
+          this._headerFile,
+          {
+            mode: serialized.mode,
+            range: selection,
+          }
+        );
         headerFileMerger.merge(existingDocument, this._edit);
         break;
 

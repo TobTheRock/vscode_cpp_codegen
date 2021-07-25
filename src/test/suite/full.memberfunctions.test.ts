@@ -3,8 +3,19 @@ import { describe, test } from "mocha";
 import { callItAsync } from "./utils";
 
 import { HeaderParser } from "../../io/HeaderParser";
-import { MemberFunction, FriendFunction } from "../../cpp";
-import { TextFragment, SerializableMode, IClassNameProvider } from "../../io";
+import {
+  MemberFunction,
+  FriendFunction,
+  PureVirtualMemberFunction,
+  VirtualMemberFunction,
+  StaticMemberFunction,
+} from "../../cpp";
+import {
+  TextFragment,
+  SerializableMode,
+  IClassNameProvider,
+  TextScope,
+} from "../../io";
 
 const args = [
   "",
@@ -988,6 +999,75 @@ suite("Full Member Function Tests", () => {
             mode: SerializableMode.interfaceHeader,
           }),
           ""
+        );
+      }
+    );
+  });
+  describe("Do not serialize if not in selection", function () {
+    callItAsync(
+      "With function arguments ${value}",
+      [
+        PureVirtualMemberFunction,
+        VirtualMemberFunction,
+        MemberFunction,
+        StaticMemberFunction,
+        FriendFunction,
+      ],
+      async function (memberFunctionType: any) {
+        const rangeEnd = 42;
+        const range = new TextScope(0, 42);
+        const memberfunction = new memberFunctionType(
+          "testName",
+          "void",
+          "",
+          false,
+          range,
+          { getClassName: () => "TestClass", originalName: "TestClass" }
+        );
+
+        const selection = new TextScope(rangeEnd + 1, rangeEnd * 2);
+        const serial = memberfunction.serialize({
+          mode: SerializableMode.source,
+          range: selection,
+        });
+        assert.strictEqual(serial.length, 0);
+      }
+    );
+  });
+
+  describe("Serialize if in selection", function () {
+    callItAsync(
+      "With function arguments ${value}",
+      [
+        PureVirtualMemberFunction,
+        VirtualMemberFunction,
+        MemberFunction,
+        StaticMemberFunction,
+        FriendFunction,
+      ],
+      async function (memberFunctionType: any) {
+        const rangeEnd = 42;
+        const range = new TextScope(0, 42);
+        const memberfunction = new memberFunctionType(
+          "testName",
+          "void",
+          "",
+          false,
+          range,
+          { getClassName: () => "TestClass", originalName: "TestClass" }
+        );
+        const rangeFull = new TextScope(0, rangeEnd - 1);
+        const rangePartialStart = new TextScope(0, rangeEnd / 2);
+        const rangePartialEnd = new TextScope(rangeEnd / 2, rangeEnd - 1);
+
+        [rangeFull, rangePartialStart, rangePartialEnd].forEach(
+          async (range) => {
+            const serial = memberfunction.serialize({
+              mode: SerializableMode.source,
+              range,
+            });
+            assert.ok(serial.length);
+          }
         );
       }
     );

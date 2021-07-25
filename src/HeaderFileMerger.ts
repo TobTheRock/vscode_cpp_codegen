@@ -88,11 +88,14 @@ export class HeaderFileMerger extends CommonFileMerger {
     serializables: T[],
     where: number
   ) {
-    return serializables.map((serializable) => {
-      where = where + 1;
-      const content = serializable.serialize(this._serializeOptions);
-      return { content, where };
-    });
+    return serializables
+      .map((serializable) => serializable.serialize(this._serializeOptions))
+      .filter((content) => content.length)
+      .map((content) => {
+        where = where + 1;
+        content = `\n${content.trim()}`;
+        return { content, where };
+      });
   }
 
   private handleAddedRemovedAndExtractChanged<
