@@ -1,16 +1,12 @@
 import * as cpp from "./cpp";
 import * as io from "./io";
 import * as vscode from "vscode";
-import { ISignaturable, ISourceFileNamespace } from "./io";
+import { ISourceFileNamespace } from "./io";
+import { CommonFileMerger, InsertedText } from "./CommonFileMerger";
 
 //TODO => utils.ts
 function flatten2dArray<T>(array: T[][]): T[] {
   return ([] as T[]).concat(...array);
-}
-
-interface InsertedText {
-  content: string;
-  where: number;
 }
 
 interface NamespacePair {
@@ -18,8 +14,9 @@ interface NamespacePair {
   existing: ISourceFileNamespace;
 }
 
-export class SourceFileMerger {
+export class SourceFileMerger extends CommonFileMerger {
   constructor(private _filePath: string, generatedSourceFileContent: string) {
+    super({});
     this._generatedSourceFile = new cpp.SourceFile(
       _filePath,
       generatedSourceFileContent
@@ -148,44 +145,6 @@ export class SourceFileMerger {
         return { where: addContentAt, content: `\n${namespace.serialize()}` };
       })
     );
-  }
-
-  private deleteTextScope(
-    edit: vscode.WorkspaceEdit,
-    textDocument: vscode.TextDocument,
-    ...textScopes: io.TextScope[]
-  ) {
-    const removedFunctionLabel = "Removed from file " + textDocument.fileName;
-    textScopes
-      .filter((textScope) => textScope.scopeEnd !== textScope.scopeStart)
-      .forEach((textScope) =>
-        edit.delete(
-          textDocument.uri,
-          new vscode.Range(
-            textDocument.positionAt(textScope.scopeStart),
-            textDocument.positionAt(textScope.scopeEnd + 1)
-          ),
-          { needsConfirmation: true, label: removedFunctionLabel }
-        )
-      );
-  }
-
-  private addTextScopeContent(
-    edit: vscode.WorkspaceEdit,
-    textDocument: vscode.TextDocument,
-    ...insertedTexts: InsertedText[]
-  ) {
-    const addedFunctionLabel = "Added to file " + textDocument.fileName;
-    insertedTexts
-      .filter((insertedText) => insertedText.content.length)
-      .forEach((insertedText) =>
-        edit.insert(
-          textDocument.uri,
-          textDocument.positionAt(insertedText.where),
-          insertedText.content,
-          { needsConfirmation: true, label: addedFunctionLabel }
-        )
-      );
   }
 
   private _generatedSourceFile: cpp.SourceFile;

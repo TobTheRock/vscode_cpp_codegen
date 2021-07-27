@@ -18,6 +18,14 @@ export class MemberFunction extends io.TextScope implements IFunction {
     super(scope.scopeStart, scope.scopeEnd);
   }
 
+  equals(other: IFunction): boolean {
+    return (
+      this.name === other.name &&
+      this.args === other.args &&
+      this.returnVal === other.returnVal
+    );
+  }
+
   serialize(options: io.SerializationOptions) {
     let serial = "";
 
@@ -199,6 +207,14 @@ export class FriendFunction extends io.TextScope implements IFunction {
     scope: io.TextScope
   ) {
     super(scope.scopeStart, scope.scopeEnd);
+  }
+
+  equals(other: IFunction): boolean {
+    return (
+      this.name === other.name &&
+      this.args === other.args &&
+      this.returnVal === other.returnVal
+    );
   }
 
   serialize(options: io.SerializationOptions) {

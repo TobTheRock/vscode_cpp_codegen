@@ -37,6 +37,11 @@ export class ClassConstructor extends io.TextScope implements IConstructor {
   ) {
     super(scope.scopeStart, scope.scopeEnd);
   }
+
+  equals(other: IConstructor): boolean {
+    return this.args === other.args;
+  }
+
   serialize(options: io.SerializationOptions): string {
     let serial = "";
     switch (options.mode) {
@@ -72,6 +77,10 @@ export class ClassDestructor extends io.TextScope implements IDestructor {
   ) {
     super(scope.scopeStart, scope.scopeEnd);
   }
+  equals(other: IDestructor): boolean {
+    return this.virtual === other.virtual;
+  }
+
   serialize(options: io.SerializationOptions): string {
     let serial = "";
     switch (options.mode) {
@@ -291,6 +300,10 @@ class ClassBase extends io.TextScope implements IClass {
 
   protected acceptSerializableMode(mode: io.SerializableMode): boolean {
     throw new Error("Method not implemented.");
+  }
+
+  equals(other: IClass): boolean {
+    return this.name === other.name;
   }
 
   protected getScopeFactory(classNameProvider: io.IClassNameProvider) {

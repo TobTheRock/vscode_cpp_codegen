@@ -35,7 +35,9 @@ export class HeaderFile extends FileBase implements io.IFile {
   constructor(filePath: string, content: string) {
     super(filePath);
     this.namespaces = [];
-    this.deserialize(io.TextFragment.createFromString(content));
+    if (content) {
+      this.deserialize(io.TextFragment.createFromString(content));
+    }
   }
 
   deserialize(fileContent: io.TextFragment) {

@@ -28,6 +28,10 @@ export class Namespace extends io.TextScope implements INamespace {
     );
   }
 
+  equals(other: INamespace): boolean {
+    return this.name === other.name;
+  }
+
   private addNamespaceToOptions(
     options: io.SerializationOptions
   ): io.SerializationOptions {
@@ -104,6 +108,9 @@ export class NoneNamespace extends io.TextScope implements INamespace {
     let serial: string = io.serializeArray(this.functions, options);
     serial += io.serializeArray(this.classes, options);
     return serial;
+  }
+  equals(other: INamespace): boolean {
+    return this.name === other.name;
   }
 
   deserialize(data: io.TextFragment) {

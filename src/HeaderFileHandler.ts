@@ -16,6 +16,7 @@ import {
 import { asyncForEach, awaitMapEntries } from "./utils";
 import { flatten, compact } from "lodash";
 import { resolve } from "dns";
+import { HeaderFileMerger } from "./HeaderFileMerger";
 
 interface SerializedContent {
   mode: io.SerializableMode;
@@ -303,6 +304,7 @@ export class HeaderFileHandler {
   ) {
     switch (serialized.mode) {
       case io.SerializableMode.source:
+      case io.SerializableMode.implSource:
         const sourceFileMerger = new SourceFileMerger(
           serialized.outputUri.fsPath,
           serialized.content
@@ -310,9 +312,18 @@ export class HeaderFileHandler {
         sourceFileMerger.merge(existingDocument, this._edit);
         break;
 
+      case io.SerializableMode.header:
+      case io.SerializableMode.implHeader:
+      case io.SerializableMode.interfaceHeader:
+        const headerFileMerger = new HeaderFileMerger({}, this._headerFile, {
+          mode: serialized.mode,
+        });
+        headerFileMerger.merge(existingDocument, this._edit);
+        break;
+
       default:
         vscode.window.showErrorMessage(
-          "Merging header files is not implemented yet"
+          `Cannot write stubs, file ${existingDocument.fileName} already exists`
         );
         break;
     }
