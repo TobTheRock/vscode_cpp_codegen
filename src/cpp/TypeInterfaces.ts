@@ -23,6 +23,7 @@ export interface IClassScope extends io.ISerializable, io.IDeserializable {
 export interface IClass
   extends io.ISerializable,
     io.IDeserializable,
+    io.INameInputReceiver,
     io.TextScope {
   readonly name: string;
   readonly publicScope: IClassScope;
@@ -35,6 +36,7 @@ export interface IClass
 export interface INamespace
   extends io.ISerializable,
     io.IDeserializable,
+    io.INameInputReceiver,
     io.TextScope {
   readonly name: string;
   readonly classes: IClass[];

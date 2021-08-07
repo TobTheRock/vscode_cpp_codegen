@@ -1,4 +1,6 @@
 import { TextFragment } from "./Text";
+import { flatten } from "lodash";
+
 export enum SerializableMode {
   header, // matching header file (respective to current file, which is a Source)
   source, // matching source file (respective to current file, which is a Header)
@@ -7,13 +9,37 @@ export enum SerializableMode {
   interfaceHeader, // interface header file (respective to current file, which has a class with  virtual functions => pure virtual ones are generated)
 }
 
+const HEADER_SOURCE_GROUP = [SerializableMode.header, SerializableMode.source];
+const INTERFACE_IMPLEMENTATION_GROUP = [
+  SerializableMode.implHeader,
+  SerializableMode.implSource,
+];
+
+export function getSerializableModeGroup(
+  mode: SerializableMode
+): SerializableMode[] {
+  return flatten(
+    [
+      INTERFACE_IMPLEMENTATION_GROUP,
+      HEADER_SOURCE_GROUP,
+      [SerializableMode.interfaceHeader],
+    ].filter((group) => group.includes(mode))
+  );
+}
 export interface IClassNameProvider {
   getClassName(mode: SerializableMode, withOuterScope: boolean): string;
   originalName: string;
 }
 
 export interface INameInputProvider {
-  getInterfaceName?(origName: string): string | Promise<string>;
+  getImplementationName(origName: string): string | Promise<string>;
+}
+
+export interface INameInputReceiver {
+  provideNames(
+    nameInputProvider: INameInputProvider,
+    ...modes: SerializableMode[]
+  ): Promise<void>;
 }
 
 export interface SerializationOptions {
@@ -23,7 +49,7 @@ export interface SerializationOptions {
 }
 
 export interface ISerializable {
-  serialize: (options: SerializationOptions) => string | Promise<string>;
+  serialize: (options: SerializationOptions) => string;
 }
 
 export interface IFile extends ISerializable, IDeserializable {
@@ -38,17 +64,17 @@ export function serializeArray(
   options: SerializationOptions,
   elementPrefix: string = "",
   elementSuffix: string = ""
-): Promise<string> {
-  return serializableArray.reduce(async (accumulate, serializable) => {
-    let acummulatedSerialized = await accumulate;
-    let serializedElement = await serializable.serialize(options);
+): string {
+  return serializableArray.reduce((accumulate, serializable) => {
+    let acummulatedSerialized = accumulate;
+    let serializedElement = serializable.serialize(options);
     if (!serializedElement.length) {
       return acummulatedSerialized;
     }
     return (
       acummulatedSerialized + elementPrefix + serializedElement + elementSuffix
     );
-  }, Promise.resolve(""));
+  }, "");
 }
 
 export interface IDeserializable {

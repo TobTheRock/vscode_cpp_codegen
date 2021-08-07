@@ -26,12 +26,11 @@ export class SourceFileMerger {
     );
   }
 
-  async merge(edit: vscode.WorkspaceEdit) {
-    const textDocument = await vscode.workspace.openTextDocument(
-      this._filePath
-    );
-
-    const text = textDocument.getText();
+  async merge(
+    existingDocument: vscode.TextDocument,
+    edit: vscode.WorkspaceEdit
+  ) {
+    const text = existingDocument.getText();
     const existingSourceFile = new cpp.SourceFile(this._filePath, text);
 
     const generatedSignatures = flatten2dArray(
@@ -65,7 +64,7 @@ export class SourceFileMerger {
     );
     this.deleteTextScope(
       edit,
-      textDocument,
+      existingDocument,
       ...namespacesToBeRemoved,
       ...removedSignatures.map((signature) => signature.textScope)
     );
@@ -79,7 +78,7 @@ export class SourceFileMerger {
 
     this.mergeOrAddNamespaces(
       edit,
-      textDocument,
+      existingDocument,
       namespacesWithAddedSignatures,
       existingSourceFile.namespaces,
       text.length

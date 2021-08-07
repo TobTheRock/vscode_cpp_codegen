@@ -18,7 +18,7 @@ export class MemberFunction extends io.TextScope implements IFunction {
     super(scope.scopeStart, scope.scopeEnd);
   }
 
-  async serialize(options: io.SerializationOptions) {
+  serialize(options: io.SerializationOptions) {
     let serial = "";
 
     switch (options.mode) {
@@ -89,20 +89,20 @@ export class VirtualMemberFunction extends MemberFunction {
     super(name, returnVal, args, isConst, scope, classNameProvider);
   }
 
-  async serialize(options: io.SerializationOptions) {
+  serialize(options: io.SerializationOptions) {
     let serial = "";
 
     switch (options.mode) {
       case io.SerializableMode.header:
-        serial = (await super.getHeading(options)) + " override;";
+        serial = super.getHeading(options) + " override;";
         break;
 
       case io.SerializableMode.interfaceHeader:
-        serial = "virtual " + (await super.getHeading(options)) + " =0;";
+        serial = "virtual " + super.getHeading(options) + " =0;";
         break;
 
       default:
-        serial = await super.serialize(options);
+        serial = super.serialize(options);
         break;
     }
 
@@ -121,7 +121,7 @@ export class StaticMemberFunction extends MemberFunction {
     super(name, returnVal, args, isConst, scope, classNameProvider);
   }
 
-  async serialize(options: io.SerializationOptions) {
+  serialize(options: io.SerializationOptions) {
     let serial = "";
 
     switch (options.mode) {
@@ -158,16 +158,16 @@ export class PureVirtualMemberFunction extends MemberFunction {
     super(name, returnVal, args, isConst, scope, classNameProvider);
   }
 
-  async serialize(options: io.SerializationOptions) {
+  serialize(options: io.SerializationOptions) {
     let serial = "";
 
     switch (options.mode) {
       case io.SerializableMode.header:
-        serial = "virtual " + (await super.getHeading(options)) + " =0;";
+        serial = "virtual " + super.getHeading(options) + " =0;";
         break;
 
       case io.SerializableMode.implHeader:
-        serial = (await super.getHeading(options)) + " override;";
+        serial = super.getHeading(options) + " override;";
         break;
 
       case io.SerializableMode.implSource:
@@ -201,7 +201,7 @@ export class FriendFunction extends io.TextScope implements IFunction {
     super(scope.scopeStart, scope.scopeEnd);
   }
 
-  async serialize(options: io.SerializationOptions) {
+  serialize(options: io.SerializationOptions) {
     let serial = "";
 
     switch (options.mode) {

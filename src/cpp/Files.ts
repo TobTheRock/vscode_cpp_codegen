@@ -34,19 +34,19 @@ export class SourceFile extends FileBase {
 export class HeaderFile extends FileBase implements io.IFile {
   constructor(filePath: string, content: string) {
     super(filePath);
-    this._namespaces = [];
+    this.namespaces = [];
     this.deserialize(io.TextFragment.createFromString(content));
   }
 
   deserialize(fileContent: io.TextFragment) {
     HeaderParser.parseComments(fileContent);
-    this._namespaces.push(...HeaderParser.parseNamespaces(fileContent));
-    this._namespaces.push(...HeaderParser.parseNoneNamespaces(fileContent));
+    this.namespaces.push(...HeaderParser.parseNamespaces(fileContent));
+    this.namespaces.push(...HeaderParser.parseNoneNamespaces(fileContent));
   }
 
-  async serialize(options: io.SerializationOptions): Promise<string> {
-    return await io.serializeArray(this._namespaces, options, undefined, "\n");
+  serialize(options: io.SerializationOptions): string {
+    return io.serializeArray(this.namespaces, options, undefined, "\n");
   }
 
-  private readonly _namespaces: INamespace[];
+  readonly namespaces: INamespace[];
 }

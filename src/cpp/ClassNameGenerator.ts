@@ -8,21 +8,28 @@ export class ClassNameGenerator {
     ]);
   }
 
-  async generate(options: io.SerializationOptions): Promise<string> {
-    const createdName = this._createdNames.get(options.mode);
-    if (createdName) {
-      return createdName;
+  async generate(
+    nameInputProvider: io.INameInputProvider,
+    ...modes: io.SerializableMode[]
+  ): Promise<void> {
+    for (const mode of modes) {
+      switch (mode) {
+        case io.SerializableMode.implHeader:
+        case io.SerializableMode.implSource:
+          await this.createImplName(nameInputProvider, mode);
+        case io.SerializableMode.interfaceHeader:
+          this.createInterfaceName();
+        default:
+      }
     }
+  }
 
-    switch (options.mode) {
-      case io.SerializableMode.implHeader:
-      case io.SerializableMode.implSource:
-        return await this.createImplName(options);
-      case io.SerializableMode.interfaceHeader:
-        return this.createInterfaceName();
-      default:
-        return ""; // TODO warning? throw?
+  get(options: io.SerializationOptions): string {
+    let name = this._createdNames.get(options.mode);
+    if (!name) {
+      throw new Error("Internal Error: Class name was not generated yet!");
     }
+    return name;
   }
 
   getClassNameProvider(
@@ -39,30 +46,22 @@ export class ClassNameGenerator {
     };
   }
 
-  private async createImplName(options: io.SerializationOptions) {
-    let implName = this._createdNames.get(options.mode);
+  private async createImplName(
+    nameInputProvider: io.INameInputProvider,
+    mode: io.SerializableMode
+  ) {
+    let implName = this._createdNames.get(mode);
     if (!implName) {
-      if (options.nameInputProvider?.getInterfaceName) {
-        implName = await options.nameInputProvider.getInterfaceName(
-          this._origName
-        );
-      }
-      // TODO naming conventions config
-      else if (this._origName.startsWith("I")) {
-        implName = this._origName.substring(1);
-      } else {
-        implName = this._origName + "Impl";
-      }
+      implName = await nameInputProvider.getImplementationName(this._origName);
       this._createdNames.set(io.SerializableMode.implHeader, implName);
       this._createdNames.set(io.SerializableMode.implSource, implName);
     }
-
-    return implName;
   }
 
   private createInterfaceName() {
     // TODO naming conventions config
-    return "I" + this._origName;
+    const name = "I" + this._origName;
+    this._createdNames.set(io.SerializableMode.interfaceHeader, name);
   }
 
   private _createdNames: Map<io.SerializableMode, string>;
