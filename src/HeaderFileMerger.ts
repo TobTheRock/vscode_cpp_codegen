@@ -2,14 +2,7 @@ import * as cpp from "./cpp";
 import * as io from "./io";
 import * as vscode from "vscode";
 import { ISignaturable, ISourceFileNamespace } from "./io";
-import {
-  compact,
-  differenceWith,
-  intersectionWith,
-  max,
-  maxBy,
-  zipWith,
-} from "lodash";
+import { compact, differenceWith, max, maxBy, zipWith } from "lodash";
 import { CommonFileMerger, FileMergerOptions } from "./CommonFileMerger";
 
 interface InsertedText {
@@ -43,6 +36,26 @@ export class HeaderFileMerger extends CommonFileMerger {
     super(options);
   }
 
+  merge(existingDocument: vscode.TextDocument, edit: vscode.WorkspaceEdit) {
+    const text = existingDocument.getText();
+    const existingHeaderFile = new cpp.HeaderFile(
+      existingDocument.fileName,
+      text
+    );
+
+    const changedNamespaces = this.handleAddedRemovedAndExtractChanged(
+      edit,
+      existingDocument,
+      text.length,
+      existingHeaderFile.namespaces,
+      this._generatedHeaderFile.namespaces
+    );
+
+    changedNamespaces.forEach(
+      this.mergeNamespace.bind(this, edit, existingDocument)
+    );
+  }
+
   private createDiff<T extends cpp.Comparable<T>>(
     existing: T[],
     generated: T[]
@@ -52,13 +65,22 @@ export class HeaderFileMerger extends CommonFileMerger {
     };
     const added = differenceWith(generated, existing, comparator);
     const removed = differenceWith(existing, generated, comparator);
-    const changed = compact(
-      zipWith(generated, existing, (a, b) => {
-        if (a && b && comparator(a, b)) {
-          return { generated: a, existing: b };
+    const changed = existing.reduce<ChangedPair<T>[]>(
+      (changedAcc, existingElement: T) => {
+        const generatedMatchingElement = generated.find((b) =>
+          comparator(existingElement, b)
+        );
+        if (generatedMatchingElement) {
+          return changedAcc.concat({
+            generated: generatedMatchingElement,
+            existing: existingElement,
+          });
         }
-      })
+        return changedAcc;
+      },
+      []
     );
+
     return { added, removed, changed };
   }
 
@@ -92,26 +114,6 @@ export class HeaderFileMerger extends CommonFileMerger {
     this.deleteTextScope(edit, textDocument, ...diff.removed);
 
     return diff.changed;
-  }
-
-  merge(existingDocument: vscode.TextDocument, edit: vscode.WorkspaceEdit) {
-    const text = existingDocument.getText();
-    const existingHeaderFile = new cpp.HeaderFile(
-      existingDocument.fileName,
-      text
-    );
-
-    const changedNamespaces = this.handleAddedRemovedAndExtractChanged(
-      edit,
-      existingDocument,
-      text.length,
-      existingHeaderFile.namespaces,
-      this._generatedHeaderFile.namespaces
-    );
-
-    changedNamespaces.forEach(
-      this.mergeNamespace.bind(this, edit, existingDocument)
-    );
   }
 
   private mergeNamespace(
