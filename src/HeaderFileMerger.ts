@@ -48,13 +48,13 @@ export class HeaderFileMerger extends CommonFileMerger {
     generated: T[]
   ): Diff<T> {
     const comparator = (a: T, b: T) => {
-      return a.equals(b);
+      return a.equals(b, this._serializeOptions.mode);
     };
     const added = differenceWith(generated, existing, comparator);
     const removed = differenceWith(existing, generated, comparator);
     const changed = compact(
       zipWith(generated, existing, (a, b) => {
-        if (a && b && a.equals(b)) {
+        if (a && b && comparator(a, b)) {
           return { generated: a, existing: b };
         }
       })
@@ -67,6 +67,7 @@ export class HeaderFileMerger extends CommonFileMerger {
     where: number
   ) {
     return serializables.map((serializable) => {
+      where = where + 1;
       const content = serializable.serialize(this._serializeOptions);
       return { content, where };
     });

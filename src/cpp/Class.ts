@@ -276,6 +276,12 @@ class ClassBase extends io.TextScope implements IClass {
     this.protectedScope = scopeFactory.createProtectedScope();
   }
 
+  getName(mode: io.SerializableMode): string {
+    return this._classNameGen.has({ mode })
+      ? this._classNameGen.get({ mode })
+      : this.name;
+  }
+
   async provideNames(
     nameInputProvider: io.INameInputProvider,
     ...modes: io.SerializableMode[]
@@ -302,7 +308,10 @@ class ClassBase extends io.TextScope implements IClass {
     throw new Error("Method not implemented.");
   }
 
-  equals(other: IClass): boolean {
+  equals(other: IClass, mode?: io.SerializableMode): boolean {
+    if (mode) {
+      return this.getName(mode) === other.getName(mode);
+    }
     return this.name === other.name;
   }
 

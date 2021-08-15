@@ -1,7 +1,7 @@
 import * as io from "../io";
 
 export interface Comparable<T> {
-  equals: (other: T) => boolean;
+  equals: (other: T, mode?: io.SerializableMode) => boolean;
 }
 
 export interface IFunction
@@ -45,6 +45,8 @@ export interface IClass
   readonly protectedScope: IClassScope;
   readonly destructor?: IDestructor;
   readonly inheritance: string[]; // TODO -> IClass?
+
+  getName(mode: io.SerializableMode): string;
 }
 
 export interface INamespace

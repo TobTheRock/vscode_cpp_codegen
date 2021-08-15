@@ -32,6 +32,10 @@ export class ClassNameGenerator {
     return name;
   }
 
+  has(options: io.SerializationOptions): boolean {
+    return this._createdNames.has(options.mode);
+  }
+
   getClassNameProvider(
     outerClassNameProvider?: io.IClassNameProvider
   ): io.IClassNameProvider {
