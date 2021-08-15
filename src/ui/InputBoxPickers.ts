@@ -33,6 +33,7 @@ async function showInputBox(params: InputBoxParameters): Promise<string> {
           } else {
             displayReject(new Error(params.abortMessage));
           }
+          input.hide();
         }),
         input.onDidHide(() => {
           displayReject(new Error(params.abortMessage));
