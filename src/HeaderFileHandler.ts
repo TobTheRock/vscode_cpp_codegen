@@ -97,11 +97,18 @@ export class HeaderFileHandler {
       outputDirectory,
       fileNameMap
     );
+    if (!outputContent.length) {
+      vscode.window.showWarningMessage(
+        "Nothing was generated, please check for typos."
+      );
+      return;
+    }
+
     await this.writeNewContent(outputContent);
     await vscode.workspace.applyEdit(this._edit);
-    await asyncForEach(outputContent, async (serialized) => {
+    for (const serialized of outputContent) {
       await vscode.window.showTextDocument(serialized.outputUri);
-    });
+    }
   }
 
   private pickOutputDirectory(): Promise<vscode.Uri> {
@@ -184,21 +191,27 @@ export class HeaderFileHandler {
       })
     );
 
-    return modesWithFilenames.map((zip) => {
-      const mode = zip.mode;
-      const fileHeader = this.createFileHeader(
-        mode,
-        outputDirectory.fsPath,
-        zip.fileName
-      );
-      const fileBody = this._headerFile.serialize({ mode });
-      const outputUri = this.getOutputFileUri(
-        mode,
-        outputDirectory,
-        zip.fileName
-      );
-      return { mode, outputUri, content: fileHeader + fileBody };
-    });
+    return compact(
+      modesWithFilenames.map((zip) => {
+        const mode = zip.mode;
+        const fileHeader = this.createFileHeader(
+          mode,
+          outputDirectory.fsPath,
+          zip.fileName
+        );
+        const fileBody = this._headerFile.serialize({ mode });
+        if (!fileBody) {
+          return;
+        }
+
+        const outputUri = this.getOutputFileUri(
+          mode,
+          outputDirectory,
+          zip.fileName
+        );
+        return { mode, outputUri, content: fileHeader + fileBody };
+      })
+    );
   }
 
   private getOutputFileUri(
