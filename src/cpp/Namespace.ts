@@ -52,7 +52,8 @@ export class Namespace extends io.TextScope implements INamespace {
     let suffix = "";
     if (
       config.sourceFileNamespaceSerialization ===
-      SourceFileNamespaceSerialization.named
+        SourceFileNamespaceSerialization.named ||
+      !io.isSourceFileSerializationMode(options.mode)
     ) {
       prefix = "namespace " + this.name + " {\n";
       suffix = "}\n";

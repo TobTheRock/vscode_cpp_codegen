@@ -15,6 +15,12 @@ const INTERFACE_IMPLEMENTATION_GROUP = [
   SerializableMode.implSource,
 ];
 
+export function isSourceFileSerializationMode(mode: SerializableMode): boolean {
+  return (
+    mode === SerializableMode.implSource || mode === SerializableMode.source
+  );
+}
+
 export function getSerializableModeGroup(
   mode: SerializableMode
 ): SerializableMode[] {
@@ -45,7 +51,6 @@ export interface INameInputReceiver {
 export interface SerializationOptions {
   mode: SerializableMode;
   nameScopes?: string[];
-  nameInputProvider?: INameInputProvider;
   range?: TextScope;
 }
 

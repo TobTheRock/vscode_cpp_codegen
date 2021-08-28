@@ -4,12 +4,6 @@ import * as vscode from "vscode";
 import { ISignaturable, ISourceFileNamespace } from "./io";
 import { compact, differenceWith, max, maxBy, zipWith } from "lodash";
 import { CommonFileMerger, FileMergerOptions } from "./CommonFileMerger";
-
-interface InsertedText {
-  content: string;
-  where: number;
-}
-
 interface ChangedPair<T> {
   generated: T;
   existing: T;
@@ -20,13 +14,6 @@ interface Diff<T> {
   removed: T[];
   changed: ChangedPair<T>[];
 }
-
-interface ClassScopeDiff {
-  memberFunctions: Diff<cpp.IFunction>;
-  classes: Diff<cpp.IClass>;
-  constructors: Diff<cpp.IConstructor>;
-}
-
 export class HeaderFileMerger extends CommonFileMerger {
   constructor(
     options: FileMergerOptions,
