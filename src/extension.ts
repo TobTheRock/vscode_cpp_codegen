@@ -7,6 +7,10 @@ import { Configuration, IExtensionConfiguration } from "./Configuration";
 import { WorkspaceDirectoryFinder } from "./WorkspaceDirectories";
 import { HeaderFileHandler } from "./HeaderFileHandler";
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "UNKOWN";
+}
+
 function createHeaderFile(
   textEditor: vscode.TextEditor
 ): cpp.HeaderFile | undefined {
@@ -17,7 +21,7 @@ function createHeaderFile(
     );
   } catch (error) {
     vscode.window.showErrorMessage(
-      "Unable to parse header file: " + error.message
+      "Unable to parse header file: " + getErrorMessage(error)
     );
     return;
   }
@@ -57,7 +61,7 @@ async function generateStubsFromHeader(
     }
   } catch (error) {
     vscode.window.showErrorMessage(
-      "Unable to generate stubs: " + error.message
+      "Unable to generate stubs: " + getErrorMessage(error)
     );
   }
 }
