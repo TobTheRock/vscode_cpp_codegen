@@ -4,7 +4,7 @@ import {
   joinNameScopesWithFunctionName,
   removeDefaultInitializersFromArgs,
 } from "./utils";
-export class StandaloneFunction extends io.TextScope implements IFunction {
+class StandaloneFunctionBase extends io.TextScope implements IFunction {
   constructor(
     public readonly name: string,
     public readonly returnVal: string,
@@ -12,6 +12,13 @@ export class StandaloneFunction extends io.TextScope implements IFunction {
     scope: io.TextScope
   ) {
     super(scope.scopeStart, scope.scopeEnd);
+  }
+  equals(other: IFunction): boolean {
+    return (
+      this.name === other.name &&
+      this.args === other.args &&
+      this.returnVal === other.returnVal
+    );
   }
 
   serialize(options: io.SerializationOptions) {
@@ -47,3 +54,7 @@ export class StandaloneFunction extends io.TextScope implements IFunction {
     return serial;
   }
 }
+
+export class StandaloneFunction extends io.makeRangedSerializable(
+  StandaloneFunctionBase
+) {}

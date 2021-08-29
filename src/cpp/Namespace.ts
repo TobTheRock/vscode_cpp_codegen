@@ -6,6 +6,7 @@ import {
   SourceFileNamespaceSerialization,
 } from "../Configuration";
 import clone = require("clone");
+import { asyncForEach } from "../utils";
 export class Namespace extends io.TextScope implements INamespace {
   constructor(name: string, scope: io.TextScope) {
     super(scope.scopeStart, scope.scopeEnd);
@@ -13,6 +14,22 @@ export class Namespace extends io.TextScope implements INamespace {
     this.classes = [];
     this.functions = [];
     this.subnamespaces = [];
+  }
+
+  async provideNames(
+    nameInputProvider: io.INameInputProvider,
+    ...modes: io.SerializableMode[]
+  ): Promise<void> {
+    const subNameInputReceiver: io.INameInputReceiver[] = (
+      this.classes as io.INameInputReceiver[]
+    ).concat(this.subnamespaces);
+    return asyncForEach(subNameInputReceiver, async (receiver) =>
+      receiver.provideNames(nameInputProvider, ...modes)
+    );
+  }
+
+  equals(other: INamespace): boolean {
+    return this.name === other.name;
   }
 
   private addNamespaceToOptions(
@@ -27,7 +44,7 @@ export class Namespace extends io.TextScope implements INamespace {
     return newOptions;
   }
 
-  async serialize(options: io.SerializationOptions) {
+  serialize(options: io.SerializationOptions) {
     const config = Configuration.get();
 
     let serial = "";
@@ -35,7 +52,8 @@ export class Namespace extends io.TextScope implements INamespace {
     let suffix = "";
     if (
       config.sourceFileNamespaceSerialization ===
-      SourceFileNamespaceSerialization.named
+        SourceFileNamespaceSerialization.named ||
+      !io.isSourceFileSerializationMode(options.mode)
     ) {
       prefix = "namespace " + this.name + " {\n";
       suffix = "}\n";
@@ -43,9 +61,9 @@ export class Namespace extends io.TextScope implements INamespace {
       options = this.addNamespaceToOptions(options);
     }
 
-    serial += await io.serializeArray(this.subnamespaces, options);
-    serial += await io.serializeArray(this.functions, options);
-    serial += await io.serializeArray(this.classes, options);
+    serial += io.serializeArray(this.subnamespaces, options);
+    serial += io.serializeArray(this.functions, options);
+    serial += io.serializeArray(this.classes, options);
 
     if (!serial.length) {
       return "";
@@ -75,10 +93,25 @@ export class NoneNamespace extends io.TextScope implements INamespace {
     this.subnamespaces = [];
   }
 
-  async serialize(options: io.SerializationOptions) {
-    let serial: string = await io.serializeArray(this.functions, options);
-    serial += await io.serializeArray(this.classes, options);
+  async provideNames(
+    nameInputProvider: io.INameInputProvider,
+    ...modes: io.SerializableMode[]
+  ): Promise<void> {
+    const subNameInputReceiver: io.INameInputReceiver[] = (
+      this.classes as io.INameInputReceiver[]
+    ).concat(this.subnamespaces);
+    return asyncForEach(subNameInputReceiver, async (receiver) =>
+      receiver.provideNames(nameInputProvider, ...modes)
+    );
+  }
+
+  serialize(options: io.SerializationOptions) {
+    let serial: string = io.serializeArray(this.functions, options);
+    serial += io.serializeArray(this.classes, options);
     return serial;
+  }
+  equals(other: INamespace): boolean {
+    return this.name === other.name;
   }
 
   deserialize(data: io.TextFragment) {

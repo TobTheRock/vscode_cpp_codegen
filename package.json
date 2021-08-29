@@ -121,9 +121,54 @@
       },
       {
         "command": "codegen-cpp.cppInterfaceImplFromHeader",
-        "title": "codegen-cpp:  Generate interface implementation source/header files",
+        "title": "codegen-cpp: Generate interface implementation source/header files",
         "when": "editorLangId == cpp",
         "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+      },
+      {
+        "command": "codegen-cpp.cppSourceFromHeaderSelection",
+        "title": "codegen-cpp: Generate source stub(s) for selection",
+        "when": "editorLangId == cpp && editorHasSelection",
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+      },
+      {
+        "command": "codegen-cpp.cppInterfaceImplFromHeaderSelection",
+        "title": "codegen-cpp: Generate interface implementation source/header stub(s) for selection",
+        "when": "editorLangId == cpp",
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "codegen-cpp/context/generate",
+          "group": "1_modification",
+          "when": "editorLangId == cpp && resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+        }
+      ],
+      "codegen-cpp/context/generate": [
+        {
+          "command": "codegen-cpp.cppSourceFromHeader",
+          "when": "!editorHasSelection"
+        },
+        {
+          "command": "codegen-cpp.cppInterfaceImplFromHeader",
+          "when": "!editorHasSelection"
+        },
+        {
+          "command": "codegen-cpp.cppSourceFromHeaderSelection",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "codegen-cpp.cppInterfaceImplFromHeaderSelection",
+          "when": "editorHasSelection"
+        }
+      ]
+    },
+    "submenus": [
+      {
+        "label": "Generate Stubs...",
+        "id": "codegen-cpp/context/generate"
       }
     ]
   },
@@ -138,21 +183,23 @@
   "devDependencies": {
     "@types/clone": "^2.1.0",
     "@types/glob": "^7.1.3",
+    "@types/lodash": "^4.14.171",
     "@types/mocha": "^8.0.0",
     "@types/node": "^12.20.12",
     "@types/vscode": "^1.51.0",
     "@typescript-eslint/eslint-plugin": "^4.22.1",
     "@typescript-eslint/parser": "^4.22.1",
+    "@vscode/test-electron": "^1.4.0",
     "eslint": "^7.26.0",
     "glob": "^7.1.7",
     "mocha": "^8.4.0",
     "mocha-param": "^2.0.1",
-    "typescript": "^4.2.4",
-    "@vscode/test-electron": "^1.4.0"
+    "typescript": "^4.2.4"
   },
   "dependencies": {
     "chokidar": "^3.4.3",
     "clone": "^2.1.2",
-    "g2-bracket-parser": "^2.0.0"
+    "g2-bracket-parser": "^2.0.0",
+    "lodash": "^4.17.21"
   }
 }

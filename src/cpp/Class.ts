@@ -10,6 +10,7 @@ import * as io from "../io";
 import { joinNameScopesWithFunctionName, joinNameScopes } from "./utils";
 import { ClassNameGenerator } from "./ClassNameGenerator";
 import * as vscode from "vscode";
+import { asyncForEach } from "../utils";
 
 function getCtorDtorImplName(
   classNameProvider: io.IClassNameProvider,
@@ -36,7 +37,12 @@ export class ClassConstructor extends io.TextScope implements IConstructor {
   ) {
     super(scope.scopeStart, scope.scopeEnd);
   }
-  async serialize(options: io.SerializationOptions): Promise<string> {
+
+  equals(other: IConstructor): boolean {
+    return this.args === other.args;
+  }
+
+  serialize(options: io.SerializationOptions): string {
     let serial = "";
     switch (options.mode) {
       case io.SerializableMode.header:
@@ -71,7 +77,11 @@ export class ClassDestructor extends io.TextScope implements IDestructor {
   ) {
     super(scope.scopeStart, scope.scopeEnd);
   }
-  async serialize(options: io.SerializationOptions): Promise<string> {
+  equals(other: IDestructor): boolean {
+    return this.virtual === other.virtual;
+  }
+
+  serialize(options: io.SerializationOptions): string {
     let serial = "";
     switch (options.mode) {
       case io.SerializableMode.header:
@@ -128,7 +138,7 @@ class ClassScopeBase implements IClassScope {
     );
   }
 
-  async serialize(options: io.SerializationOptions) {
+  serialize(options: io.SerializationOptions) {
     if (
       !this.constructors.length &&
       !this.nestedClasses.length &&
@@ -154,14 +164,14 @@ class ClassScopeBase implements IClassScope {
         arraySuffix = "\n\n";
         break;
     }
-    serial += await io.serializeArray(
+    serial += io.serializeArray(
       this.constructors,
       options,
       arrayPrefix,
       arraySuffix
     );
-    serial += await io.serializeArray(this.nestedClasses, options, arrayPrefix); // TODO formatting not working for multiline
-    serial += await io.serializeArray(
+    serial += io.serializeArray(this.nestedClasses, options, arrayPrefix); // TODO formatting not working for multiline
+    serial += io.serializeArray(
       this.memberFunctions,
       options,
       arrayPrefix,
@@ -247,7 +257,7 @@ class ClassScopeFactory {
   }
 }
 
-class ClassBase extends io.TextScope implements IClass {
+class ClassBaseUnranged extends io.TextScope implements IClass {
   constructor(
     scope: io.TextScope,
     public readonly name: string,
@@ -264,6 +274,45 @@ class ClassBase extends io.TextScope implements IClass {
     this.publicScope = scopeFactory.createPublicScope();
     this.privateScope = scopeFactory.createPrivateScope();
     this.protectedScope = scopeFactory.createProtectedScope();
+  }
+
+  getName(mode: io.SerializableMode): string {
+    return this._classNameGen.has({ mode })
+      ? this._classNameGen.get({ mode })
+      : this.name;
+  }
+
+  async provideNames(
+    nameInputProvider: io.INameInputProvider,
+    ...modes: io.SerializableMode[]
+  ): Promise<void> {
+    const generatePromises = this._classNameGen.generate(
+      nameInputProvider,
+      ...modes.filter(this.acceptSerializableMode)
+    );
+
+    const subclassPromises = asyncForEach(
+      [this.publicScope, this.privateScope, this.protectedScope],
+      async (scope) =>
+        asyncForEach(scope.nestedClasses, (subClass) =>
+          subClass.provideNames(nameInputProvider, ...modes)
+        )
+    );
+
+    return Promise.all([generatePromises, subclassPromises]).then(
+      () => undefined
+    );
+  }
+
+  protected acceptSerializableMode(mode: io.SerializableMode): boolean {
+    throw new Error("Method not implemented.");
+  }
+
+  equals(other: IClass, mode?: io.SerializableMode): boolean {
+    if (mode) {
+      return this.getName(mode) === other.getName(mode);
+    }
+    return this.name === other.name;
   }
 
   protected getScopeFactory(classNameProvider: io.IClassNameProvider) {
@@ -290,11 +339,15 @@ class ClassBase extends io.TextScope implements IClass {
     this.protectedScope.deserialize(data);
   }
 
-  async serialize(options: io.SerializationOptions) {
+  serialize(options: io.SerializationOptions) {
     let serial = "";
     let suffix = "";
 
-    const serializedName = await this._classNameGen.generate(options);
+    if (!this.acceptSerializableMode(options.mode)) {
+      return serial;
+    }
+
+    const serializedName = this._classNameGen.get(options);
 
     switch (options.mode) {
       case io.SerializableMode.header:
@@ -315,11 +368,11 @@ class ClassBase extends io.TextScope implements IClass {
     }
 
     if (this.destructor) {
-      serial += (await this.destructor.serialize(options)) + "\n\n";
+      serial += this.destructor.serialize(options) + "\n\n";
     }
-    serial += await this.publicScope.serialize(options);
-    serial += await this.protectedScope.serialize(options);
-    serial += await this.privateScope.serialize(options);
+    serial += this.publicScope.serialize(options);
+    serial += this.protectedScope.serialize(options);
+    serial += this.privateScope.serialize(options);
     serial += suffix;
     return serial;
   }
@@ -351,6 +404,7 @@ class ClassBase extends io.TextScope implements IClass {
   private readonly _classNameGen: ClassNameGenerator;
   private _classNameProvider: io.IClassNameProvider;
 }
+class ClassBase extends io.makeRangedSerializable(ClassBaseUnranged) {}
 
 export class ClassImplementation extends ClassBase {
   constructor(
@@ -362,20 +416,17 @@ export class ClassImplementation extends ClassBase {
     super(scope, name, inheritance, outerClassNameProvider);
   }
 
-  async serialize(options: io.SerializationOptions) {
-    let serial = "";
-    switch (options.mode) {
+  protected acceptSerializableMode(mode: io.SerializableMode): boolean {
+    switch (mode) {
       case io.SerializableMode.implHeader:
       case io.SerializableMode.implSource:
-        break;
+        return false;
       case io.SerializableMode.source:
       case io.SerializableMode.interfaceHeader:
       case io.SerializableMode.header:
       default:
-        serial = await super.serialize(options);
-        break;
+        return true;
     }
-    return serial;
   }
 }
 
@@ -388,22 +439,18 @@ export class ClassInterface extends ClassBase {
   ) {
     super(scope, name, inheritance, outerClassNameProvider);
   }
-
-  async serialize(options: io.SerializationOptions) {
-    let serial = "";
-    switch (options.mode) {
+  protected acceptSerializableMode(mode: io.SerializableMode): boolean {
+    switch (mode) {
       case io.SerializableMode.source:
         //TODO warning
-        break;
+        return false;
       case io.SerializableMode.interfaceHeader:
       case io.SerializableMode.header:
       case io.SerializableMode.implHeader:
       case io.SerializableMode.implSource:
       default:
-        serial = await super.serialize(options);
-        break;
+        return true;
     }
-    return serial;
   }
 }
 

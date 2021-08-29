@@ -5,8 +5,12 @@ import {
   joinNameScopesWithFunctionName,
 } from "./utils";
 import * as io from "../io";
+import { type } from "os";
 
-export class MemberFunction extends io.TextScope implements IFunction {
+class MemberFunctionBase
+  extends io.TextScope
+  implements IFunction, io.ISerializable
+{
   constructor(
     public readonly name: string,
     public readonly returnVal: string,
@@ -18,7 +22,15 @@ export class MemberFunction extends io.TextScope implements IFunction {
     super(scope.scopeStart, scope.scopeEnd);
   }
 
-  async serialize(options: io.SerializationOptions) {
+  equals(other: IFunction): boolean {
+    return (
+      this.name === other.name &&
+      this.args === other.args &&
+      this.returnVal === other.returnVal
+    );
+  }
+
+  serialize(options: io.SerializationOptions) {
     let serial = "";
 
     switch (options.mode) {
@@ -76,8 +88,10 @@ export class MemberFunction extends io.TextScope implements IFunction {
     }
   }
 }
-
-export class VirtualMemberFunction extends MemberFunction {
+export class MemberFunction extends io.makeRangedSerializable(
+  MemberFunctionBase
+) {}
+class VirtualMemberFunctionUnranged extends MemberFunctionBase {
   constructor(
     name: string,
     returnVal: string,
@@ -89,27 +103,30 @@ export class VirtualMemberFunction extends MemberFunction {
     super(name, returnVal, args, isConst, scope, classNameProvider);
   }
 
-  async serialize(options: io.SerializationOptions) {
+  serialize(options: io.SerializationOptions) {
     let serial = "";
 
     switch (options.mode) {
       case io.SerializableMode.header:
-        serial = (await super.getHeading(options)) + " override;";
+        serial = super.getHeading(options) + " override;";
         break;
 
       case io.SerializableMode.interfaceHeader:
-        serial = "virtual " + (await super.getHeading(options)) + " =0;";
+        serial = "virtual " + super.getHeading(options) + " =0;";
         break;
 
       default:
-        serial = await super.serialize(options);
+        serial = super.serialize(options);
         break;
     }
 
     return serial;
   }
 }
-export class StaticMemberFunction extends MemberFunction {
+export class VirtualMemberFunction extends io.makeRangedSerializable(
+  VirtualMemberFunctionUnranged
+) {}
+class StaticMemberFunctionUnranged extends MemberFunctionBase {
   constructor(
     name: string,
     returnVal: string,
@@ -121,7 +138,7 @@ export class StaticMemberFunction extends MemberFunction {
     super(name, returnVal, args, isConst, scope, classNameProvider);
   }
 
-  async serialize(options: io.SerializationOptions) {
+  serialize(options: io.SerializationOptions) {
     let serial = "";
 
     switch (options.mode) {
@@ -146,7 +163,11 @@ export class StaticMemberFunction extends MemberFunction {
   }
 }
 
-export class PureVirtualMemberFunction extends MemberFunction {
+export class StaticMemberFunction extends io.makeRangedSerializable(
+  StaticMemberFunctionUnranged
+) {}
+
+export class PureVirtualMemberFunctionUnranged extends MemberFunctionBase {
   constructor(
     name: string,
     returnVal: string,
@@ -158,16 +179,16 @@ export class PureVirtualMemberFunction extends MemberFunction {
     super(name, returnVal, args, isConst, scope, classNameProvider);
   }
 
-  async serialize(options: io.SerializationOptions) {
+  serialize(options: io.SerializationOptions) {
     let serial = "";
 
     switch (options.mode) {
       case io.SerializableMode.header:
-        serial = "virtual " + (await super.getHeading(options)) + " =0;";
+        serial = "virtual " + super.getHeading(options) + " =0;";
         break;
 
       case io.SerializableMode.implHeader:
-        serial = (await super.getHeading(options)) + " override;";
+        serial = super.getHeading(options) + " override;";
         break;
 
       case io.SerializableMode.implSource:
@@ -190,7 +211,11 @@ export class PureVirtualMemberFunction extends MemberFunction {
   }
 }
 
-export class FriendFunction extends io.TextScope implements IFunction {
+export class PureVirtualMemberFunction extends io.makeRangedSerializable(
+  PureVirtualMemberFunctionUnranged
+) {}
+
+class FriendFunctionUnranged extends io.TextScope implements IFunction {
   constructor(
     public readonly name: string,
     public readonly returnVal: string,
@@ -201,7 +226,15 @@ export class FriendFunction extends io.TextScope implements IFunction {
     super(scope.scopeStart, scope.scopeEnd);
   }
 
-  async serialize(options: io.SerializationOptions) {
+  equals(other: IFunction): boolean {
+    return (
+      this.name === other.name &&
+      this.args === other.args &&
+      this.returnVal === other.returnVal
+    );
+  }
+
+  serialize(options: io.SerializationOptions) {
     let serial = "";
 
     switch (options.mode) {
@@ -257,3 +290,6 @@ export class FriendFunction extends io.TextScope implements IFunction {
     }
   }
 }
+export class FriendFunction extends io.makeRangedSerializable(
+  FriendFunctionUnranged
+) {}

@@ -1,16 +1,16 @@
 import * as cpp from "./cpp";
 import * as io from "./io";
 import * as vscode from "vscode";
-import { ISignaturable, ISourceFileNamespace } from "./io";
+import { ISourceFileNamespace } from "./io";
+import {
+  CommonFileMerger,
+  FileMergerOptions,
+  InsertedText,
+} from "./CommonFileMerger";
 
 //TODO => utils.ts
 function flatten2dArray<T>(array: T[][]): T[] {
   return ([] as T[]).concat(...array);
-}
-
-interface InsertedText {
-  content: string;
-  where: number;
 }
 
 interface NamespacePair {
@@ -18,29 +18,64 @@ interface NamespacePair {
   existing: ISourceFileNamespace;
 }
 
-export class SourceFileMerger {
-  constructor(private _filePath: string, generatedSourceFileContent: string) {
+//TODO options
+export class SourceFileMerger extends CommonFileMerger {
+  constructor(
+    options: FileMergerOptions,
+    private _filePath: string,
+    generatedSourceFileContent: string
+  ) {
+    super(options);
     this._generatedSourceFile = new cpp.SourceFile(
       _filePath,
       generatedSourceFileContent
     );
   }
 
-  async merge(edit: vscode.WorkspaceEdit) {
-    const textDocument = await vscode.workspace.openTextDocument(
-      this._filePath
-    );
-
-    const text = textDocument.getText();
+  merge(existingDocument: vscode.TextDocument, edit: vscode.WorkspaceEdit) {
+    const text = existingDocument.getText();
     const existingSourceFile = new cpp.SourceFile(this._filePath, text);
 
-    const generatedSignatures = flatten2dArray(
-      this._generatedSourceFile.namespaces.map((ns) => ns.getAllSignatures())
-    );
     const existingSignatures = flatten2dArray(
       existingSourceFile.namespaces.map((ns) => ns.getAllSignatures())
     );
 
+    const generatedSignatures = flatten2dArray(
+      this._generatedSourceFile.namespaces.map((ns) => ns.getAllSignatures())
+    );
+
+    if (!this._options.disableRemoving) {
+      this.checkRemovedDefinitions(
+        existingSignatures,
+        generatedSignatures,
+        existingSourceFile,
+        existingDocument,
+        edit
+      );
+    }
+    const namespacesWithAddedSignatures: ISourceFileNamespace[] = [
+      ...this._generatedSourceFile.namespaces,
+    ].filter((generatedNamespace) => {
+      generatedNamespace.removeContaining(existingSignatures);
+      return !generatedNamespace.isEmpty();
+    });
+
+    this.mergeOrAddNamespaces(
+      edit,
+      existingDocument,
+      namespacesWithAddedSignatures,
+      existingSourceFile.namespaces,
+      text.length
+    );
+  }
+
+  private checkRemovedDefinitions(
+    existingSignatures: io.ISignaturable[],
+    generatedSignatures: io.ISignaturable[],
+    existingSourceFile: cpp.SourceFile,
+    existingDocument: vscode.TextDocument,
+    edit: vscode.WorkspaceEdit
+  ) {
     let removedSignatures = existingSignatures.filter(
       (existingSignature) =>
         !generatedSignatures.some((generatedSignature) =>
@@ -65,24 +100,9 @@ export class SourceFileMerger {
     );
     this.deleteTextScope(
       edit,
-      textDocument,
+      existingDocument,
       ...namespacesToBeRemoved,
       ...removedSignatures.map((signature) => signature.textScope)
-    );
-
-    const namespacesWithAddedSignatures: ISourceFileNamespace[] = [
-      ...this._generatedSourceFile.namespaces,
-    ].filter((generatedNamespace) => {
-      generatedNamespace.removeContaining(existingSignatures);
-      return !generatedNamespace.isEmpty();
-    });
-
-    this.mergeOrAddNamespaces(
-      edit,
-      textDocument,
-      namespacesWithAddedSignatures,
-      existingSourceFile.namespaces,
-      text.length
     );
   }
 
@@ -149,44 +169,6 @@ export class SourceFileMerger {
         return { where: addContentAt, content: `\n${namespace.serialize()}` };
       })
     );
-  }
-
-  private deleteTextScope(
-    edit: vscode.WorkspaceEdit,
-    textDocument: vscode.TextDocument,
-    ...textScopes: io.TextScope[]
-  ) {
-    const removedFunctionLabel = "Removed from file " + textDocument.fileName;
-    textScopes
-      .filter((textScope) => textScope.scopeEnd !== textScope.scopeStart)
-      .forEach((textScope) =>
-        edit.delete(
-          textDocument.uri,
-          new vscode.Range(
-            textDocument.positionAt(textScope.scopeStart),
-            textDocument.positionAt(textScope.scopeEnd + 1)
-          ),
-          { needsConfirmation: true, label: removedFunctionLabel }
-        )
-      );
-  }
-
-  private addTextScopeContent(
-    edit: vscode.WorkspaceEdit,
-    textDocument: vscode.TextDocument,
-    ...insertedTexts: InsertedText[]
-  ) {
-    const addedFunctionLabel = "Added to file " + textDocument.fileName;
-    insertedTexts
-      .filter((insertedText) => insertedText.content.length)
-      .forEach((insertedText) =>
-        edit.insert(
-          textDocument.uri,
-          textDocument.positionAt(insertedText.where),
-          insertedText.content,
-          { needsConfirmation: true, label: addedFunctionLabel }
-        )
-      );
   }
 
   private _generatedSourceFile: cpp.SourceFile;

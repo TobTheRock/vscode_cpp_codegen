@@ -561,7 +561,7 @@ export function structAndClassTests(specifier: string) {
     assert.strictEqual(classLike.length, 1);
     let nestedClass: IClass = classLike[0].publicScope.nestedClasses[0];
     assert.strictEqual(classLike[0].publicScope.nestedClasses.length, 1);
-    const serialized = await classLike[0].serialize({
+    const serialized = classLike[0].serialize({
       mode: SerializableMode.source,
     });
     assert.ok(serialized.includes("TestClass::NestedClass::fncName"));

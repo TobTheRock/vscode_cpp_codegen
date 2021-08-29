@@ -9,11 +9,14 @@ The extension is automatically loaded when using the C++ language.
 The following commands are provided while a C++ header file (extension: `hpp`, `h`, `hxx`, `hh`) is open in the editor:
 
 - `codegen-cpp: Generate interface implementation source/header files` : Parses the currently opened header file and generates implementation stubs for all available interfaces. The names of the interface implementations can be provided via the UI.
+- `codegen-cpp: Generate interface implementation source/header stub(s) for selection`: Same as above, but only for a certain text selection in the currently opened header file
+
   ![](./docu/showcase_generate_interface_impl_stubs.gif)
 
-- `codegen-cpp: Generate source file from header` : Parses the currently opened header file and generates the source stubs. The output directory can be provided via the UI. In case a source file exists, changes can be evaluated with the refactoring view;
+- `codegen-cpp: Generate source file from header`: Parses the currently opened header file and generates the source stubs. The output directory can be provided via the UI. In case a source file exists, changes can be evaluated with the refactoring view;
+- `codegen-cpp: Generate source stub(s) for selection`: Same as above, but only for a certain text selection in the currently opened header file
 
-![](./docu/showcase_merge_source_files.gif)
+  ![](./docu/showcase_merge_source_files.gif)
 
 ## Extension Settings
 
@@ -50,13 +53,19 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 
 ## Possible features in future
 
-- Generating code only for selected text ranges
 - Prettifying the generated output
 - more configuration possibilities (e.g. for namespaces)
 - Generating abstract factories
 - ...
 
 ## Release Notes
+
+### 0.2.0
+
+- feature: context menus
+- feature: generating stubs for a text selection
+- feature: Merging header files
+- fix: missing namespaces in header when using prepended mode
 
 ### 0.1.4
 
