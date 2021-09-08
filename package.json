@@ -17,6 +17,7 @@
   "keywords": [
     "c++",
     "cpp",
+    "C/C++",
     "definition",
     "generator",
     "stub",
@@ -31,7 +32,7 @@
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
-      "title": "Codegen C++",
+      "title": "Stub Code Generator C++",
       "properties": {
         "codegen-cpp.FileHeader.ForC++Source": {
           "type": "array",
@@ -109,6 +110,23 @@
             "Serialized prepended in front of function definitions, e.g. `void myNamespace::MyClass::funct()`"
           ],
           "description": "Sets how namespaces are serialized in generated source files"
+        },
+        "codegen-cpp.RefactoringPreview": {
+          "type": "string",
+          "description": "Configure when the refactoring preview is displayed when merging files",
+          "default": "Always",
+          "enum": [
+            "Always",
+            "Never",
+            "Deletion",
+            "Adding"
+          ],
+          "enumDescriptions": [
+            "always show the refactoring preview ",
+            "never show the refactoring preview ",
+            "show the refactoring preview when definitions are deleted",
+            "show the refactoring preview when definitions are added"
+          ]
         }
       }
     },

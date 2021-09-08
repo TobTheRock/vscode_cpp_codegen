@@ -12,6 +12,7 @@ import * as path from "path";
 import {
   IExtensionConfiguration,
   DirectorySelectorMode,
+  RefactoringPreview,
 } from "./Configuration";
 import { asyncForEach, awaitMapEntries } from "./utils";
 import { flatten, compact } from "lodash";
@@ -77,7 +78,7 @@ export class HeaderFileHandler {
     private readonly _headerFile: cpp.HeaderFile,
     private readonly _edit: vscode.WorkspaceEdit,
     private readonly _workspaceDirectoryFinder: WorkspaceDirectoryFinder,
-    private readonly _opt: IExtensionConfiguration
+    private readonly _config: IExtensionConfiguration
   ) {
     this._userInput = new ui.UserInput();
   }
@@ -133,7 +134,7 @@ export class HeaderFileHandler {
     return this._userInput.registerElement(
       ui.DirectoryPicker,
       this._workspaceDirectoryFinder,
-      this._opt.outputDirectorySelector.mode,
+      this._config.outputDirectorySelector.mode,
       vscode.Uri.file(this._headerFile.directory)
     );
   }
@@ -183,7 +184,7 @@ export class HeaderFileHandler {
       mode === io.SerializableMode.implHeader;
     const cannotDeduce = isImplMode && !firstImplementationNamePromise;
 
-    if (!this._opt.deduceOutputFileNames || cannotDeduce) {
+    if (!this._config.deduceOutputFileNames || cannotDeduce) {
       return this._userInput.registerElement(
         ui.FileNamePicker,
         this._headerFile.basename
@@ -242,11 +243,11 @@ export class HeaderFileHandler {
       case io.SerializableMode.header:
       case io.SerializableMode.interfaceHeader:
       case io.SerializableMode.implHeader:
-        fileName += "." + this._opt.outputFileExtension.forCppHeader;
+        fileName += "." + this._config.outputFileExtension.forCppHeader;
         break;
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
-        fileName += "." + this._opt.outputFileExtension.forCppSource;
+        fileName += "." + this._config.outputFileExtension.forCppSource;
         break;
     }
     return vscode.Uri.joinPath(outputDirectory, fileName);
@@ -260,7 +261,7 @@ export class HeaderFileHandler {
     let fileHeader: string;
     switch (mode) {
       case io.SerializableMode.implHeader:
-        fileHeader = this._opt.fileHeader.forCppHeader;
+        fileHeader = this._config.fileHeader.forCppHeader;
         fileHeader += this.createIncludeStatements(
           outputDirectory,
           this._headerFile.getPath()
@@ -268,20 +269,20 @@ export class HeaderFileHandler {
         break;
       case io.SerializableMode.header:
       case io.SerializableMode.interfaceHeader:
-        fileHeader = this._opt.fileHeader.forCppHeader;
+        fileHeader = this._config.fileHeader.forCppHeader;
         break;
       case io.SerializableMode.source:
-        fileHeader = this._opt.fileHeader.forCppSource;
+        fileHeader = this._config.fileHeader.forCppSource;
         fileHeader += this.createIncludeStatements(
           outputDirectory,
           this._headerFile.getPath()
         );
         break;
       case io.SerializableMode.implSource:
-        fileHeader = this._opt.fileHeader.forCppSource;
+        fileHeader = this._config.fileHeader.forCppSource;
         const include = path.join(
           outputDirectory,
-          outputFileName + "." + this._opt.outputFileExtension.forCppHeader
+          outputFileName + "." + this._config.outputFileExtension.forCppHeader
         );
         fileHeader += this.createIncludeStatements(outputDirectory, include);
         break;
@@ -340,6 +341,12 @@ export class HeaderFileHandler {
   ) {
     const mergerOptions: FileMergerOptions = {
       disableRemoving: this._disableRemoveOnMerge,
+      skipConfirmAdding:
+        this._config.refactoringPreview === RefactoringPreview.never ||
+        this._config.refactoringPreview === RefactoringPreview.deletion,
+      skipConfirmRemoving:
+        this._config.refactoringPreview === RefactoringPreview.never ||
+        this._config.refactoringPreview === RefactoringPreview.adding,
     };
     switch (serialized.mode) {
       case io.SerializableMode.source:
