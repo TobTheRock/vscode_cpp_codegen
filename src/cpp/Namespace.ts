@@ -1,5 +1,4 @@
-import { IClass, IFunction, INamespace } from "./TypeInterfaces";
-import { HeaderParser } from "../io/HeaderParser";
+import { IClass, IFunction, INamespace, IParser } from "./TypeInterfaces";
 import * as io from "../io";
 import {
   Configuration,
@@ -72,10 +71,10 @@ export class Namespace extends io.TextScope implements INamespace {
     return prefix + serial + suffix;
   }
 
-  deserialize(data: io.TextFragment) {
-    this.subnamespaces = HeaderParser.parseNamespaces(data);
-    this.classes = HeaderParser.parseClasses(data);
-    this.functions = HeaderParser.parseStandaloneFunctiones(data);
+  deserialize(data: io.TextFragment, parser: IParser) {
+    this.subnamespaces = parser.parseNamespaces(data);
+    this.classes = parser.parseClasses(data);
+    this.functions = parser.parseStandaloneFunctions(data);
   }
 
   name: string;
@@ -84,7 +83,7 @@ export class Namespace extends io.TextScope implements INamespace {
   subnamespaces: INamespace[];
 }
 
-export class NoneNamespace extends io.TextScope implements INamespace {
+export class RootNamespace extends io.TextScope implements INamespace {
   constructor(scope: io.TextScope) {
     super(scope.scopeStart, scope.scopeEnd);
     this.name = "";
@@ -108,20 +107,22 @@ export class NoneNamespace extends io.TextScope implements INamespace {
   serialize(options: io.SerializationOptions) {
     let serial: string = io.serializeArray(this.functions, options);
     serial += io.serializeArray(this.classes, options);
+    serial += io.serializeArray(this.subnamespaces, options, undefined, "\n");
     return serial;
   }
+
   equals(other: INamespace): boolean {
     return this.name === other.name;
   }
 
-  deserialize(data: io.TextFragment) {
-    this.classes = HeaderParser.parseClasses(data);
-    this.functions = HeaderParser.parseStandaloneFunctiones(data);
+  deserialize(data: io.TextFragment, parser: IParser) {
+    this.subnamespaces = parser.parseNamespaces(data);
+    this.classes = parser.parseClasses(data);
+    this.functions = parser.parseStandaloneFunctions(data);
   }
 
   readonly name: string;
   classes: IClass[];
   functions: IFunction[];
   subnamespaces: INamespace[];
-  private readonly _nameInputProvider: io.INameInputProvider | undefined;
 }

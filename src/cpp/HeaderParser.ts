@@ -1,13 +1,25 @@
-import * as cpp from "../cpp";
-import * as io from ".";
-import {
-  NamespaceMatch,
-  joinRegexStringsWithWhiteSpace as joinRegexStringsWithWhiteSpace,
-  CommonParser,
-} from "./CommonParser";
-import { TextScope } from "./Text";
-import { IClassNameProvider } from "./Serialization";
+import * as io from "../io";
+import { CommonParser } from "./CommonParser";
 import * as vscode from "vscode";
+import { joinRegexStringsWithWhiteSpace } from "./utils";
+import {
+  ClassConstructor,
+  ClassDestructor,
+  ClassInterface,
+  ClassImplementation,
+  StructInterface,
+  StructImplementation,
+} from "./Class";
+import {
+  PureVirtualMemberFunction,
+  VirtualMemberFunction,
+  StaticMemberFunction,
+  MemberFunction,
+  FriendFunction,
+} from "./MemberFunction";
+import { StandaloneFunction } from "./StandaloneFunction";
+import { IClassNameProvider } from "../io";
+import { IConstructor, IFunction, IClass } from "./TypeInterfaces";
 
 class ClassMatchBase {
   constructor(regexMatch: io.TextMatch) {
@@ -316,8 +328,8 @@ interface IScopeMatch<MatchType> extends IMatch<MatchType> {
   readonly postBracketRegex?: string;
 }
 
-export abstract class HeaderParser extends CommonParser {
-  static parseClassPrivateScope(data: io.TextFragment): io.TextFragment {
+class HeaderParserImpl extends CommonParser {
+  parseClassPrivateScope(data: io.TextFragment): io.TextFragment {
     let publicOrProtectedRegex =
       "(?:public:|protected:)((?!private:)[\\s\\S])*";
     const matcher = new io.RemovingRegexMatcher(publicOrProtectedRegex);
@@ -329,19 +341,19 @@ export abstract class HeaderParser extends CommonParser {
     return privateFragment;
   }
 
-  static parseClassPublicScope(data: io.TextFragment): io.TextFragment {
+  parseClassPublicScope(data: io.TextFragment): io.TextFragment {
     return this.parseClassOrStructScope(ClassPublicScopeMatch, data);
   }
 
-  static parseClassProtectedScope(data: io.TextFragment): io.TextFragment {
+  parseClassProtectedScope(data: io.TextFragment): io.TextFragment {
     return this.parseClassOrStructScope(ClassProtectedScopeMatch, data);
   }
 
-  static parseStructPrivateScope(data: io.TextFragment): io.TextFragment {
+  parseStructPrivateScope(data: io.TextFragment): io.TextFragment {
     return this.parseClassOrStructScope(StructPrivateScopeMatch, data);
   }
 
-  static parseStructPublicScope(data: io.TextFragment): io.TextFragment {
+  parseStructPublicScope(data: io.TextFragment): io.TextFragment {
     let privateOrProtectedRegex =
       "(?:private:|protected:)((?!public:)[\\s\\S])*";
     const publicFragment = io.TextFragment.createEmpty();
@@ -354,15 +366,15 @@ export abstract class HeaderParser extends CommonParser {
     return publicFragment;
   }
 
-  static parseStructProtectedScope(data: io.TextFragment): io.TextFragment {
+  parseStructProtectedScope(data: io.TextFragment): io.TextFragment {
     return this.parseClassOrStructScope(StructProtectedScopeMatch, data);
   }
 
-  static parseClassConstructor(
+  parseClassConstructors(
     data: io.TextFragment,
-    classNameProvider: IClassNameProvider
-  ): cpp.ClassConstructor[] {
-    let ctors: cpp.ClassConstructor[] = [];
+    classNameProvider: io.IClassNameProvider
+  ): IConstructor[] {
+    let ctors: ClassConstructor[] = [];
     const matcher = new io.RemovingRegexWithBodyMatcher(
       ClassConstructorMatch.getRegexStr(classNameProvider.originalName),
       ClassConstructorMatch.postBracketRegex,
@@ -372,7 +384,7 @@ export abstract class HeaderParser extends CommonParser {
     matcher.match(data).forEach((regexMatch) => {
       let match = new ClassConstructorMatch(regexMatch);
       ctors.push(
-        new cpp.ClassConstructor(
+        new ClassConstructor(
           match.argsMatch,
           classNameProvider,
           regexMatch as io.TextScope
@@ -382,18 +394,18 @@ export abstract class HeaderParser extends CommonParser {
     return ctors;
   }
 
-  static parseClassDestructors(
+  parseClassDestructors(
     data: io.TextFragment,
     classNameProvider: IClassNameProvider
-  ): cpp.ClassDestructor[] {
-    let deconstructors: cpp.ClassDestructor[] = [];
+  ): ClassDestructor[] {
+    let deconstructors: ClassDestructor[] = [];
     const matcher = new io.RemovingRegexMatcher(
       ClassDestructorMatch.getRegexStr(classNameProvider.originalName)
     );
     matcher.match(data).forEach((regexMatch) => {
       let match = new ClassDestructorMatch(regexMatch);
       deconstructors.push(
-        new cpp.ClassDestructor(
+        new ClassDestructor(
           match.isVirtual,
           classNameProvider,
           regexMatch as io.TextScope
@@ -403,16 +415,16 @@ export abstract class HeaderParser extends CommonParser {
     return deconstructors;
   }
 
-  static parseClassMemberFunctions(
+  parseClassMemberFunctions(
     data: io.TextFragment,
     classNameProvider: IClassNameProvider
-  ): cpp.IFunction[] {
-    let memberFunctions: cpp.IFunction[] = [];
+  ): IFunction[] {
+    let memberFunctions: IFunction[] = [];
 
     const createMemberFunction = function <MatchType extends IFunctionMatch>(
       match: MatchType
     ) {
-      let newFunc: cpp.IFunction;
+      let newFunc: IFunction;
       if (match.hasInvalidSignature) {
         // TODO add a logger with summarizes the warnings, if there are multiple
         vscode.window.showWarningMessage(
@@ -423,7 +435,7 @@ export abstract class HeaderParser extends CommonParser {
         return;
       } else if (match.virtualMatch) {
         if (match.pureMatch) {
-          newFunc = new cpp.PureVirtualMemberFunction(
+          newFunc = new PureVirtualMemberFunction(
             match.nameMatch ?? "",
             match.returnValMatch ?? "",
             match.argsMatch ?? "",
@@ -432,7 +444,7 @@ export abstract class HeaderParser extends CommonParser {
             classNameProvider
           );
         } else {
-          newFunc = new cpp.VirtualMemberFunction(
+          newFunc = new VirtualMemberFunction(
             match.nameMatch ?? "",
             match.returnValMatch ?? "",
             match.argsMatch ?? "",
@@ -442,7 +454,7 @@ export abstract class HeaderParser extends CommonParser {
           );
         }
       } else if (match.staticMatch) {
-        newFunc = new cpp.StaticMemberFunction(
+        newFunc = new StaticMemberFunction(
           match.nameMatch ?? "",
           match.returnValMatch ?? "",
           match.argsMatch ?? "",
@@ -451,7 +463,7 @@ export abstract class HeaderParser extends CommonParser {
           classNameProvider
         );
       } else {
-        newFunc = new cpp.MemberFunction(
+        newFunc = new MemberFunction(
           match.nameMatch ?? "",
           match.returnValMatch ?? "",
           match.argsMatch ?? "",
@@ -474,7 +486,7 @@ export abstract class HeaderParser extends CommonParser {
       FriendFunctionMatch,
       data,
       (match: FriendFunctionMatch) => {
-        const newFunc = new cpp.FriendFunction(
+        const newFunc = new FriendFunction(
           match.nameMatch,
           match.returnValMatch,
           match.argsMatch,
@@ -493,29 +505,11 @@ export abstract class HeaderParser extends CommonParser {
     return memberFunctions;
   }
 
-  static parseNamespaces(data: io.TextFragment): cpp.INamespace[] {
-    let namespaces: cpp.INamespace[] = [];
-    this.forEachScopeRegexMatch(NamespaceMatch, data, (match) => {
-      const newNamespace = new cpp.Namespace(match.nameMatch, match.textScope);
-      newNamespace.deserialize(match.bodyMatch);
-      namespaces.push(newNamespace);
-    });
-    return namespaces;
-  }
-
-  static parseNoneNamespaces(data: io.TextFragment): cpp.INamespace[] {
-    const newNoneNamespace = new cpp.NoneNamespace(
-      new TextScope(data.getScopeStart(), data.getScopeEnd())
-    );
-    newNoneNamespace.deserialize(data);
-    return [newNoneNamespace];
-  }
-
-  static parseStandaloneFunctiones(data: io.TextFragment): cpp.IFunction[] {
-    let standaloneFunctions: cpp.IFunction[] = [];
+  parseStandaloneFunctions(data: io.TextFragment): IFunction[] {
+    let standaloneFunctions: IFunction[] = [];
     this.forEachCallableRegexMatch(StandaloneFunctionMatch, data, (match) => {
       standaloneFunctions.push(
-        new cpp.StandaloneFunction(
+        new StandaloneFunction(
           match.nameMatch,
           match.returnValMatch,
           match.argsMatch,
@@ -527,50 +521,50 @@ export abstract class HeaderParser extends CommonParser {
     return standaloneFunctions;
   }
 
-  static parseClasses(
+  parseClasses(
     data: io.TextFragment,
     classNameProvider?: io.IClassNameProvider
-  ): cpp.IClass[] {
-    let classes: cpp.IClass[] = [];
+  ): IClass[] {
+    let classes: IClass[] = [];
     this.forEachScopeRegexMatch(ClassMatch, data, (match) => {
       const newClass = match.isInterface
-        ? new cpp.ClassInterface(
+        ? new ClassInterface(
             match.textScope,
             match.nameMatch,
             match.inheritanceMatch,
             classNameProvider
           )
-        : new cpp.ClassImplementation(
+        : new ClassImplementation(
             match.textScope,
             match.nameMatch,
             match.inheritanceMatch,
             classNameProvider
           );
-      newClass.deserialize(match.bodyMatch);
+      newClass.deserialize(match.bodyMatch, this);
       classes.push(newClass);
     });
 
     this.forEachScopeRegexMatch(StructMatch, data, (match) => {
       const newStruct = match.isInterface
-        ? new cpp.StructInterface(
+        ? new StructInterface(
             match.textScope,
             match.nameMatch,
             match.inheritanceMatch,
             classNameProvider
           )
-        : new cpp.StructImplementation(
+        : new StructImplementation(
             match.textScope,
             match.nameMatch,
             match.inheritanceMatch,
             classNameProvider
           );
-      newStruct.deserialize(match.bodyMatch);
+      newStruct.deserialize(match.bodyMatch, this);
       classes.push(newStruct);
     });
 
     return classes;
   }
-  private static parseClassOrStructScope<MatchType extends IClassScopeMatch>(
+  private parseClassOrStructScope<MatchType extends IClassScopeMatch>(
     type: IScopeMatch<MatchType>,
     data: io.TextFragment
   ): io.TextFragment {
@@ -581,7 +575,7 @@ export abstract class HeaderParser extends CommonParser {
     return publicFragment;
   }
 
-  private static forEachRegexMatch<MatchType>(
+  private forEachRegexMatch<MatchType>(
     type: IMatch<MatchType>,
     data: io.TextFragment,
     onMatch: (match: MatchType) => void
@@ -594,7 +588,7 @@ export abstract class HeaderParser extends CommonParser {
       });
   }
 
-  private static forEachCallableRegexMatch<MatchType>(
+  private forEachCallableRegexMatch<MatchType>(
     type: ICallableMatch<MatchType>,
     data: io.TextFragment,
     onMatch: (match: MatchType) => void
@@ -612,7 +606,7 @@ export abstract class HeaderParser extends CommonParser {
       });
   }
 
-  private static forEachScopeRegexMatch<MatchType>(
+  private forEachScopeRegexMatch<MatchType>(
     type: IScopeMatch<MatchType>,
     data: io.TextFragment,
     onMatch: (match: MatchType) => void
@@ -625,3 +619,6 @@ export abstract class HeaderParser extends CommonParser {
       });
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export const HeaderParser = new HeaderParserImpl();

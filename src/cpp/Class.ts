@@ -4,8 +4,8 @@ import {
   IConstructor,
   IDestructor,
   IClassScope,
+  IParser,
 } from "./TypeInterfaces";
-import { HeaderParser } from "../io/HeaderParser";
 import * as io from "../io";
 import { joinNameScopesWithFunctionName, joinNameScopes } from "./utils";
 import { ClassNameGenerator } from "./ClassNameGenerator";
@@ -111,10 +111,13 @@ export class ClassDestructor extends io.TextScope implements IDestructor {
   }
 }
 
-class ClassScopeBase implements IClassScope {
+abstract class ClassScopeBase implements IClassScope {
   constructor(private readonly _classNameProvider: io.IClassNameProvider) {}
 
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
+  extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
     throw new Error("Unimplemented!");
   }
 
@@ -122,19 +125,16 @@ class ClassScopeBase implements IClassScope {
     throw new Error("Unimplemented!");
   }
 
-  deserialize(data: io.TextFragment) {
-    let content: io.TextFragment = this.extractScopeTextFragment(data);
+  deserialize(data: io.TextFragment, parser: IParser) {
+    let content: io.TextFragment = this.extractScopeTextFragment(data, parser);
     this.nestedClasses.push(
-      ...HeaderParser.parseClasses(content, this._classNameProvider)
+      ...parser.parseClasses(content, this._classNameProvider)
     );
     this.constructors.push(
-      ...HeaderParser.parseClassConstructor(content, this._classNameProvider)
+      ...parser.parseClassConstructors(content, this._classNameProvider)
     );
     this.memberFunctions.push(
-      ...HeaderParser.parseClassMemberFunctions(
-        content,
-        this._classNameProvider
-      )
+      ...parser.parseClassMemberFunctions(content, this._classNameProvider)
     );
   }
 
@@ -187,8 +187,11 @@ class ClassScopeBase implements IClassScope {
 }
 
 class ClassPrivateScope extends ClassScopeBase {
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
-    return HeaderParser.parseClassPrivateScope(data);
+  extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
+    return parser.parseClassPrivateScope(data);
   }
 
   getScopeHeader(): string {
@@ -196,8 +199,11 @@ class ClassPrivateScope extends ClassScopeBase {
   }
 }
 class ClassPublicScope extends ClassScopeBase {
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
-    return HeaderParser.parseClassPublicScope(data);
+  extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
+    return parser.parseClassPublicScope(data);
   }
 
   getScopeHeader(): string {
@@ -205,8 +211,11 @@ class ClassPublicScope extends ClassScopeBase {
   }
 }
 class ClassProtectedScope extends ClassScopeBase {
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
-    return HeaderParser.parseClassProtectedScope(data);
+  extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
+    return parser.parseClassProtectedScope(data);
   }
 
   getScopeHeader(): string {
@@ -215,8 +224,11 @@ class ClassProtectedScope extends ClassScopeBase {
 }
 
 class StructPrivateScope extends ClassScopeBase {
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
-    return HeaderParser.parseStructPrivateScope(data);
+  extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
+    return parser.parseStructPrivateScope(data);
   }
 
   getScopeHeader(): string {
@@ -224,8 +236,11 @@ class StructPrivateScope extends ClassScopeBase {
   }
 }
 class StructPublicScope extends ClassScopeBase {
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
-    return HeaderParser.parseStructPublicScope(data);
+  extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
+    return parser.parseStructPublicScope(data);
   }
 
   getScopeHeader(): string {
@@ -233,8 +248,11 @@ class StructPublicScope extends ClassScopeBase {
   }
 }
 class StructProtectedScope extends ClassScopeBase {
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
-    return HeaderParser.parseStructProtectedScope(data);
+  extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
+    return parser.parseStructProtectedScope(data);
   }
 
   getScopeHeader(): string {
@@ -319,11 +337,8 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
     return new ClassScopeFactory(classNameProvider);
   }
 
-  deserialize(data: io.TextFragment) {
-    const dtors = HeaderParser.parseClassDestructors(
-      data,
-      this._classNameProvider
-    );
+  deserialize(data: io.TextFragment, parser: IParser) {
+    const dtors = parser.parseClassDestructors(data, this._classNameProvider);
 
     if (dtors.length >= 1) {
       if (dtors.length > 1) {
@@ -334,9 +349,9 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
       this.destructor = dtors[0];
     }
 
-    this.publicScope.deserialize(data);
-    this.privateScope.deserialize(data);
-    this.protectedScope.deserialize(data);
+    this.publicScope.deserialize(data, parser);
+    this.privateScope.deserialize(data, parser);
+    this.protectedScope.deserialize(data, parser);
   }
 
   serialize(options: io.SerializationOptions) {

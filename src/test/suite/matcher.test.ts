@@ -4,7 +4,7 @@ import * as assert from "assert";
 // as well as import your extension to test it
 import * as vscode from "vscode";
 // import * as myExtension from '../../extension';
-import { HeaderParser } from "../../io/HeaderParser";
+import { HeaderParser } from "../../cpp/HeaderParser";
 import { IFunction } from "../../cpp";
 import * as io from "../../io";
 

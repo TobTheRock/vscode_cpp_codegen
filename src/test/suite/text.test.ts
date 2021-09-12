@@ -4,7 +4,7 @@ import * as assert from "assert";
 // as well as import your extension to test it
 import * as vscode from "vscode";
 // import * as myExtension from '../../extension';
-import { HeaderParser } from "../../io/HeaderParser";
+import { HeaderParser } from "../../cpp/HeaderParser";
 import { IFunction } from "../../cpp";
 import * as io from "../../io";
 
@@ -30,7 +30,6 @@ suite("Text Utility Tests", () => {
     );
 
     assert.ok(textBlock1.fullyContains(textBlock2));
-
   });
 
   test("Textblock contains check", () => {
@@ -49,7 +48,6 @@ suite("Text Utility Tests", () => {
     );
 
     assert.ok(textBlock1.contains(textBlock2));
-
   });
 
   test("TextScope merge", () => {
@@ -72,7 +70,6 @@ suite("Text Utility Tests", () => {
     assert.strictEqual(mergedScopes.length, 1);
     assert.strictEqual(mergedScopes[0].scopeStart, textBlock1.scopeStart);
     assert.strictEqual(mergedScopes[0].scopeEnd, textBlock2.scopeEnd);
-
   });
 
   test("TextScope not merge", () => {
@@ -97,7 +94,6 @@ suite("Text Utility Tests", () => {
     assert.strictEqual(mergedScopes[0].scopeEnd, textBlock1.scopeEnd);
     assert.strictEqual(mergedScopes[1].scopeStart, textBlock2.scopeStart);
     assert.strictEqual(mergedScopes[1].scopeEnd, textBlock2.scopeEnd);
-
   });
 
   test("TextBlock slice single", () => {
@@ -116,7 +112,6 @@ suite("Text Utility Tests", () => {
       slicedBlocks[0].content,
       testContent.slice(subStrStart, subStrEnd + 1)
     );
-
   });
 
   test("TextBlock slice multi", () => {
@@ -144,7 +139,6 @@ suite("Text Utility Tests", () => {
       slicedBlocks[1].content,
       testContent.slice(subStrStart2, subStrEnd2 + 1)
     );
-
   });
 
   test("TextBlock slice multi overlapping", () => {
@@ -166,7 +160,6 @@ suite("Text Utility Tests", () => {
       slicedBlocks[0].content,
       testContent.slice(subStrStart, subStrEnd2 + 1)
     );
-
   });
 
   test("TextFragment slice single", () => {
@@ -203,6 +196,5 @@ suite("Text Utility Tests", () => {
       slicedTextFragment.blocks[1].content,
       testContent2.slice(0, subStrEnd + 1 - gap - testContent1.length)
     );
-
   });
 });

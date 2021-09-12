@@ -5,13 +5,7 @@ import * as assert from "assert";
 import * as vscode from "vscode";
 import { Done, describe } from "mocha";
 // import * as myExtension from '../../extension';
-import { HeaderParser } from "../../io/HeaderParser";
-import {
-  IClass,
-  ClassInterface,
-  ClassImplementation,
-  IClassScope,
-} from "../../cpp";
+import { HeaderParser } from "../../cpp/HeaderParser";
 import { callItAsync } from "./utils";
 
 import { TextFragment, SerializableMode } from "../../io";
@@ -21,6 +15,7 @@ import {
   functionData,
   TestData,
 } from "./common.struct.class";
+import { IClass } from "../../cpp";
 
 suite("Parser: Class tests", () => {
   structAndClassTests("class");

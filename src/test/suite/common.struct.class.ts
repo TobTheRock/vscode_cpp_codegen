@@ -1,14 +1,10 @@
-import { HeaderParser } from "../../io/HeaderParser";
-import {
-  IClass,
-  ClassInterface,
-  ClassImplementation,
-  IClassScope,
-} from "../../cpp";
+import { HeaderParser } from "../../cpp/HeaderParser";
+import { IClass, IClassScope } from "../../cpp";
 import { callItAsync } from "./utils";
 import { TextFragment, SerializableMode } from "../../io";
 import * as assert from "assert";
 import { describe } from "mocha";
+import { ClassImplementation, ClassInterface } from "../../cpp/Class";
 
 const argData = [
   "",

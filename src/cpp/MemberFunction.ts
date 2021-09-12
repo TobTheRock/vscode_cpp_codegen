@@ -1,4 +1,4 @@
-import { IFunction } from "./TypeInterfaces";
+import { MemberFunctionIgnoringClassNames, IFunction } from "./TypeInterfaces";
 import {
   removeDefaultInitializersFromArgs,
   joinNameScopesWithMemberFunctionName,
@@ -215,7 +215,10 @@ export class PureVirtualMemberFunction extends io.makeRangedSerializable(
   PureVirtualMemberFunctionUnranged
 ) {}
 
-class FriendFunctionUnranged extends io.TextScope implements IFunction {
+class FriendFunctionUnranged
+  extends io.TextScope
+  implements IFunction, MemberFunctionIgnoringClassNames
+{
   constructor(
     public readonly name: string,
     public readonly returnVal: string,
@@ -225,6 +228,7 @@ class FriendFunctionUnranged extends io.TextScope implements IFunction {
   ) {
     super(scope.scopeStart, scope.scopeEnd);
   }
+  ignoresClassNames: boolean = true;
 
   equals(other: IFunction): boolean {
     return (

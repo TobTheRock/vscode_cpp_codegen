@@ -17,6 +17,10 @@ export class TextScope {
     error(scopeEnd >= 0, "Scope end muss be greater zero!");
   }
 
+  static createEmpty() {
+    return new TextScope(0, 0);
+  }
+
   fullyContains(other: TextScope): boolean {
     return (
       this.scopeStart <= other.scopeStart && this.scopeEnd >= other.scopeEnd

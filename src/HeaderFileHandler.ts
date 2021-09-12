@@ -146,10 +146,9 @@ export class HeaderFileHandler {
       this._userInput.registerElement(ui.InterfaceNamePicker, origName)
     );
 
-    const namesProvidePromise = asyncForEach(
-      this._headerFile.namespaces,
-      (namespace) => namespace.provideNames(helper, ...modes)
-    ).then(() => undefined);
+    const namesProvidePromise = this._headerFile.rootNamespace
+      .provideNames(helper, ...modes)
+      .then(() => undefined);
 
     return Promise.race([namesProvidePromise, helper.onFirstCall]);
   }
@@ -353,8 +352,11 @@ export class HeaderFileHandler {
       case io.SerializableMode.implSource:
         const sourceFileMerger = new SourceFileMerger(
           mergerOptions,
-          serialized.outputUri.fsPath,
-          serialized.content
+          this._headerFile,
+          {
+            mode: serialized.mode,
+            range: selection,
+          }
         );
         sourceFileMerger.merge(existingDocument, this._edit);
         break;

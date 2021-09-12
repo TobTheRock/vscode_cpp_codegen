@@ -1,5 +1,7 @@
+import * as cpp from "./cpp";
 import * as io from "./io";
 import * as vscode from "vscode";
+import { differenceWith } from "lodash";
 
 export interface InsertedText {
   content: string;
@@ -11,9 +13,21 @@ export interface FileMergerOptions {
   skipConfirmRemoving?: boolean;
   skipConfirmAdding?: boolean;
 }
+export interface ChangedPair<T> {
+  generated: T;
+  existing: T;
+}
+export interface Diff<T> {
+  added: T[];
+  removed: T[];
+  changed: ChangedPair<T>[];
+}
 
 export class CommonFileMerger {
-  constructor(protected _options: FileMergerOptions) {}
+  constructor(
+    protected readonly _options: FileMergerOptions,
+    protected readonly _serializeOptions: io.SerializationOptions
+  ) {}
 
   protected deleteTextScope(
     edit: vscode.WorkspaceEdit,
@@ -61,5 +75,47 @@ export class CommonFileMerger {
           }
         )
       );
+  }
+
+  protected createDiff<T extends cpp.Comparable<T>>(
+    existing: T[],
+    generated: T[]
+  ): Diff<T> {
+    const comparator = (a: T, b: T) => {
+      return a.equals(b, this._serializeOptions.mode);
+    };
+    const added = differenceWith(generated, existing, comparator);
+    const removed = differenceWith(existing, generated, comparator);
+    const changed = existing.reduce<ChangedPair<T>[]>(
+      (changedAcc, existingElement: T) => {
+        const generatedMatchingElement = generated.find((b) =>
+          comparator(existingElement, b)
+        );
+        if (generatedMatchingElement) {
+          return changedAcc.concat({
+            generated: generatedMatchingElement,
+            existing: existingElement,
+          });
+        }
+        return changedAcc;
+      },
+      []
+    );
+
+    return { added, removed, changed };
+  }
+
+  protected createInsertedText<T extends io.ISerializable>(
+    serializables: T[],
+    where: number
+  ) {
+    return serializables
+      .map((serializable) => serializable.serialize(this._serializeOptions))
+      .filter((content) => content.length)
+      .map((content) => {
+        where = where + 1;
+        content = `\n${content.trim()}`;
+        return { content, where };
+      });
   }
 }

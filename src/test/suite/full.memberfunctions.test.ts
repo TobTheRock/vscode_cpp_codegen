@@ -2,20 +2,21 @@ import * as assert from "assert";
 import { describe, test } from "mocha";
 import { callItAsync } from "./utils";
 
-import { HeaderParser } from "../../io/HeaderParser";
-import {
-  MemberFunction,
-  FriendFunction,
-  PureVirtualMemberFunction,
-  VirtualMemberFunction,
-  StaticMemberFunction,
-} from "../../cpp";
+import { HeaderParser } from "../../cpp/HeaderParser";
+import {} from "../../cpp";
 import {
   TextFragment,
   SerializableMode,
   IClassNameProvider,
   TextScope,
 } from "../../io";
+import {
+  MemberFunction,
+  FriendFunction,
+  PureVirtualMemberFunction,
+  VirtualMemberFunction,
+  StaticMemberFunction,
+} from "../../cpp/MemberFunction";
 
 const args = [
   "",
@@ -1039,7 +1040,6 @@ suite("Full Member Function Tests", () => {
     callItAsync(
       "With function arguments ${value}",
       [
-        PureVirtualMemberFunction,
         VirtualMemberFunction,
         MemberFunction,
         StaticMemberFunction,
@@ -1056,7 +1056,7 @@ suite("Full Member Function Tests", () => {
           range,
           { getClassName: () => "TestClass", originalName: "TestClass" }
         );
-        const rangeFull = new TextScope(0, rangeEnd - 1);
+        const rangeFull = new TextScope(0, rangeEnd);
         const rangePartialStart = new TextScope(0, rangeEnd / 2);
         const rangePartialEnd = new TextScope(rangeEnd / 2, rangeEnd - 1);
 

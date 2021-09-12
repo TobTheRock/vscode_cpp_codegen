@@ -4,7 +4,7 @@ import * as assert from "assert";
 // as well as import your extension to test it
 import * as vscode from "vscode";
 // import * as myExtension from '../../extension';
-import { HeaderParser } from "../../io/HeaderParser";
+import { HeaderParser } from "../../cpp/HeaderParser";
 import { IFunction } from "../../cpp";
 import { SerializableMode, TextFragment, TextScope } from "../../io";
 
@@ -16,7 +16,7 @@ void fncName (int argument);
 		`
     );
     let functions: IFunction[] =
-      HeaderParser.parseStandaloneFunctiones(testContent);
+      HeaderParser.parseStandaloneFunctions(testContent);
 
     assert.strictEqual(functions.length, 1);
     assert.strictEqual(functions[0].name, "fncName");
@@ -32,7 +32,7 @@ void fncName (int argument,
 		`
     );
     let functions: IFunction[] =
-      HeaderParser.parseStandaloneFunctiones(testContent);
+      HeaderParser.parseStandaloneFunctions(testContent);
 
     assert.strictEqual(functions.length, 1);
     assert.strictEqual(functions[0].name, "fncName");
@@ -52,7 +52,7 @@ std::shared_ptr<XYZ> fncName2 (int args2,
 		`
     );
     let functions: IFunction[] =
-      HeaderParser.parseStandaloneFunctiones(testContent);
+      HeaderParser.parseStandaloneFunctions(testContent);
 
     assert.strictEqual(functions.length, 2);
     assert.strictEqual(functions[0].name, "fncName");
@@ -71,7 +71,7 @@ const XYZ* fncName (int arg1,
 		`
     );
     let functions: IFunction[] =
-      HeaderParser.parseStandaloneFunctiones(testContent);
+      HeaderParser.parseStandaloneFunctions(testContent);
 
     assert.strictEqual(functions.length, 1);
     assert.strictEqual(functions[0].name, "fncName");
@@ -83,9 +83,9 @@ const XYZ* fncName (int arg1,
     const testString = `void fncName ();`;
     const testContent = TextFragment.createFromString(testString);
     const range = new TextScope(testString.length, testString.length * 2);
-    const parsedFunctions = HeaderParser.parseStandaloneFunctiones(testContent);
+    const parsedFunctions = HeaderParser.parseStandaloneFunctions(testContent);
     assert.strictEqual(parsedFunctions.length, 1);
-    const serial = await parsedFunctions[0].serialize({
+    const serial = parsedFunctions[0].serialize({
       mode: SerializableMode.source,
       range,
     });
@@ -94,7 +94,6 @@ const XYZ* fncName (int arg1,
 
   test("Serialize if in selection", function () {
     const testString = `void fncName ();`;
-    const testContent = TextFragment.createFromString(testString);
     const rangeFull = new TextScope(0, testString.length - 1);
     const rangePartialStart = new TextScope(0, testString.length / 2);
     const rangePartialEnd = new TextScope(
@@ -103,10 +102,11 @@ const XYZ* fncName (int arg1,
     );
 
     [rangeFull, rangePartialStart, rangePartialEnd].forEach(async (range) => {
+      const testContent = TextFragment.createFromString(testString);
       const parsedFunctions =
-        HeaderParser.parseStandaloneFunctiones(testContent);
+        HeaderParser.parseStandaloneFunctions(testContent);
       assert.strictEqual(parsedFunctions.length, 1);
-      const serial = await parsedFunctions[0].serialize({
+      const serial = parsedFunctions[0].serialize({
         mode: SerializableMode.source,
         range,
       });

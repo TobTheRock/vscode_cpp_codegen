@@ -223,6 +223,7 @@
     "chokidar": "^3.4.3",
     "clone": "^2.1.2",
     "g2-bracket-parser": "^2.0.0",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "tree-model": "^1.0.7"
   }
 }

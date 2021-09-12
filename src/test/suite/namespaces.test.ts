@@ -2,10 +2,11 @@ import * as assert from "assert";
 
 import { Done, describe } from "mocha";
 // import * as myExtension from '../../extension';
-import { HeaderParser } from "../../io/HeaderParser";
-import { INamespace, Namespace, NoneNamespace } from "../../cpp";
+import { HeaderParser } from "../../cpp/HeaderParser";
+import { INamespace } from "../../cpp";
 import { TextFragment, SerializableMode } from "../../io";
 import { callItAsync } from "./utils";
+import { Namespace, RootNamespace } from "../../cpp/Namespace";
 class TestData {
   constructor(
     public content: string,
@@ -202,7 +203,7 @@ suite("Namespace Tests", () => {
     );
   });
 
-  test("Parse NonNamespace Separated By Comments", () => {
+  test("Parse Root Namespace Separated By Comments", () => {
     const testData = TextFragment.createFromString(
       `
 			class MyClass {       // The class
@@ -211,14 +212,13 @@ suite("Namespace Tests", () => {
 			};`
     );
     HeaderParser.parseComments(testData);
-    let namespaces: INamespace[] = HeaderParser.parseNoneNamespaces(testData);
+    let namespace: INamespace = HeaderParser.parseRootNamespace(testData);
 
-    assert.strictEqual(namespaces.length, 1);
-    assert.strictEqual(namespaces[0].name, "");
-    assert.strictEqual(namespaces[0].classes.length, 1);
-    assert.strictEqual(namespaces[0].functions.length, 0);
-    assert.strictEqual(namespaces[0].subnamespaces.length, 0);
-    assert.ok(namespaces[0] instanceof NoneNamespace);
+    assert.strictEqual(namespace.name, "");
+    assert.strictEqual(namespace.classes.length, 1);
+    assert.strictEqual(namespace.functions.length, 0);
+    assert.strictEqual(namespace.subnamespaces.length, 0);
+    assert.ok(namespace instanceof RootNamespace);
   });
 
   test("Don't serialize empty namespaces", async () => {

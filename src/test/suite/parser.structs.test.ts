@@ -1,6 +1,6 @@
 import * as assert from "assert";
 import { describe } from "mocha";
-import { HeaderParser } from "../../io/HeaderParser";
+import { HeaderParser } from "../../cpp/HeaderParser";
 import { IClass } from "../../cpp";
 import { callItAsync } from "./utils";
 

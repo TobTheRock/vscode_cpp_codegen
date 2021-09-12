@@ -4,6 +4,7 @@ import {
   joinNameScopesWithFunctionName,
   removeDefaultInitializersFromArgs,
 } from "./utils";
+
 class StandaloneFunctionBase extends io.TextScope implements IFunction {
   constructor(
     public readonly name: string,

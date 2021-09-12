@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import { Done, describe, it, test } from "mocha";
 import { callItAsync } from "./utils";
-import { HeaderParser } from "../../io/HeaderParser";
+import { HeaderParser } from "../../cpp/HeaderParser";
 import { TextFragment, IClassNameProvider } from "../../io";
 
 const argData = [
