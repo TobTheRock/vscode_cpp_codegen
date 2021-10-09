@@ -5,7 +5,6 @@ import {
   joinNameScopesWithFunctionName,
 } from "./utils";
 import * as io from "../io";
-import { type } from "os";
 
 class MemberFunctionBase
   extends io.TextScope

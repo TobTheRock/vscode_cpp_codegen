@@ -178,7 +178,7 @@ suite("SourceFileDefinition Tests", () => {
     assert.ok(func4.equals(func2));
   });
 
-  test("comparing class defintions", () => {
+  test("comparing with different class names", () => {
     let func = new SourceFileDefinition(
       `fncName`,
       `void`,
@@ -198,6 +198,38 @@ suite("SourceFileDefinition Tests", () => {
 
     assert.ok(func.equals(func));
     assert.ok(!func.equals(func2));
+  });
+
+  test("comparing with different argument variable names", () => {
+    let func = new SourceFileDefinition(
+      `fncName`,
+      `void`,
+      "int arg1, void* arg2",
+      [],
+      [],
+      emptyScope
+    );
+    let func2 = new SourceFileDefinition(
+      `fncName`,
+      `void`,
+      "int , void*",
+      [],
+      [],
+      emptyScope
+    );
+    let func3 = new SourceFileDefinition(
+      `fncName`,
+      `void`,
+      "int arg3, void* arg4",
+      [],
+      [],
+      emptyScope
+    );
+
+    assert.ok(func.equals(func2));
+    assert.ok(func2.equals(func));
+    assert.ok(func.equals(func3));
+    assert.ok(func2.equals(func3));
   });
 
   test("should set namespaces properly", () => {

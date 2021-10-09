@@ -1,5 +1,6 @@
 import TreeModel = require("tree-model");
 import {
+  compact,
   dropRight,
   dropWhile,
   flatten,
@@ -10,6 +11,7 @@ import {
   reverse,
   takeWhile,
   words,
+  zip,
 } from "lodash";
 
 import * as io from "../io";
@@ -137,10 +139,37 @@ export class SourceFileDefinition extends io.TextScope implements IDefinition {
     }
 
     return (
-      this.args === other.args &&
-      this.returnVal === other.returnVal &&
-      nameMatching
+      nameMatching &&
+      this.compareArguments(other) &&
+      this.returnVal === other.returnVal
     );
+  }
+
+  private compareArguments(other: IFunction): boolean {
+    const ownArgs = compact(this.args.split(/,/));
+    const otherArgs = compact(other.args.split(/,/));
+
+    if (ownArgs.length !== otherArgs.length) {
+      return false;
+    }
+
+    for (const args of zip(ownArgs, otherArgs)) {
+      const ownArg = compact(args[0]?.split(/\s+/));
+      const otherArg = compact(args[1]?.split(/\s+/));
+      const ownArgWithoutLast = ownArg?.slice(0, -1);
+      const otherArgWithoutLast = otherArg?.slice(0, -1);
+
+      if (
+        !isEqual(ownArg, otherArg) &&
+        !isEqual(ownArg, otherArgWithoutLast) &&
+        !isEqual(ownArgWithoutLast, otherArg) &&
+        !isEqual(ownArgWithoutLast, otherArgWithoutLast)
+      ) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }
 export interface AddDefinitionReturn {
