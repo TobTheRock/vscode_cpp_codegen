@@ -705,6 +705,27 @@ suite("SourceFileDefinition Tests", () => {
     );
   });
 
+  test("Should not remove root namespace", function () {
+    const testStr = `namespace NameSpace1 {
+        void fncName() {};
+      }`;
+    const testData = TextFragment.createFromString(testStr);
+    const definition = new SourceFileDefinition(
+      "fncName",
+      "void",
+      "",
+      ["NameSpace1", "NameSpace2"],
+      [],
+      emptyScope
+    );
+
+    const namespace = SourceParser.parseRootNamespace(testData);
+    const manipulator = new NamespaceDefinitionManipulator(namespace);
+    const scope = manipulator.removeDefinition(definition);
+
+    assert.notStrictEqual(namespace, scope);
+  });
+
   test("Should extract friend functions", function () {
     const testData = TextFragment.createFromString(`
       class TestClass {

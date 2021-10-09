@@ -251,7 +251,7 @@ export class NamespaceDefinitionManipulator {
 
     let scopeToBeRemoved = definition as io.TextScope;
     for (const nodeInPath of reverse(node.getPath())) {
-      if (this.isNamespaceEmpty(nodeInPath.model)) {
+      if (this.isNamespaceEmpty(nodeInPath.model) && !nodeInPath.isRoot()) {
         nodeInPath.drop();
         scopeToBeRemoved = nodeInPath.model;
       } else {
