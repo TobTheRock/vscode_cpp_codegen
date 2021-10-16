@@ -1,10 +1,51 @@
-import { throws } from "assert";
-
 // TODO utils
 function error(condition: boolean, errMsg: string = "") {
   if (!condition) {
     throw new Error(errMsg);
   }
+}
+
+export class Text {
+  private constructor(private readonly _indentStep: string = "") {
+    this._lines = [];
+  }
+
+  static createEmpty(_indentStep: string = "") {
+    return new Text(_indentStep);
+  }
+
+  add(str: string): Text {
+    if (this._lines.length) {
+      this._lines.push(str);
+    } else {
+      this._lines[this._lines.length - 1] += str;
+    }
+    return this;
+  }
+
+  addLine(line: string, indent: number = 0): Text {
+    this._lines.push(`${this._indentStep.repeat(indent)}${line}`);
+    return this;
+  }
+
+  append(other: Text, indent: number = 0): Text {
+    const otherLines = indent
+      ? other._lines.map((line) => `${this._indentStep.repeat(indent)}${line}`)
+      : other._lines;
+
+    this._lines.push(...otherLines);
+    return this;
+  }
+
+  toString(): string {
+    return this._lines.join("\n");
+  }
+
+  isEmpty(): boolean {
+    return this._lines.length === 0;
+  }
+
+  private _lines: string[];
 }
 
 export class TextScope {

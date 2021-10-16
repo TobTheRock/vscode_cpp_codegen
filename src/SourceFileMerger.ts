@@ -1,33 +1,63 @@
 import * as cpp from "./cpp";
 import * as io from "./io";
 import * as vscode from "vscode";
-import { CommonFileMerger, FileMergerOptions } from "./CommonFileMerger";
+import { IFileMerger, FileMergerOptions } from "./IFileMerger";
 import {
   extractDefinitonsFromNamespace,
   NamespaceDefinitionManipulator,
 } from "./cpp/SourceFileDefinition";
-import { uniqWith } from "lodash";
+import { add, uniqWith } from "lodash";
+import {
+  Difference,
+  TextDocumentScopeAdder,
+  TextDocumentScopeDeleter,
+} from "./TextDocumentDifference";
 
-export class SourceFileMerger extends CommonFileMerger {
+export class SourceFileMerger implements IFileMerger {
+  private _scopeAdder: TextDocumentScopeAdder;
+  private _scopeDeleter?: TextDocumentScopeDeleter;
+  private _manipulator: NamespaceDefinitionManipulator;
+
   constructor(
     options: FileMergerOptions,
     private readonly _generatedHeaderFile: cpp.HeaderFile,
-    serializeOptions: io.SerializationOptions
+    existingDocument: vscode.TextDocument,
+    edit: vscode.WorkspaceEdit,
+    private readonly _serializeOptions: io.SerializationOptions
   ) {
-    super(options, serializeOptions);
-  }
+    this._scopeAdder = new TextDocumentScopeAdder(
+      existingDocument,
+      edit,
+      this._serializeOptions,
+      options.skipConfirmAdding
+    );
 
-  merge(existingDocument: vscode.TextDocument, edit: vscode.WorkspaceEdit) {
+    if (options.disableRemoving !== true) {
+      this._scopeDeleter = new TextDocumentScopeDeleter(
+        existingDocument,
+        edit,
+        options.skipConfirmRemoving
+      );
+    }
+
     const text = existingDocument.getText();
     const existingSourceFile = new cpp.SourceFile(
       existingDocument.fileName,
       text
     );
-    const manipulator = new NamespaceDefinitionManipulator(
+    this._manipulator = new NamespaceDefinitionManipulator(
       existingSourceFile.rootNamespace
     );
+  }
 
-    const existingDefinitions = manipulator.extractDefinitions(
+  merge() {
+    const definitionDiff = this.createDefintionDiff();
+    this.removeUniqueScopes(definitionDiff.removed);
+    this.addDefinitionToNamespaceScopes(definitionDiff.added);
+  }
+
+  private createDefintionDiff(): Difference<cpp.IDefinition> {
+    const existingDefinitions = this._manipulator.extractDefinitions(
       this._serializeOptions.mode
     );
     const generatedDefinitions = extractDefinitonsFromNamespace(
@@ -35,13 +65,16 @@ export class SourceFileMerger extends CommonFileMerger {
       this._serializeOptions.mode
     );
 
-    const definitionDiff = this.createDiff(
+    return new Difference(
       existingDefinitions,
-      generatedDefinitions
+      generatedDefinitions,
+      this._serializeOptions
     );
+  }
 
-    let removedScopes = definitionDiff.removed.map((definition) =>
-      manipulator.removeDefinition(definition)
+  private removeUniqueScopes(removedDefinitions: cpp.IDefinition[]) {
+    let removedScopes = removedDefinitions.map((definition) =>
+      this._manipulator.removeDefinition(definition)
     );
     removedScopes = uniqWith(removedScopes, (scope, otherScope) =>
       otherScope.fullyContains(scope)
@@ -50,15 +83,14 @@ export class SourceFileMerger extends CommonFileMerger {
       otherScope.fullyContains(scope)
     );
 
-    this.deleteTextScope(edit, existingDocument, ...removedScopes);
+    this._scopeDeleter?.deleteTextScope(...removedScopes);
+  }
 
-    for (const definition of definitionDiff.added) {
-      const { added, where } = manipulator.addDefinition(definition);
-      this.addTextScopeContent(
-        edit,
-        existingDocument,
-        ...this.createInsertedText([added], where.scopeEnd - 1)
-      );
+  private addDefinitionToNamespaceScopes(addedDefinitions: cpp.IDefinition[]) {
+    for (const definition of addedDefinitions) {
+      const { added, namespaceWhere } =
+        this._manipulator.addDefinition(definition);
+      this._scopeAdder.addTextWithinScope(namespaceWhere, added);
     }
   }
 }

@@ -40,19 +40,16 @@ const namespacesData: TestData[] = (function () {
 suite("Namespace Tests", () => {
   // vscode.window.showInformationMessage('Start all tests.');
 
-  describe("ParseSingleNamespace", function () {
+  describe("Parse Single Namespace", function () {
     callItAsync(
       "With content ${value}",
       namespacesData,
       function (data: TestData) {
-        const testData = TextFragment.createFromString(
-          `
-				namespace namespaceName
+        const testStr = `namespace namespaceName
 				{
 					${data.content}
-				}
-			`
-        );
+				}`;
+        const testData = TextFragment.createFromString(testStr);
         let namespaces: INamespace[] = HeaderParser.parseNamespaces(testData);
 
         assert.strictEqual(namespaces.length, 1);
@@ -60,12 +57,14 @@ suite("Namespace Tests", () => {
         assert.strictEqual(namespaces[0].classes.length, data.nClasses);
         assert.strictEqual(namespaces[0].functions.length, data.nFunc);
         assert.strictEqual(namespaces[0].subnamespaces.length, 0);
-        assert.ok(namespaces[0] instanceof Namespace);
+
+        assert.strictEqual(namespaces[0].scopeStart, 0);
+        assert.strictEqual(namespaces[0].scopeEnd, testStr.length - 1);
       }
     );
   });
 
-  describe("Pars eMultiple Namespaces", function () {
+  describe("Parse Multiple Namespaces", function () {
     callItAsync(
       "With content ${value}",
       namespacesData,
@@ -233,9 +232,11 @@ suite("Namespace Tests", () => {
 
     assert.strictEqual(namespaces.length, 1);
     const namespace = namespaces[0];
-    const deserializedString = await namespace.serialize({
-      mode: SerializableMode.header,
-    });
+    const deserializedString = await namespace
+      .serialize({
+        mode: SerializableMode.header,
+      })
+      .toString();
 
     assert.strictEqual(deserializedString.length, 0);
   });

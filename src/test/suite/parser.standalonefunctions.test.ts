@@ -85,10 +85,12 @@ const XYZ* fncName (int arg1,
     const range = new TextScope(testString.length, testString.length * 2);
     const parsedFunctions = HeaderParser.parseStandaloneFunctions(testContent);
     assert.strictEqual(parsedFunctions.length, 1);
-    const serial = parsedFunctions[0].serialize({
-      mode: SerializableMode.source,
-      range,
-    });
+    const serial = parsedFunctions[0]
+      .serialize({
+        mode: SerializableMode.source,
+        range,
+      })
+      .toString();
     assert.strictEqual(serial.length, 0);
   });
 
@@ -106,10 +108,12 @@ const XYZ* fncName (int arg1,
       const parsedFunctions =
         HeaderParser.parseStandaloneFunctions(testContent);
       assert.strictEqual(parsedFunctions.length, 1);
-      const serial = parsedFunctions[0].serialize({
-        mode: SerializableMode.source,
-        range,
-      });
+      const serial = parsedFunctions[0]
+        .serialize({
+          mode: SerializableMode.source,
+          range,
+        })
+        .toString();
       assert.ok(serial.length);
     });
   });

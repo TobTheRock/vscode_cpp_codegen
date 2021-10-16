@@ -1,56 +1,37 @@
-import { MemberFunctionIgnoringClassNames, IFunction } from "./TypeInterfaces";
+import { IMemberFunctionIgnoringClassNames, IFunction } from "./TypeInterfaces";
 import {
   removeDefaultInitializersFromArgs,
   joinNameScopesWithMemberFunctionName,
   joinNameScopesWithFunctionName,
 } from "./utils";
 import * as io from "../io";
-
+import { FunctionBase } from "./CommonFunction";
 class MemberFunctionBase
-  extends io.TextScope
+  extends FunctionBase
   implements IFunction, io.ISerializable
 {
   constructor(
-    public readonly name: string,
-    public readonly returnVal: string,
-    public readonly args: string,
+    name: string,
+    returnVal: string,
+    args: string,
     public readonly isConst: boolean,
     scope: io.TextScope,
     private readonly _classNameProvider: io.IClassNameProvider
   ) {
-    super(scope.scopeStart, scope.scopeEnd);
+    super(name, returnVal, args, scope);
   }
 
-  equals(other: IFunction): boolean {
-    return (
-      this.name === other.name &&
-      this.args === other.args &&
-      this.returnVal === other.returnVal
-    );
-  }
-
-  serialize(options: io.SerializationOptions) {
-    let serial = "";
+  serialize(options: io.SerializationOptions): io.Text {
+    const text = io.Text.createEmpty(options.indentStep);
 
     switch (options.mode) {
       case io.SerializableMode.source:
-        serial = this.getHeading(options) + " {\n";
-        if (this.returnVal.length && this.returnVal !== "void") {
-          serial +=
-            "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";
-        }
-        serial += "}";
-        break;
-
+        return this.addDefinition(text, options);
       case io.SerializableMode.header:
-        serial = this.getHeading(options) + ";";
-        break;
-
+        return this.addDeclaration(text, options);
       default:
-        break;
+        return text;
     }
-
-    return serial;
   }
 
   protected getHeading(options: io.SerializationOptions) {
@@ -102,24 +83,17 @@ class VirtualMemberFunctionUnranged extends MemberFunctionBase {
     super(name, returnVal, args, isConst, scope, classNameProvider);
   }
 
-  serialize(options: io.SerializationOptions) {
-    let serial = "";
+  serialize(options: io.SerializationOptions): io.Text {
+    const text = io.Text.createEmpty(options.indentStep);
 
     switch (options.mode) {
       case io.SerializableMode.header:
-        serial = super.getHeading(options) + " override;";
-        break;
-
+        return this.addDeclaration(text, options, undefined, " override");
       case io.SerializableMode.interfaceHeader:
-        serial = "virtual " + super.getHeading(options) + " =0;";
-        break;
-
+        return this.addDeclaration(text, options, "virtual ", " =0");
       default:
-        serial = super.serialize(options);
-        break;
+        return super.serialize(options);
     }
-
-    return serial;
   }
 }
 export class VirtualMemberFunction extends io.makeRangedSerializable(
@@ -137,28 +111,17 @@ class StaticMemberFunctionUnranged extends MemberFunctionBase {
     super(name, returnVal, args, isConst, scope, classNameProvider);
   }
 
-  serialize(options: io.SerializationOptions) {
-    let serial = "";
+  serialize(options: io.SerializationOptions): io.Text {
+    const text = io.Text.createEmpty(options.indentStep);
 
     switch (options.mode) {
       case io.SerializableMode.source:
-        serial = this.getHeading(options) + " {\n";
-        if (this.returnVal !== "void") {
-          serial +=
-            "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";
-        }
-        serial += "}";
-        break;
-
+        return this.addDefinition(text, options);
       case io.SerializableMode.header:
-        serial = "static " + this.getHeading(options) + ";";
-        break;
-
+        return this.addDeclaration(text, options, "static ");
       default:
-        break;
+        return text;
     }
-
-    return serial;
   }
 }
 
@@ -178,35 +141,24 @@ export class PureVirtualMemberFunctionUnranged extends MemberFunctionBase {
     super(name, returnVal, args, isConst, scope, classNameProvider);
   }
 
-  serialize(options: io.SerializationOptions) {
-    let serial = "";
+  serialize(options: io.SerializationOptions): io.Text {
+    const text = io.Text.createEmpty(options.indentStep);
 
     switch (options.mode) {
       case io.SerializableMode.header:
-        serial = "virtual " + super.getHeading(options) + " =0;";
-        break;
+        return this.addDeclaration(text, options, "virtual ", " =0");
 
       case io.SerializableMode.implHeader:
-        serial = super.getHeading(options) + " override;";
-        break;
+        return this.addDeclaration(text, options, undefined, " override");
 
       case io.SerializableMode.implSource:
-        serial = this.getHeading(options) + " {\n";
-        if (this.returnVal !== "void") {
-          serial +=
-            "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";
-        }
-        serial += "}";
-        break;
+        return this.addDefinition(text, options);
 
       case io.SerializableMode.interfaceHeader:
       case io.SerializableMode.source:
       default:
-        serial = "";
-        break;
+        return text;
     }
-
-    return serial;
   }
 }
 
@@ -215,50 +167,32 @@ export class PureVirtualMemberFunction extends io.makeRangedSerializable(
 ) {}
 
 class FriendFunctionUnranged
-  extends io.TextScope
-  implements IFunction, MemberFunctionIgnoringClassNames
+  extends FunctionBase
+  implements IFunction, IMemberFunctionIgnoringClassNames
 {
+  ignoresClassNames: boolean = true;
+
   constructor(
-    public readonly name: string,
-    public readonly returnVal: string,
-    public readonly args: string,
+    name: string,
+    returnVal: string,
+    args: string,
     public readonly isConst: boolean,
     scope: io.TextScope
   ) {
-    super(scope.scopeStart, scope.scopeEnd);
-  }
-  ignoresClassNames: boolean = true;
-
-  equals(other: IFunction): boolean {
-    return (
-      this.name === other.name &&
-      this.args === other.args &&
-      this.returnVal === other.returnVal
-    );
+    super(name, returnVal, args, scope);
   }
 
-  serialize(options: io.SerializationOptions) {
-    let serial = "";
+  serialize(options: io.SerializationOptions): io.Text {
+    const text = io.Text.createEmpty(options.indentStep);
 
     switch (options.mode) {
       case io.SerializableMode.source:
-        serial = this.getHeading(options) + " {\n";
-        if (this.returnVal.length && this.returnVal !== "void") {
-          serial +=
-            "\t" + this.returnVal + " returnValue;\n\treturn returnValue;\n";
-        }
-        serial += "}";
-        break;
-
+        return this.addDefinition(text, options);
       case io.SerializableMode.header:
-        serial = this.getHeading(options) + ";";
-        break;
-
+        return this.addDeclaration(text, options);
       default:
-        break;
+        return text;
     }
-
-    return serial;
   }
 
   protected getHeading(options: io.SerializationOptions) {

@@ -8,7 +8,7 @@ import {
 } from "../../cpp/SourceFileDefinition";
 import { SourceParser } from "../../cpp/SourceParser";
 import { StandaloneFunction } from "../../cpp/StandaloneFunction";
-import { TextFragment, TextScope } from "../../io";
+import { ISerializable, Text, TextFragment, TextScope } from "../../io";
 
 suite("SourceFileDefinition Tests", () => {
   let nNamespacesGenerated: number = 0;
@@ -16,6 +16,11 @@ suite("SourceFileDefinition Tests", () => {
   beforeEach(() => {
     nNamespacesGenerated = 0;
   });
+  const serialDummy: ISerializable = {
+    serialize: function (): Text {
+      return Text.createEmpty();
+    },
+  };
 
   test("comparing with different name", () => {
     let func = new SourceFileDefinition(
@@ -24,7 +29,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       [],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     let func2 = new SourceFileDefinition(
       `fncName2`,
@@ -32,7 +38,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       [],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     assert.ok(func.equals(func));
     assert.ok(!func.equals(func2));
@@ -45,7 +52,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       [],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     let func2 = new SourceFileDefinition(
       `fncName`,
@@ -53,7 +61,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       [],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     assert.ok(func.equals(func));
     assert.ok(!func.equals(func2));
@@ -66,7 +75,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       [],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     let func2 = new SourceFileDefinition(
       `fncName`,
@@ -74,7 +84,8 @@ suite("SourceFileDefinition Tests", () => {
       "int",
       [],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     assert.ok(func.equals(func));
     assert.ok(!func.equals(func2));
@@ -87,7 +98,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace1", "Namespace2"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     let func2 = new SourceFileDefinition(
       `fncName`,
@@ -95,7 +107,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace1"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     let func3 = new SourceFileDefinition(
       `fncName`,
@@ -103,7 +116,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace2"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     assert.ok(func.equals(func));
     assert.ok(!func.equals(func2));
@@ -117,7 +131,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace1", "Namespace2"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     let func2 = new SourceFileDefinition(
       `fncName`,
@@ -126,7 +141,8 @@ suite("SourceFileDefinition Tests", () => {
       ["Namespace1"],
       ["ClassName"],
 
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     let func3 = new SourceFileDefinition(
       `fncName`,
@@ -135,7 +151,8 @@ suite("SourceFileDefinition Tests", () => {
       ["Namespace1", "ClassName"],
       [],
 
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     assert.ok(!func.equals(func2));
     assert.ok(func3.equals(func2));
@@ -148,7 +165,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace1", "Namespace2"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     let func2 = new StandaloneFunction(
       `Namespace1::ClassName::fncName`,
@@ -162,7 +180,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace1", "ClassName"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     let func4 = new SourceFileDefinition(
       `fncName`,
@@ -171,7 +190,8 @@ suite("SourceFileDefinition Tests", () => {
       ["Namespace1"],
       ["ClassName"],
 
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     assert.ok(!func.equals(func2));
     assert.ok(func3.equals(func2));
@@ -185,7 +205,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace1", "Namespace2"],
       ["ClassName"],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     let func2 = new SourceFileDefinition(
       `fncName`,
@@ -193,7 +214,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace1"],
       ["ClassName2"],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     assert.ok(func.equals(func));
@@ -207,7 +229,8 @@ suite("SourceFileDefinition Tests", () => {
       "int arg1, void* arg2",
       [],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     let func2 = new SourceFileDefinition(
       `fncName`,
@@ -215,7 +238,8 @@ suite("SourceFileDefinition Tests", () => {
       "int , void*",
       [],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     let func3 = new SourceFileDefinition(
       `fncName`,
@@ -223,7 +247,8 @@ suite("SourceFileDefinition Tests", () => {
       "int arg3, void* arg4",
       [],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     assert.ok(func.equals(func2));
@@ -239,7 +264,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace1"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     assert.deepStrictEqual(["Namespace1"], func.namespaceNames);
     assert.deepStrictEqual(["Namespace2"], func.classNames);
@@ -260,7 +286,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       [],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const definitons = extractDefinitonsFromNamespace(namespace);
@@ -283,7 +310,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace1"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const definitons = extractDefinitonsFromNamespace(namespace);
@@ -309,7 +337,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace1"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const definitons = extractDefinitonsFromNamespace(namespace);
@@ -340,7 +369,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace1", "Namespace2"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const definitons = extractDefinitonsFromNamespace(namespace);
@@ -374,7 +404,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace1", "Namespace2"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     const expectedDefinition2 = new SourceFileDefinition(
       "fncName",
@@ -382,7 +413,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["Namespace1", "Namespace3"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const definitons = extractDefinitonsFromNamespace(namespace);
@@ -406,7 +438,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["ClassName"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const definitons = extractDefinitonsFromNamespace(namespace);
@@ -429,7 +462,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["ClassName"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const definitons = extractDefinitonsFromNamespace(namespace);
@@ -452,7 +486,8 @@ suite("SourceFileDefinition Tests", () => {
       "int",
       ["ClassName"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const definitons = extractDefinitonsFromNamespace(namespace);
@@ -477,7 +512,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["NameSpace1", "ClassName"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const definitons = extractDefinitonsFromNamespace(namespace);
@@ -502,7 +538,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["ClassName", "ClassName2"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const definitons = extractDefinitonsFromNamespace(namespace);
@@ -523,14 +560,16 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["NameSpace1"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const namespace = SourceParser.parseRootNamespace(testData);
     const manipulator = new NamespaceDefinitionManipulator(namespace);
-    const { added, where } = manipulator.addDefinition(addedDefinition);
+    const { added, namespaceWhere } =
+      manipulator.addDefinition(addedDefinition);
 
-    assert.deepStrictEqual(where, namespace.subnamespaces[0]);
+    assert.deepStrictEqual(namespaceWhere, namespace.subnamespaces[0]);
     assert.deepStrictEqual(added, addedDefinition);
     assert.strictEqual(namespace.subnamespaces[0].functions.length, 1);
   });
@@ -552,17 +591,19 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["NameSpace1", "NameSpace2"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const namespace = SourceParser.parseRootNamespace(testData);
     const manipulator = new NamespaceDefinitionManipulator(namespace);
-    const { added, where } = manipulator.addDefinition(addedDefinition);
+    const { added, namespaceWhere } =
+      manipulator.addDefinition(addedDefinition);
     const expectedNamespace = namespace.subnamespaces[0].subnamespaces[0];
 
     assert.strictEqual(namespace.subnamespaces.length, 1);
     assert.strictEqual(namespace.subnamespaces[0].subnamespaces.length, 2);
-    assert.deepStrictEqual(where, expectedNamespace);
+    assert.deepStrictEqual(namespaceWhere, expectedNamespace);
     assert.deepStrictEqual(added, addedDefinition);
     assert.strictEqual(expectedNamespace.functions.length, 1);
   });
@@ -575,7 +616,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["NameSpace1", "NameSpace2"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const namespace = SourceParser.parseRootNamespace(testData);
@@ -599,7 +641,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["NameSpace1", "NameSpace2"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const namespace = SourceParser.parseRootNamespace(testData);
@@ -622,7 +665,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["NameSpace1", "NameSpace2", "NameSpace3"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const namespace = SourceParser.parseRootNamespace(testData);
@@ -657,7 +701,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["NameSpace1"],
       [],
-      new TextScope(42, 666)
+      new TextScope(42, 666),
+      serialDummy
     );
 
     const namespace = SourceParser.parseRootNamespace(testData);
@@ -689,7 +734,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["NameSpace1", "NameSpace2"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const namespace = SourceParser.parseRootNamespace(testData);
@@ -716,7 +762,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       ["NameSpace1", "NameSpace2"],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
 
     const namespace = SourceParser.parseRootNamespace(testData);
@@ -738,7 +785,8 @@ suite("SourceFileDefinition Tests", () => {
       "",
       [],
       [],
-      emptyScope
+      emptyScope,
+      serialDummy
     );
     const namespace = HeaderParser.parseRootNamespace(testData);
     const defintions = extractDefinitonsFromNamespace(namespace);

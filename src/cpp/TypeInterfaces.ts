@@ -1,7 +1,7 @@
 import * as io from "../io";
 
 export interface Comparable<T> {
-  equals: (other: T, mode?: io.SerializableMode) => boolean;
+  equals(other: T, mode?: io.SerializableMode): boolean;
 }
 
 export interface IFunction
@@ -70,13 +70,13 @@ export function isDefinition(fnct: IFunction) {
   return (fnct as IDefinition).namespaceNames !== undefined;
 }
 
-export interface MemberFunctionIgnoringClassNames extends IFunction {
+export interface IMemberFunctionIgnoringClassNames extends IFunction {
   readonly ignoresClassNames: boolean;
 }
 
 export function ignoresClassNames(fnct: IFunction) {
   return (
-    (fnct as MemberFunctionIgnoringClassNames).ignoresClassNames !== undefined
+    (fnct as IMemberFunctionIgnoringClassNames).ignoresClassNames !== undefined
   );
 }
 

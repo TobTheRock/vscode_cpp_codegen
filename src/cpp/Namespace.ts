@@ -6,6 +6,7 @@ import {
 } from "../Configuration";
 import clone = require("clone");
 import { asyncForEach } from "../utils";
+import { Text } from "../io";
 export class Namespace extends io.TextScope implements INamespace {
   constructor(name: string, scope: io.TextScope) {
     super(scope.scopeStart, scope.scopeEnd);
@@ -43,32 +44,46 @@ export class Namespace extends io.TextScope implements INamespace {
     return newOptions;
   }
 
-  serialize(options: io.SerializationOptions) {
-    const config = Configuration.get();
+  private serializeMembers(options: io.SerializationOptions): io.Text {
+    return io
+      .serializeArray(this.functions, options)
+      .append(io.serializeArray(this.classes, options))
+      .append(io.serializeArray(this.subnamespaces, options));
+  }
 
-    let serial = "";
-    let prefix = "";
-    let suffix = "";
+  private serializeWithNamedDeclaration(
+    options: io.SerializationOptions
+  ): io.Text {
+    const serializedText = this.serializeMembers(options);
+    if (serializedText.isEmpty()) {
+      return serializedText;
+    }
+
+    return Text.createEmpty(options.indentStep)
+      .addLine(`namespace ${this.name} {`)
+      .append(serializedText)
+      .addLine("}");
+  }
+
+  private serializePrepended(options: io.SerializationOptions): io.Text {
+    return this.serializeMembers(this.addNamespaceToOptions(options));
+  }
+
+  serialize(options: io.SerializationOptions): io.Text {
+    const config = Configuration.get();
+    const addNamespaceSpeficier =
+      config.sourceFileNamespaceSerialization ===
+        SourceFileNamespaceSerialization.named ||
+      !io.isSourceFileSerializationMode(options.mode);
+
     if (
       config.sourceFileNamespaceSerialization ===
         SourceFileNamespaceSerialization.named ||
       !io.isSourceFileSerializationMode(options.mode)
     ) {
-      prefix = "namespace " + this.name + " {\n";
-      suffix = "}\n";
-    } else {
-      options = this.addNamespaceToOptions(options);
+      return this.serializeWithNamedDeclaration(options);
     }
-
-    serial += io.serializeArray(this.subnamespaces, options);
-    serial += io.serializeArray(this.functions, options);
-    serial += io.serializeArray(this.classes, options);
-
-    if (!serial.length) {
-      return "";
-    }
-
-    return prefix + serial + suffix;
+    return this.serializePrepended(options);
   }
 
   deserialize(data: io.TextFragment, parser: IParser) {
@@ -105,10 +120,10 @@ export class RootNamespace extends io.TextScope implements INamespace {
   }
 
   serialize(options: io.SerializationOptions) {
-    let serial: string = io.serializeArray(this.functions, options);
-    serial += io.serializeArray(this.classes, options);
-    serial += io.serializeArray(this.subnamespaces, options, undefined, "\n");
-    return serial;
+    return io
+      .serializeArray(this.functions, options)
+      .append(io.serializeArray(this.classes, options))
+      .append(io.serializeArray(this.subnamespaces, options, true));
   }
 
   equals(other: INamespace): boolean {

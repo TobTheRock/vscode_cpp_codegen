@@ -251,6 +251,7 @@ suite("HeaderParser: Class Operator Declarations", () => {
       "With '${value}'",
       allocatorOperatorData,
       async (data: OperatorData) => {
+        const indentStep = "\t";
         const testContent = TextFragment.createFromString(
           data.toString() + ";"
         );
@@ -273,9 +274,12 @@ suite("HeaderParser: Class Operator Declarations", () => {
           (data.returnVal !== "void"
             ? "\t" + data.returnVal + " returnValue;\n\treturn returnValue;\n}"
             : "}");
-        const actualSerial = await parsedFunctions[0].serialize({
-          mode: SerializableMode.source,
-        });
+        const actualSerial = await parsedFunctions[0]
+          .serialize({
+            mode: SerializableMode.source,
+            indentStep,
+          })
+          .toString();
         assert.strictEqual(expectedSerial, actualSerial);
       }
     );

@@ -9,16 +9,11 @@ import * as io from "./io";
 import * as vscode from "vscode";
 import * as ui from "./ui";
 import * as path from "path";
-import {
-  IExtensionConfiguration,
-  DirectorySelectorMode,
-  RefactoringPreview,
-} from "./Configuration";
+import { IExtensionConfiguration, RefactoringPreview } from "./Configuration";
 import { asyncForEach, awaitMapEntries } from "./utils";
-import { flatten, compact } from "lodash";
-import { resolve } from "dns";
 import { HeaderFileMerger } from "./HeaderFileMerger";
-import { FileMergerOptions } from "./CommonFileMerger";
+import { FileMergerOptions } from "./IFileMerger";
+import { compact } from "lodash";
 
 interface SerializedContent {
   mode: io.SerializableMode;
@@ -73,6 +68,7 @@ class ImplementationNameHelper
 export class HeaderFileHandler {
   private _userInput: ui.UserInput;
   private _disableRemoveOnMerge = false;
+  private _indentStep: string;
 
   constructor(
     private readonly _headerFile: cpp.HeaderFile,
@@ -81,6 +77,15 @@ export class HeaderFileHandler {
     private readonly _config: IExtensionConfiguration
   ) {
     this._userInput = new ui.UserInput();
+    this._indentStep = this.getIndentStep();
+  }
+
+  private getIndentStep(): string {
+    const activeEditor = vscode.window.activeTextEditor;
+    const useSpaces = activeEditor?.options.insertSpaces;
+    const tabSize = activeEditor?.options.tabSize as number;
+
+    return useSpaces && tabSize ? " ".repeat(tabSize) : "\t";
   }
 
   async writeFileAs(...modes: io.SerializableMode[]) {
@@ -218,7 +223,11 @@ export class HeaderFileHandler {
           outputDirectory.fsPath,
           zip.fileName
         );
-        const fileBody = this._headerFile.serialize({ mode, range: selection });
+        const fileBody = this._headerFile.serialize({
+          mode,
+          range: selection,
+          indentStep: this._indentStep,
+        });
         if (!fileBody) {
           return;
         }
@@ -347,18 +356,22 @@ export class HeaderFileHandler {
         this._config.refactoringPreview === RefactoringPreview.never ||
         this._config.refactoringPreview === RefactoringPreview.adding,
     };
+
     switch (serialized.mode) {
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
         const sourceFileMerger = new SourceFileMerger(
           mergerOptions,
           this._headerFile,
+          existingDocument,
+          this._edit,
           {
             mode: serialized.mode,
             range: selection,
+            indentStep: this._indentStep,
           }
         );
-        sourceFileMerger.merge(existingDocument, this._edit);
+        sourceFileMerger.merge();
         break;
 
       case io.SerializableMode.header:
@@ -367,12 +380,15 @@ export class HeaderFileHandler {
         const headerFileMerger = new HeaderFileMerger(
           mergerOptions,
           this._headerFile,
+          existingDocument,
+          this._edit,
           {
             mode: serialized.mode,
             range: selection,
+            indentStep: this._indentStep,
           }
         );
-        headerFileMerger.merge(existingDocument, this._edit);
+        headerFileMerger.merge();
         break;
 
       default:

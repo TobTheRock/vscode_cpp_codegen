@@ -1,7 +1,6 @@
 import TreeModel = require("tree-model");
 import {
   compact,
-  dropRight,
   dropWhile,
   flatten,
   head,
@@ -9,8 +8,6 @@ import {
   last,
   remove,
   reverse,
-  takeWhile,
-  words,
   zip,
 } from "lodash";
 
@@ -35,7 +32,7 @@ export class SourceFileDefinition extends io.TextScope implements IDefinition {
     public readonly namespaceNames: string[],
     classNames: string[],
     scope: io.TextScope,
-    private _serializable?: io.ISerializable
+    private _serializable: io.ISerializable
   ) {
     super(scope.scopeStart, scope.scopeEnd);
 
@@ -117,8 +114,8 @@ export class SourceFileDefinition extends io.TextScope implements IDefinition {
     );
   }
 
-  serialize(options: io.SerializationOptions): string {
-    return this._serializable?.serialize(options) ?? "";
+  serialize(options: io.SerializationOptions): io.Text {
+    return this._serializable.serialize(options);
   }
 
   equals(other: IFunction): boolean {
@@ -174,7 +171,7 @@ export class SourceFileDefinition extends io.TextScope implements IDefinition {
 }
 export interface AddDefinitionReturn {
   added: io.ISerializable;
-  where: io.TextScope;
+  namespaceWhere: io.TextScope;
 }
 
 export class NamespaceDefinitionManipulator {
@@ -232,7 +229,7 @@ export class NamespaceDefinitionManipulator {
     );
     return {
       added: addedSerializable,
-      where: parentNode.model as io.TextScope,
+      namespaceWhere: parentNode.model as io.TextScope,
     };
   }
 

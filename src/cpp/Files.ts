@@ -40,12 +40,12 @@ export class SourceFile extends FileBase {
   }
 }
 
-export class HeaderFile extends FileBase implements io.IFile {
+export class HeaderFile extends FileBase {
   constructor(filePath: string, content: string) {
     super(filePath, content, HeaderParser);
   }
 
   serialize(options: io.SerializationOptions): string {
-    return this.rootNamespace.serialize(options);
+    return this.rootNamespace.serialize(options).toString();
   }
 }

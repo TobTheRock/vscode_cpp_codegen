@@ -2,156 +2,160 @@ import * as cpp from "./cpp";
 import * as io from "./io";
 import * as vscode from "vscode";
 import { compact, max, maxBy } from "lodash";
+import { FileMergerOptions, IFileMerger } from "./IFileMerger";
 import {
-  ChangedPair,
-  CommonFileMerger,
-  FileMergerOptions,
-} from "./CommonFileMerger";
+  Difference,
+  TextDocumentScopeAdder,
+  TextDocumentScopeDeleter,
+} from "./TextDocumentDifference";
 
-export class HeaderFileMerger extends CommonFileMerger {
+export class HeaderFileMerger implements IFileMerger {
+  private _scopeAdder: TextDocumentScopeAdder;
+  private _scopeDeleter?: TextDocumentScopeDeleter;
+  private _existingHeaderFile: cpp.HeaderFile;
   constructor(
     options: FileMergerOptions,
     private readonly _generatedHeaderFile: cpp.HeaderFile,
-    serializeOptions: io.SerializationOptions
+    existingDocument: vscode.TextDocument,
+    edit: vscode.WorkspaceEdit,
+    private readonly _serializeOptions: io.SerializationOptions
   ) {
-    super(options, serializeOptions);
-  }
+    this._scopeAdder = new TextDocumentScopeAdder(
+      existingDocument,
+      edit,
+      this._serializeOptions,
+      options.skipConfirmAdding
+    );
 
-  merge(existingDocument: vscode.TextDocument, edit: vscode.WorkspaceEdit) {
+    if (options.disableRemoving !== true) {
+      this._scopeDeleter = new TextDocumentScopeDeleter(
+        existingDocument,
+        edit,
+        options.skipConfirmRemoving
+      );
+    }
+
     const text = existingDocument.getText();
-    const existingHeaderFile = new cpp.HeaderFile(
+    this._existingHeaderFile = new cpp.HeaderFile(
       existingDocument.fileName,
       text
     );
-
-    this.mergeNamespace(edit, existingDocument, {
-      generated: this._generatedHeaderFile.rootNamespace,
-      existing: existingHeaderFile.rootNamespace,
-    });
   }
 
-  private handleAddedRemovedAndExtractChanged<
-    T extends cpp.Comparable<T> & io.ISerializable & io.TextScope
-  >(
-    edit: vscode.WorkspaceEdit,
-    textDocument: vscode.TextDocument,
-    addWhere: number,
-    existing: T[],
-    generated: T[]
-  ): ChangedPair<T>[] {
-    const diff = this.createDiff(existing, generated);
-    this.addTextScopeContent(
-      edit,
-      textDocument,
-      ...this.createInsertedText(diff.added, addWhere)
+  merge() {
+    this.mergeNamespace(
+      this._existingHeaderFile.rootNamespace,
+      this._generatedHeaderFile.rootNamespace
     );
-
-    this.deleteTextScope(edit, textDocument, ...diff.removed);
-
-    return diff.changed;
   }
 
   private mergeNamespace(
-    edit: vscode.WorkspaceEdit,
-    textDocument: vscode.TextDocument,
-    namespacePair: ChangedPair<cpp.INamespace>
+    existingNamespace: cpp.INamespace,
+    generatedNamespace: cpp.INamespace
   ) {
-    const changedClasses = this.handleAddedRemovedAndExtractChanged(
-      edit,
-      textDocument,
-      namespacePair.existing.scopeEnd,
-      namespacePair.existing.classes,
-      namespacePair.generated.classes
+    const classDiff = this.createDiff(
+      existingNamespace.classes,
+      generatedNamespace.classes
+    );
+    const functionDiff = this.createDiff(
+      existingNamespace.functions,
+      generatedNamespace.functions
+    );
+    const subNamespaceDiff = this.createDiff(
+      existingNamespace.subnamespaces,
+      generatedNamespace.subnamespaces
     );
 
-    this.handleAddedRemovedAndExtractChanged(
-      edit,
-      textDocument,
-      namespacePair.existing.scopeEnd,
-      namespacePair.existing.functions,
-      namespacePair.generated.functions
+    this._scopeAdder.addTextWithinScope(
+      existingNamespace,
+      ...classDiff.added,
+      ...functionDiff.added,
+      ...subNamespaceDiff.added
     );
-    const changedSubNamespaces = this.handleAddedRemovedAndExtractChanged(
-      edit,
-      textDocument,
-      namespacePair.existing.scopeEnd,
-      namespacePair.existing.subnamespaces,
-      namespacePair.generated.subnamespaces
+    this._scopeDeleter?.deleteTextScope(
+      ...classDiff.removed,
+      ...functionDiff.removed,
+      ...subNamespaceDiff.removed
     );
 
-    changedSubNamespaces.forEach(
-      this.mergeNamespace.bind(this, edit, textDocument)
+    subNamespaceDiff.changed.forEach((namespacePair) =>
+      this.mergeNamespace(namespacePair.existing, namespacePair.generated)
     );
-    changedClasses.forEach(this.mergeClass.bind(this, edit, textDocument));
+    classDiff.changed.forEach((classPair) =>
+      this.mergeClass(classPair.existing, classPair.generated)
+    );
   }
 
-  private mergeClass(
-    edit: vscode.WorkspaceEdit,
-    textDocument: vscode.TextDocument,
-    classPair: ChangedPair<cpp.IClass>
-  ) {
-    this.handleAddedRemovedAndExtractChanged(
-      edit,
-      textDocument,
-      classPair.existing.scopeEnd,
-      compact([classPair.existing.destructor]),
-      compact([classPair.generated.destructor])
+  private mergeClass(exisitingClass: cpp.IClass, generatedClass: cpp.IClass) {
+    const destructorDiff = this.createDiff(
+      compact([exisitingClass.destructor]),
+      compact([generatedClass.destructor])
     );
+    this._scopeAdder.addTextAfterScope(exisitingClass, ...destructorDiff.added);
+    this._scopeDeleter?.deleteTextScope(...destructorDiff.removed);
 
-    this.mergeClassScope(edit, textDocument, {
-      existing: classPair.existing.privateScope,
-      generated: classPair.generated.privateScope,
-    });
-
-    this.mergeClassScope(edit, textDocument, {
-      existing: classPair.existing.protectedScope,
-      generated: classPair.generated.protectedScope,
-    });
-
-    this.mergeClassScope(edit, textDocument, {
-      existing: classPair.existing.publicScope,
-      generated: classPair.generated.publicScope,
-    });
+    this.mergeClassScope(
+      exisitingClass.privateScope,
+      generatedClass.privateScope
+    );
+    this.mergeClassScope(
+      exisitingClass.protectedScope,
+      generatedClass.protectedScope
+    );
+    this.mergeClassScope(
+      exisitingClass.publicScope,
+      generatedClass.publicScope
+    );
 
     // TODO inheritance: Diff<string>; => make it a textscope
   }
 
   private mergeClassScope(
-    edit: vscode.WorkspaceEdit,
-    textDocument: vscode.TextDocument,
-    classScopePair: ChangedPair<cpp.IClassScope>
+    exisitingClassScope: cpp.IClassScope,
+    generatedClassScope: cpp.IClassScope
   ) {
-    const classScopeEnd = this.getClassScopeEnd(classScopePair.existing);
-
+    const classScopeEnd = this.getClassScopeEnd(exisitingClassScope);
     if (!classScopeEnd) {
       return;
     }
 
-    const changedClasses = this.handleAddedRemovedAndExtractChanged(
-      edit,
-      textDocument,
-      classScopeEnd,
-      classScopePair.existing.nestedClasses,
-      classScopePair.generated.nestedClasses
+    const nestedClassDiff = this.createDiff(
+      exisitingClassScope.nestedClasses,
+      generatedClassScope.nestedClasses
     );
 
-    this.handleAddedRemovedAndExtractChanged(
-      edit,
-      textDocument,
-      classScopeEnd,
-      classScopePair.existing.memberFunctions,
-      classScopePair.generated.memberFunctions
+    const memberFunctionDiff = this.createDiff(
+      exisitingClassScope.memberFunctions,
+      generatedClassScope.memberFunctions
     );
 
-    this.handleAddedRemovedAndExtractChanged(
-      edit,
-      textDocument,
-      classScopeEnd,
-      classScopePair.existing.constructors,
-      classScopePair.generated.constructors
+    const constructorDiff = this.createDiff(
+      exisitingClassScope.constructors,
+      generatedClassScope.constructors
     );
 
-    changedClasses.forEach(this.mergeClass.bind(this, edit, textDocument));
+    this._scopeAdder.addTextAfter(
+      classScopeEnd,
+      ...nestedClassDiff.added,
+      ...memberFunctionDiff.added,
+      ...constructorDiff.added
+    );
+    this._scopeDeleter?.deleteTextScope(
+      ...nestedClassDiff.removed,
+      ...memberFunctionDiff.removed,
+      ...constructorDiff.removed
+    );
+
+    nestedClassDiff.changed.forEach((classPair) =>
+      this.mergeClass(classPair.existing, classPair.generated)
+    );
+  }
+
+  private createDiff<T extends cpp.Comparable<T>>(
+    existing: T[],
+    generated: T[]
+  ) {
+    return new Difference(existing, generated, this._serializeOptions);
   }
 
   private getClassScopeEnd(classScope: cpp.IClassScope): number | undefined {
