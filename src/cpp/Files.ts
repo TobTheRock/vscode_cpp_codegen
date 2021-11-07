@@ -10,9 +10,11 @@ abstract class FileBase implements io.IDeserializable {
     this.extension = filePath.split(".").slice(-1)[0];
     this.basename = path.basename(filePath, "." + this.extension);
 
-    if (content) {
-      this.deserialize(io.TextFragment.createFromString(content));
-    }
+    const textFragment = content.length
+      ? io.TextFragment.createFromString(content)
+      : io.TextFragment.createEmpty();
+
+    this.deserialize(textFragment);
   }
 
   deserialize(data: io.TextFragment): void {

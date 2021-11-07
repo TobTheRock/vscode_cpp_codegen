@@ -42,7 +42,10 @@ export class Text {
   }
 
   isEmpty(): boolean {
-    return this._lines.length === 0;
+    return (
+      this._lines.length === 0 ||
+      (this._lines.length === 1 && this._lines[0].length === 0)
+    );
   }
 
   private _lines: string[];
@@ -259,10 +262,18 @@ export class TextFragment {
   }
 
   getScopeStart() {
+    if (!this.blocks.length) {
+      return 0;
+    }
+
     return Math.min(...Array.from(this.blocks, (block) => block.scopeStart));
   }
 
   getScopeEnd() {
+    if (!this.blocks.length) {
+      return 0;
+    }
+
     return Math.max(...Array.from(this.blocks, (block) => block.scopeEnd));
   }
 }
