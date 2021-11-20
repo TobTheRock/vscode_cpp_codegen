@@ -39,7 +39,7 @@ suite("Parser: Structs tests", () => {
     assertClassScopeEmpty(nestedClass.publicScope);
     assertClassScopeEmpty(nestedClass.privateScope);
     assertClassScopeEmpty(nestedClass.protectedScope);
-    assert.strictEqual(nestedClass.destructor, undefined);
+    assert.strictEqual(nestedClass.publicScope.destructor, undefined);
     assert.strictEqual(nestedClass.inheritance.length, 0);
   });
 

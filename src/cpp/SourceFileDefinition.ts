@@ -288,6 +288,15 @@ export class NamespaceDefinitionManipulator {
         classNames
       )
     );
+    if (scope.destructor) {
+      definitions.push(
+        SourceFileDefinition.createFromDestructor(
+          scope.destructor,
+          namespaceNames,
+          classNames
+        )
+      );
+    }
     definitions.push(
       ...scope.memberFunctions.map((fnct) =>
         SourceFileDefinition.createFromMemberFunction(
@@ -316,16 +325,6 @@ export class NamespaceDefinitionManipulator {
     const className = mode ? cl.getName(mode) : cl.name;
     const classNames = [...parentClassNames, className];
     const definitions: IDefinition[] = [];
-
-    if (cl.destructor) {
-      definitions.push(
-        SourceFileDefinition.createFromDestructor(
-          cl.destructor,
-          namespaceNames,
-          classNames
-        )
-      );
-    }
 
     definitions.push(
       ...flatten(

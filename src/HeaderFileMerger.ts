@@ -87,13 +87,6 @@ export class HeaderFileMerger implements IFileMerger {
   }
 
   private mergeClass(exisitingClass: cpp.IClass, generatedClass: cpp.IClass) {
-    const destructorDiff = this.createDiff(
-      compact([exisitingClass.destructor]),
-      compact([generatedClass.destructor])
-    );
-    this._scopeAdder.addTextAfterScope(exisitingClass, ...destructorDiff.added);
-    this._scopeDeleter?.deleteTextScope(...destructorDiff.removed);
-
     this.mergeClassScope(
       exisitingClass.privateScope,
       generatedClass.privateScope
@@ -134,16 +127,23 @@ export class HeaderFileMerger implements IFileMerger {
       generatedClassScope.constructors
     );
 
+    const destructorDiff = this.createDiff(
+      compact([exisitingClassScope.destructor]),
+      compact([generatedClassScope.destructor])
+    );
+
     this._scopeAdder.addTextAfter(
       classScopeEnd,
       ...nestedClassDiff.added,
-      ...memberFunctionDiff.added,
-      ...constructorDiff.added
+      ...constructorDiff.added,
+      ...destructorDiff.added,
+      ...memberFunctionDiff.added
     );
     this._scopeDeleter?.deleteTextScope(
       ...nestedClassDiff.removed,
-      ...memberFunctionDiff.removed,
-      ...constructorDiff.removed
+      ...constructorDiff.removed,
+      ...destructorDiff.removed,
+      ...memberFunctionDiff.removed
     );
 
     nestedClassDiff.changed.forEach((classPair) =>

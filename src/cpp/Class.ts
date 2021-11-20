@@ -108,6 +108,11 @@ export class ClassDestructor extends io.TextScope implements IDestructor {
 }
 
 abstract class ClassScopeBase implements IClassScope {
+  destructor?: IDestructor;
+  readonly memberFunctions: IFunction[] = [];
+  readonly nestedClasses: IClass[] = [];
+  readonly constructors: IConstructor[] = [];
+
   constructor(private readonly _classNameProvider: io.IClassNameProvider) {}
 
   extractScopeTextFragment(
@@ -126,6 +131,13 @@ abstract class ClassScopeBase implements IClassScope {
     this.nestedClasses.push(
       ...parser.parseClasses(content, this._classNameProvider)
     );
+    const dtors = parser.parseClassDestructors(
+      content,
+      this._classNameProvider
+    );
+    if (dtors.length > 0) {
+      this.destructor = dtors[0];
+    }
     this.constructors.push(
       ...parser.parseClassConstructors(content, this._classNameProvider)
     );
@@ -159,26 +171,16 @@ abstract class ClassScopeBase implements IClassScope {
         seperateElementsWithNewLine = true;
         break;
     }
-    text
-      .append(
+
+    this.destructor,
+      text.append(
         io.serializeArray(
-          this.constructors,
-          options,
-          seperateElementsWithNewLine
-        ),
-        indent
-      )
-      .append(
-        io.serializeArray(
-          this.memberFunctions,
-          options,
-          seperateElementsWithNewLine
-        ),
-        indent
-      )
-      .append(
-        io.serializeArray(
-          this.nestedClasses,
+          compact([
+            ...this.constructors,
+            this.destructor,
+            ...this.memberFunctions,
+            ...this.nestedClasses,
+          ]),
           options,
           seperateElementsWithNewLine
         ),
@@ -187,10 +189,6 @@ abstract class ClassScopeBase implements IClassScope {
 
     return text;
   }
-
-  readonly memberFunctions: IFunction[] = [];
-  readonly nestedClasses: IClass[] = [];
-  readonly constructors: IConstructor[] = [];
 }
 
 class ClassPrivateScope extends ClassScopeBase {
@@ -345,17 +343,6 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
   }
 
   deserialize(data: io.TextFragment, parser: IParser) {
-    const dtors = parser.parseClassDestructors(data, this._classNameProvider);
-
-    if (dtors.length >= 1) {
-      if (dtors.length > 1) {
-        vscode.window.showWarningMessage(
-          "Class " + this.name + " has multiple destructors!"
-        );
-      }
-      this.destructor = dtors[0];
-    }
-
     this.publicScope.deserialize(data, parser);
     this.privateScope.deserialize(data, parser);
     this.protectedScope.deserialize(data, parser);
@@ -366,12 +353,7 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
     seperateElementsWithNewLine: boolean
   ): io.Text {
     return io.serializeArray(
-      compact([
-        this.destructor,
-        this.publicScope,
-        this.protectedScope,
-        this.privateScope,
-      ]),
+      [this.publicScope, this.protectedScope, this.privateScope],
       options,
       seperateElementsWithNewLine
     );
@@ -449,7 +431,6 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
   readonly publicScope: IClassScope;
   readonly privateScope: IClassScope;
   readonly protectedScope: IClassScope;
-  destructor: IDestructor | undefined;
   private readonly _classNameGen: ClassNameGenerator;
   private _classNameProvider: io.IClassNameProvider;
 }

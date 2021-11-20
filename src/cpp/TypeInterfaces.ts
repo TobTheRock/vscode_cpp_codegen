@@ -31,6 +31,7 @@ export interface IClassScope extends io.ISerializable {
   readonly memberFunctions: IFunction[];
   readonly nestedClasses: IClass[];
   readonly constructors: IConstructor[];
+  readonly destructor?: IDestructor;
   deserialize(data: io.TextFragment, parser: IParser): void;
 }
 
@@ -43,7 +44,6 @@ export interface IClass
   readonly publicScope: IClassScope;
   readonly privateScope: IClassScope;
   readonly protectedScope: IClassScope;
-  readonly destructor?: IDestructor;
   readonly inheritance: string[]; // TODO -> IClass?
 
   getName(mode: io.SerializableMode): string;
