@@ -26,9 +26,9 @@ class MemberFunctionBase
 
     switch (options.mode) {
       case io.SerializableMode.source:
-        return this.addDefinition(text, options);
+        return this.serializeDefinition(text, options);
       case io.SerializableMode.header:
-        return this.addDeclaration(text, options);
+        return this.serializeDeclaration(text, options);
       default:
         return text;
     }
@@ -43,7 +43,7 @@ class MemberFunctionBase
           this.returnVal +
           " " +
           this.name +
-          " (" +
+          "(" +
           this.args +
           ")" +
           (this.isConst ? " const" : "")
@@ -58,7 +58,7 @@ class MemberFunctionBase
             this._classNameProvider.getClassName(options.mode, true),
             this.name
           ) +
-          " (" +
+          "(" +
           removeDefaultInitializersFromArgs(this.args) +
           ")" +
           (this.isConst ? " const" : "")
@@ -88,9 +88,9 @@ class VirtualMemberFunctionUnranged extends MemberFunctionBase {
 
     switch (options.mode) {
       case io.SerializableMode.header:
-        return this.addDeclaration(text, options, undefined, " override");
+        return this.serializeDeclaration(text, options, undefined, " override");
       case io.SerializableMode.interfaceHeader:
-        return this.addDeclaration(text, options, "virtual ", " =0");
+        return this.serializeDeclaration(text, options, "virtual ", " =0");
       default:
         return super.serialize(options);
     }
@@ -116,9 +116,9 @@ class StaticMemberFunctionUnranged extends MemberFunctionBase {
 
     switch (options.mode) {
       case io.SerializableMode.source:
-        return this.addDefinition(text, options);
+        return this.serializeDefinition(text, options);
       case io.SerializableMode.header:
-        return this.addDeclaration(text, options, "static ");
+        return this.serializeDeclaration(text, options, "static ");
       default:
         return text;
     }
@@ -146,13 +146,13 @@ export class PureVirtualMemberFunctionUnranged extends MemberFunctionBase {
 
     switch (options.mode) {
       case io.SerializableMode.header:
-        return this.addDeclaration(text, options, "virtual ", " =0");
+        return this.serializeDeclaration(text, options, "virtual ", " =0");
 
       case io.SerializableMode.implHeader:
-        return this.addDeclaration(text, options, undefined, " override");
+        return this.serializeDeclaration(text, options, undefined, " override");
 
       case io.SerializableMode.implSource:
-        return this.addDefinition(text, options);
+        return this.serializeDefinition(text, options);
 
       case io.SerializableMode.interfaceHeader:
       case io.SerializableMode.source:
@@ -187,9 +187,9 @@ class FriendFunctionUnranged
 
     switch (options.mode) {
       case io.SerializableMode.source:
-        return this.addDefinition(text, options);
+        return this.serializeDefinition(text, options);
       case io.SerializableMode.header:
-        return this.addDeclaration(text, options);
+        return this.serializeDeclaration(text, options);
       default:
         return text;
     }
@@ -206,7 +206,7 @@ class FriendFunctionUnranged
           this.returnVal +
           " " +
           this.name +
-          " (" +
+          "(" +
           this.args +
           ")" +
           (this.isConst ? " const" : "")
@@ -217,7 +217,7 @@ class FriendFunctionUnranged
           this.returnVal +
           " " +
           joinNameScopesWithFunctionName(options.nameScopes, this.name) +
-          " (" +
+          "(" +
           removeDefaultInitializersFromArgs(this.args) +
           ")" +
           (this.isConst ? " const" : "")

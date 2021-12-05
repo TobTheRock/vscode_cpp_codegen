@@ -10,7 +10,7 @@ class FunctionDefinitionMatch {
     this.argsMatch = regexMatch.getGroupMatch(2);
     this.constMatch = regexMatch.getGroupMatch(3);
   }
-  private static readonly forbiddenReturnValues: string = "\\boperator\\b";
+  private static readonly forbiddenReturnValues: string = "\\boperator\\b|\"|'";
   private static readonly returnValRegex: string =
     "(\\b(?:(?!" +
     FunctionDefinitionMatch.forbiddenReturnValues +

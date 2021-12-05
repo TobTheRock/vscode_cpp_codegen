@@ -1,3 +1,5 @@
+import { last } from "lodash";
+
 // TODO utils
 function error(condition: boolean, errMsg: string = "") {
   if (!condition) {
@@ -15,7 +17,7 @@ export class Text {
   }
 
   add(str: string): Text {
-    if (this._lines.length) {
+    if (!this._lines.length) {
       this._lines.push(str);
     } else {
       this._lines[this._lines.length - 1] += str;
@@ -46,6 +48,14 @@ export class Text {
       this._lines.length === 0 ||
       (this._lines.length === 1 && this._lines[0].length === 0)
     );
+  }
+
+  addNewLineSeperation(): Text {
+    const lastLine = last(this._lines);
+    if (lastLine) {
+      this._lines.push("");
+    }
+    return this;
   }
 
   private _lines: string[];

@@ -7,6 +7,7 @@ import * as vscode from "vscode";
 import { HeaderParser } from "../../cpp/HeaderParser";
 import { IFunction } from "../../cpp";
 import * as io from "../../io";
+import { Text } from "../../io";
 
 suite("Text Utility Tests", () => {
   test("Textblock should have correct scope on construction", () => {
@@ -196,5 +197,57 @@ suite("Text Utility Tests", () => {
       slicedTextFragment.blocks[1].content,
       testContent2.slice(0, subStrEnd + 1 - gap - testContent1.length)
     );
+  });
+
+  test("Text check if empty", function () {
+    const text = Text.createEmpty();
+    assert.strictEqual(text.toString(), "");
+    assert.ok(text.isEmpty());
+  });
+
+  test("Text check if not empty", function () {
+    const text = Text.createEmpty().add("BLA");
+    assert.ok(!text.isEmpty());
+  });
+
+  test("Text add string content", function () {
+    const testContent = "BLA";
+    const text = Text.createEmpty().add(testContent).add(testContent);
+    assert.strictEqual(text.toString(), testContent + testContent);
+  });
+
+  test("Text add string content as new line", function () {
+    const testContent = "BLA";
+    const text = Text.createEmpty().addLine(testContent).addLine(testContent);
+    assert.strictEqual(text.toString(), `${testContent}\n${testContent}`);
+  });
+
+  test("Text add string content as new line with seperation", function () {
+    const testContent = "BLA";
+    const text = Text.createEmpty()
+      .addLine(testContent)
+      .addNewLineSeperation()
+      .addLine(testContent);
+    assert.strictEqual(text.toString(), `${testContent}\n\n${testContent}`);
+  });
+
+  test("Text Do not add new line seperation if last line was empty", function () {
+    const text = Text.createEmpty().addNewLineSeperation();
+    assert.strictEqual(text.toString(), "");
+    assert.ok(text.isEmpty());
+
+    text.addLine("").addNewLineSeperation();
+    assert.strictEqual(text.toString(), "");
+    assert.ok(text.isEmpty());
+  });
+
+  test("Text append other text indented", function () {
+    const testContent = "BLA";
+    const indentedText = Text.createEmpty().addLine(testContent);
+    const text = Text.createEmpty("\t")
+      .append(indentedText)
+      .append(indentedText, 2);
+
+    assert.strictEqual(text.toString(), `${testContent}\n\t\t${testContent}`);
   });
 });

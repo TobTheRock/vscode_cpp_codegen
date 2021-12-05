@@ -111,7 +111,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "int fncName (" + data.arg + ");"
+          "int fncName(" + data.arg + ");"
         );
         assert.strictEqual(
           memberFnct
@@ -120,7 +120,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "int TestClass::fncName (" +
+          "int TestClass::fncName(" +
             data.argWoInit +
             ") {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -183,7 +183,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "const int* fncName (" + data.arg + ");"
+          "const int* fncName(" + data.arg + ");"
         );
         assert.strictEqual(
           memberFnct
@@ -192,7 +192,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "const int* TestClass::fncName (" +
+          "const int* TestClass::fncName(" +
             data.argWoInit +
             ") {\n" +
             "\tconst int* returnValue;\n\treturn returnValue;\n}"
@@ -255,7 +255,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "std::pair<int, void*> fncName (" + data.arg + ");"
+          "std::pair<int, void*> fncName(" + data.arg + ");"
         );
         assert.strictEqual(
           memberFnct
@@ -264,7 +264,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "std::pair<int, void*> TestClass::fncName (" +
+          "std::pair<int, void*> TestClass::fncName(" +
             data.argWoInit +
             ") {\n" +
             "\tstd::pair<int, void*> returnValue;\n\treturn returnValue;\n}"
@@ -327,7 +327,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "int fncName (" + data.arg + ") const;"
+          "int fncName(" + data.arg + ") const;"
         );
         assert.strictEqual(
           memberFnct
@@ -336,7 +336,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "int TestClass::fncName (" +
+          "int TestClass::fncName(" +
             data.argWoInit +
             ") const {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -399,7 +399,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "int fncName (" + data.arg + ") override;"
+          "int fncName(" + data.arg + ") override;"
         );
         assert.strictEqual(
           memberFnct
@@ -408,7 +408,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "int TestClass::fncName (" +
+          "int TestClass::fncName(" +
             data.argWoInit +
             ") {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -437,7 +437,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.interfaceHeader,
             })
             .toString(),
-          "virtual int fncName (" + data.arg + ") =0;"
+          "virtual int fncName(" + data.arg + ") =0;"
         );
       }
     );
@@ -471,7 +471,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "int fncName (" + data.arg + ") override;"
+          "int fncName(" + data.arg + ") override;"
         );
         assert.strictEqual(
           memberFnct
@@ -480,7 +480,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "int TestClass::fncName (" +
+          "int TestClass::fncName(" +
             data.argWoInit +
             ") {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -509,7 +509,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.interfaceHeader,
             })
             .toString(),
-          "virtual int fncName (" + data.arg + ") =0;"
+          "virtual int fncName(" + data.arg + ") =0;"
         );
       }
     );
@@ -543,7 +543,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "int fncName (" + data.arg + ") const override;"
+          "int fncName(" + data.arg + ") const override;"
         );
         assert.strictEqual(
           memberFnct
@@ -552,7 +552,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "int TestClass::fncName (" +
+          "int TestClass::fncName(" +
             data.argWoInit +
             ") const {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -581,7 +581,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.interfaceHeader,
             })
             .toString(),
-          "virtual int fncName (" + data.arg + ") const =0;"
+          "virtual int fncName(" + data.arg + ") const =0;"
         );
       }
     );
@@ -615,7 +615,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "virtual int fncName (" + data.arg + ") =0;"
+          "virtual int fncName(" + data.arg + ") =0;"
         );
         assert.strictEqual(
           memberFnct
@@ -633,7 +633,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.implHeader,
             })
             .toString(),
-          "int fncName (" + data.arg + ") override;"
+          "int fncName(" + data.arg + ") override;"
         );
         assert.strictEqual(
           memberFnct
@@ -642,7 +642,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "int TestClass::fncName (" +
+          "int TestClass::fncName(" +
             data.argWoInit +
             ") {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -687,7 +687,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "virtual int fncName (" + data.arg + ") const =0;"
+          "virtual int fncName(" + data.arg + ") const =0;"
         );
         assert.strictEqual(
           memberFnct
@@ -705,7 +705,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.implHeader,
             })
             .toString(),
-          "int fncName (" + data.arg + ") const override;"
+          "int fncName(" + data.arg + ") const override;"
         );
         assert.strictEqual(
           memberFnct
@@ -714,7 +714,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "int TestClass::fncName (" +
+          "int TestClass::fncName(" +
             data.argWoInit +
             ") const {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -759,7 +759,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "static int fncName (" + data.arg + ");"
+          "static int fncName(" + data.arg + ");"
         );
         assert.strictEqual(
           memberFnct
@@ -768,7 +768,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "int TestClass::fncName (" +
+          "int TestClass::fncName(" +
             data.argWoInit +
             ") {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -832,7 +832,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "virtual int fncName (" + data.arg + ") const =0;"
+          "virtual int fncName(" + data.arg + ") const =0;"
         );
         assert.strictEqual(
           memberFnct
@@ -849,7 +849,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.implHeader,
             })
             .toString(),
-          "int fncName (" + data.arg + ") const override;"
+          "int fncName(" + data.arg + ") const override;"
         );
         assert.strictEqual(
           memberFnct
@@ -858,7 +858,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "int TestClass::fncName (" +
+          "int TestClass::fncName(" +
             data.argWoInit +
             ") const {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -883,7 +883,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "virtual int fncName2 (" + data.arg + ") =0;"
+          "virtual int fncName2(" + data.arg + ") =0;"
         );
         assert.strictEqual(
           memberFnct
@@ -900,7 +900,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.implHeader,
             })
             .toString(),
-          "int fncName2 (" + data.arg + ") override;"
+          "int fncName2(" + data.arg + ") override;"
         );
         assert.strictEqual(
           memberFnct
@@ -909,7 +909,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "int TestClass::fncName2 (" +
+          "int TestClass::fncName2(" +
             data.argWoInit +
             ") {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -934,7 +934,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "std::shared_ptr<Test> fncName3 (" + data.arg + ");"
+          "std::shared_ptr<Test> fncName3(" + data.arg + ");"
         );
         assert.strictEqual(
           memberFnct
@@ -943,7 +943,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "std::shared_ptr<Test> ITestClass::fncName3 (" +
+          "std::shared_ptr<Test> ITestClass::fncName3(" +
             data.argWoInit +
             ") {\n" +
             "\tstd::shared_ptr<Test> returnValue;\n\treturn returnValue;\n}"
@@ -985,7 +985,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "void fncName4 (" + data.arg + ") const;"
+          "void fncName4(" + data.arg + ") const;"
         );
         assert.strictEqual(
           memberFnct
@@ -994,7 +994,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "void ITestClass::fncName4 (" + data.argWoInit + ") const {\n}"
+          "void ITestClass::fncName4(" + data.argWoInit + ") const {\n}"
         );
         assert.strictEqual(
           memberFnct
@@ -1033,7 +1033,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "int fncName5 (" + data.arg + ") override;"
+          "int fncName5(" + data.arg + ") override;"
         );
         assert.strictEqual(
           memberFnct
@@ -1042,7 +1042,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "int ITestClass::fncName5 (" +
+          "int ITestClass::fncName5(" +
             data.argWoInit +
             ") {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -1070,7 +1070,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.interfaceHeader,
             })
             .toString(),
-          "virtual int fncName5 (" + data.arg + ") =0;"
+          "virtual int fncName5(" + data.arg + ") =0;"
         );
       }
     );
@@ -1104,7 +1104,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "friend int fncName (" + data.arg + ");"
+          "friend int fncName(" + data.arg + ");"
         );
         assert.strictEqual(
           memberFnct
@@ -1113,7 +1113,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "int fncName (" +
+          "int fncName(" +
             data.argWoInit +
             ") {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -1154,7 +1154,7 @@ suite("Full Member Function Tests", () => {
       testData,
       async function (data: TestData) {
         const testContent = TextFragment.createFromString(
-          "friend int fncName (" + data.arg + ") const;"
+          "friend int fncName(" + data.arg + ") const;"
         );
 
         let parsedFunctions = HeaderParser.parseClassMemberFunctions(
@@ -1176,7 +1176,7 @@ suite("Full Member Function Tests", () => {
               mode: SerializableMode.header,
             })
             .toString(),
-          "friend int fncName (" + data.arg + ") const;"
+          "friend int fncName(" + data.arg + ") const;"
         );
         assert.strictEqual(
           memberFnct
@@ -1185,7 +1185,7 @@ suite("Full Member Function Tests", () => {
               indentStep,
             })
             .toString(),
-          "int fncName (" +
+          "int fncName(" +
             data.argWoInit +
             ") const {\n" +
             "\tint returnValue;\n\treturn returnValue;\n}"
@@ -1279,11 +1279,13 @@ suite("Full Member Function Tests", () => {
 
         [rangeFull, rangePartialStart, rangePartialEnd].forEach(
           async (range) => {
-            const serial = memberfunction.serialize({
-              mode: SerializableMode.source,
-              indentStep,
-              range,
-            });
+            const serial = memberfunction
+              .serialize({
+                mode: SerializableMode.source,
+                indentStep,
+                range,
+              })
+              .toString();
             assert.ok(serial.length);
           }
         );

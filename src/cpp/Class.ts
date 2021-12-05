@@ -9,9 +9,9 @@ import {
 import * as io from "../io";
 import { joinNameScopesWithFunctionName, joinNameScopes } from "./utils";
 import { ClassNameGenerator } from "./ClassNameGenerator";
-import * as vscode from "vscode";
 import { asyncForEach } from "../utils";
 import { compact } from "lodash";
+import { ISerializable } from "../io";
 
 function getCtorDtorImplName(
   classNameProvider: io.IClassNameProvider,
@@ -44,13 +44,13 @@ export class ClassConstructor extends io.TextScope implements IConstructor {
   }
 
   serialize(options: io.SerializationOptions): io.Text {
-    const args = `(${this.args});`;
+    const args = `(${this.args})`;
     const text = io.Text.createEmpty(options.indentStep);
     switch (options.mode) {
       case io.SerializableMode.header:
       case io.SerializableMode.implHeader:
         text.addLine(
-          this._classNameProvider.getClassName(options.mode, true) + args
+          this._classNameProvider.getClassName(options.mode, true) + args + ";"
         );
         break;
 
@@ -115,14 +115,14 @@ abstract class ClassScopeBase implements IClassScope {
 
   constructor(private readonly _classNameProvider: io.IClassNameProvider) {}
 
-  extractScopeTextFragment(
+  protected extractScopeTextFragment(
     data: io.TextFragment,
     parser: IParser
   ): io.TextFragment {
     throw new Error("Unimplemented!");
   }
 
-  getScopeHeader(): string {
+  protected getScopeHeader(): string {
     throw new Error("Unimplemented!");
   }
 
@@ -148,7 +148,6 @@ abstract class ClassScopeBase implements IClassScope {
 
   serialize(options: io.SerializationOptions): io.Text {
     const text = io.Text.createEmpty(options.indentStep);
-    let indent = 0;
     if (
       !this.constructors.length &&
       !this.nestedClasses.length &&
@@ -157,110 +156,126 @@ abstract class ClassScopeBase implements IClassScope {
       return text;
     }
 
-    let seperateElementsWithNewLine = false;
     switch (options.mode) {
       case io.SerializableMode.header:
       case io.SerializableMode.interfaceHeader:
       case io.SerializableMode.implHeader:
-        text.addLine(this.getScopeHeader());
-        indent = 1;
-        break;
+        return this.serializeDeclarations(options, text);
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
       default:
-        seperateElementsWithNewLine = true;
-        break;
+        return this.serializeDefinitions(options, text);
     }
+  }
 
-    this.destructor,
-      text.append(
-        io.serializeArray(
-          compact([
-            ...this.constructors,
-            this.destructor,
-            ...this.memberFunctions,
-            ...this.nestedClasses,
-          ]),
-          options,
-          seperateElementsWithNewLine
-        ),
-        indent
-      );
+  private serializeDeclarations(
+    options: io.SerializationOptions,
+    text: io.Text
+  ): io.Text {
+    text.addLine(this.getScopeHeader());
+
+    const serializedMembers = io.serializeArray(
+      this.getSerializableMembers(),
+      options
+    );
+    text.append(serializedMembers, 1);
 
     return text;
+  }
+
+  private serializeDefinitions(
+    options: io.SerializationOptions,
+    text: io.Text
+  ): io.Text {
+    const serializedMembers = io.serializeArrayWithNewLineSeperation(
+      this.getSerializableMembers(),
+      options
+    );
+    text.append(serializedMembers);
+
+    return text;
+  }
+
+  private getSerializableMembers(): ISerializable[] {
+    return compact([
+      ...this.constructors,
+      this.destructor,
+      ...this.memberFunctions,
+      ...this.nestedClasses,
+    ]);
   }
 }
 
 class ClassPrivateScope extends ClassScopeBase {
-  extractScopeTextFragment(
+  protected extractScopeTextFragment(
     data: io.TextFragment,
     parser: IParser
   ): io.TextFragment {
     return parser.parseClassPrivateScope(data);
   }
 
-  getScopeHeader(): string {
+  protected getScopeHeader(): string {
     return "private:";
   }
 }
 class ClassPublicScope extends ClassScopeBase {
-  extractScopeTextFragment(
+  protected extractScopeTextFragment(
     data: io.TextFragment,
     parser: IParser
   ): io.TextFragment {
     return parser.parseClassPublicScope(data);
   }
 
-  getScopeHeader(): string {
+  protected getScopeHeader(): string {
     return "public:";
   }
 }
 class ClassProtectedScope extends ClassScopeBase {
-  extractScopeTextFragment(
+  protected extractScopeTextFragment(
     data: io.TextFragment,
     parser: IParser
   ): io.TextFragment {
     return parser.parseClassProtectedScope(data);
   }
 
-  getScopeHeader(): string {
+  protected getScopeHeader(): string {
     return "protected:";
   }
 }
 
 class StructPrivateScope extends ClassScopeBase {
-  extractScopeTextFragment(
+  protected extractScopeTextFragment(
     data: io.TextFragment,
     parser: IParser
   ): io.TextFragment {
     return parser.parseStructPrivateScope(data);
   }
 
-  getScopeHeader(): string {
+  protected getScopeHeader(): string {
     return "private:";
   }
 }
 class StructPublicScope extends ClassScopeBase {
-  extractScopeTextFragment(
+  protected extractScopeTextFragment(
     data: io.TextFragment,
     parser: IParser
   ): io.TextFragment {
     return parser.parseStructPublicScope(data);
   }
 
-  getScopeHeader(): string {
+  protected getScopeHeader(): string {
     return "public:";
   }
 }
 class StructProtectedScope extends ClassScopeBase {
-  extractScopeTextFragment(
+  protected extractScopeTextFragment(
     data: io.TextFragment,
     parser: IParser
   ): io.TextFragment {
     return parser.parseStructProtectedScope(data);
   }
 
-  getScopeHeader(): string {
+  protected getScopeHeader(): string {
     return "protected:";
   }
 }
@@ -348,25 +363,19 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
     this.protectedScope.deserialize(data, parser);
   }
 
-  private serializeMembers(
-    options: io.SerializationOptions,
-    seperateElementsWithNewLine: boolean
-  ): io.Text {
-    return io.serializeArray(
-      [this.publicScope, this.protectedScope, this.privateScope],
-      options,
-      seperateElementsWithNewLine
-    );
-  }
-
-  private serializeSource(
+  private serializeDefinitions(
     text: io.Text,
     options: io.SerializationOptions
   ): io.Text {
-    return this.serializeMembers(options, true);
+    return text.append(
+      io.serializeArrayWithNewLineSeperation(
+        this.getSerializableMembers(),
+        options
+      )
+    );
   }
 
-  private serializeHeader(
+  private serializeDeclarations(
     text: io.Text,
     options: io.SerializationOptions
   ): io.Text {
@@ -374,7 +383,7 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
 
     return text
       .addLine(this.getHeaderSerialStart(serializedName))
-      .append(this.serializeMembers(options, false))
+      .append(io.serializeArray(this.getSerializableMembers(), options))
       .addLine("};");
   }
 
@@ -388,8 +397,12 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
       .addLine(
         this.getHeaderSerialStart(serializedName, ["public " + this.name])
       )
-      .append(this.serializeMembers(options, false))
+      .append(io.serializeArray(this.getSerializableMembers(), options))
       .addLine("};");
+  }
+
+  private getSerializableMembers(): ISerializable[] {
+    return [this.publicScope, this.protectedScope, this.privateScope];
   }
 
   serialize(options: io.SerializationOptions): io.Text {
@@ -398,13 +411,13 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
     switch (options.mode) {
       case io.SerializableMode.header:
       case io.SerializableMode.interfaceHeader:
-        return this.serializeHeader(text, options);
+        return this.serializeDeclarations(text, options);
       case io.SerializableMode.implHeader:
         return this.serializeImplHeader(text, options);
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
       default:
-        return this.serializeSource(text, options);
+        return this.serializeDefinitions(text, options);
     }
   }
 

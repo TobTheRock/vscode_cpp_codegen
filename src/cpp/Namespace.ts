@@ -46,8 +46,8 @@ export class Namespace extends io.TextScope implements INamespace {
 
   private serializeMembers(options: io.SerializationOptions): io.Text {
     return io
-      .serializeArray(this.functions, options)
-      .append(io.serializeArray(this.classes, options))
+      .serializeArrayWithNewLineSeperation(this.functions, options)
+      .append(io.serializeArrayWithNewLineSeperation(this.classes, options))
       .append(io.serializeArray(this.subnamespaces, options));
   }
 
@@ -61,6 +61,7 @@ export class Namespace extends io.TextScope implements INamespace {
 
     return Text.createEmpty(options.indentStep)
       .addLine(`namespace ${this.name} {`)
+      .addNewLineSeperation()
       .append(serializedText)
       .addLine("}");
   }
@@ -71,10 +72,6 @@ export class Namespace extends io.TextScope implements INamespace {
 
   serialize(options: io.SerializationOptions): io.Text {
     const config = Configuration.get();
-    const addNamespaceSpeficier =
-      config.sourceFileNamespaceSerialization ===
-        SourceFileNamespaceSerialization.named ||
-      !io.isSourceFileSerializationMode(options.mode);
 
     if (
       config.sourceFileNamespaceSerialization ===
@@ -121,9 +118,9 @@ export class RootNamespace extends io.TextScope implements INamespace {
 
   serialize(options: io.SerializationOptions) {
     return io
-      .serializeArray(this.functions, options)
-      .append(io.serializeArray(this.classes, options))
-      .append(io.serializeArray(this.subnamespaces, options, true));
+      .serializeArrayWithNewLineSeperation(this.functions, options)
+      .append(io.serializeArrayWithNewLineSeperation(this.classes, options))
+      .append(io.serializeArray(this.subnamespaces, options));
   }
 
   equals(other: INamespace): boolean {

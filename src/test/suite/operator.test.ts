@@ -265,7 +265,7 @@ suite("HeaderParser: Class Operator Declarations", () => {
           data.returnVal +
           " TestClass::" +
           data.funcName() +
-          " (" +
+          "(" +
           data.args +
           ") {\n";
 

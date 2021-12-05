@@ -30,7 +30,7 @@ export class FunctionBase
     throw new Error("Method not implemented.");
   }
 
-  protected addDefinition(
+  protected serializeDefinition(
     text: io.Text,
     options: io.SerializationOptions
   ): io.Text {
@@ -44,7 +44,7 @@ export class FunctionBase
     return text;
   }
 
-  protected addDeclaration(
+  protected serializeDeclaration(
     text: io.Text,
     options: io.SerializationOptions,
     prefix: string = "",

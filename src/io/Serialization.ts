@@ -60,17 +60,24 @@ export interface ISerializable {
 
 export function serializeArray(
   serializableArray: ISerializable[],
-  options: SerializationOptions,
-  seperateElementsWithNewLine: boolean = false
+  options: SerializationOptions
 ): Text {
   return serializableArray
-    .map((serializable) => {
-      const textElement = serializable.serialize(options);
-      if (seperateElementsWithNewLine && !textElement.isEmpty()) {
-        textElement.addLine("");
-      }
-      return textElement;
-    })
+    .map((serializable) => serializable.serialize(options))
+    .reduce(
+      (accumulatedText, textElement) => accumulatedText.append(textElement),
+      Text.createEmpty(options.indentStep)
+    );
+}
+
+export function serializeArrayWithNewLineSeperation(
+  serializableArray: ISerializable[],
+  options: SerializationOptions
+): Text {
+  return serializableArray
+    .map((serializable) =>
+      serializable.serialize(options).addNewLineSeperation()
+    )
     .reduce(
       (accumulatedText, textElement) => accumulatedText.append(textElement),
       Text.createEmpty(options.indentStep)

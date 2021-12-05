@@ -17,27 +17,18 @@ class StandaloneFunctionBase extends FunctionBase implements IFunction {
   }
 
   protected getHeading(options: io.SerializationOptions) {
-    const friendPrefix = "friend ";
     switch (options.mode) {
       case io.SerializableMode.header:
       case io.SerializableMode.implHeader:
       case io.SerializableMode.interfaceHeader:
-        return (
-          friendPrefix +
-          this.returnVal +
-          " " +
-          this.name +
-          " (" +
-          this.args +
-          ")"
-        );
+        return this.returnVal + " " + this.name + "(" + this.args + ")";
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
         return (
           this.returnVal +
           " " +
           joinNameScopesWithFunctionName(options.nameScopes, this.name) +
-          " (" +
+          "(" +
           removeDefaultInitializersFromArgs(this.args) +
           ")"
         );
@@ -51,11 +42,11 @@ class StandaloneFunctionBase extends FunctionBase implements IFunction {
 
     switch (options.mode) {
       case io.SerializableMode.source:
-        return this.addDefinition(text, options);
+        return this.serializeDefinition(text, options);
 
       case io.SerializableMode.interfaceHeader:
       case io.SerializableMode.implHeader:
-        return this.addDeclaration(text, options);
+        return this.serializeDeclaration(text, options);
 
       default:
         return text;
