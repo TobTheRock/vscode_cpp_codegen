@@ -1,4 +1,4 @@
-import { TextFragment, TextScope } from "./Text";
+import { Text, TextFragment, TextScope } from "./Text";
 import { flatten } from "lodash";
 
 export enum SerializableMode {
@@ -52,35 +52,36 @@ export interface SerializationOptions {
   mode: SerializableMode;
   nameScopes?: string[];
   range?: TextScope;
+  indentStep?: string;
 }
-
 export interface ISerializable {
-  serialize: (options: SerializationOptions) => string;
-}
-
-export interface IFile extends ISerializable, IDeserializable {
-  getPath(): string;
-  readonly directory: string;
-  readonly basename: string;
-  readonly extension: string;
+  serialize(options: SerializationOptions): Text;
 }
 
 export function serializeArray(
   serializableArray: ISerializable[],
-  options: SerializationOptions,
-  elementPrefix: string = "",
-  elementSuffix: string = ""
-): string {
-  return serializableArray.reduce((accumulate, serializable) => {
-    let acummulatedSerialized = accumulate;
-    let serializedElement = serializable.serialize(options);
-    if (!serializedElement.length) {
-      return acummulatedSerialized;
-    }
-    return (
-      acummulatedSerialized + elementPrefix + serializedElement + elementSuffix
+  options: SerializationOptions
+): Text {
+  return serializableArray
+    .map((serializable) => serializable.serialize(options))
+    .reduce(
+      (accumulatedText, textElement) => accumulatedText.append(textElement),
+      Text.createEmpty(options.indentStep)
     );
-  }, "");
+}
+
+export function serializeArrayWithNewLineSeperation(
+  serializableArray: ISerializable[],
+  options: SerializationOptions
+): Text {
+  return serializableArray
+    .map((serializable) =>
+      serializable.serialize(options).addNewLineSeperation()
+    )
+    .reduce(
+      (accumulatedText, textElement) => accumulatedText.append(textElement),
+      Text.createEmpty(options.indentStep)
+    );
 }
 
 export interface IDeserializable {
@@ -88,7 +89,7 @@ export interface IDeserializable {
 }
 
 class ISerializeDummyImpl implements ISerializable {
-  serialize(options: SerializationOptions): string {
+  serialize(options: SerializationOptions): Text {
     throw new Error("This class should not be used directly");
   }
 }
@@ -97,9 +98,9 @@ export function makeRangedSerializable<
   TBase extends Constructor<TextScope & ISerializeDummyImpl>
 >(base: TBase) {
   return class RangedSerializable extends base {
-    serialize(options: SerializationOptions): string {
+    serialize(options: SerializationOptions): Text {
       if (options.range && !this.contains(options.range)) {
-        return "";
+        return Text.createEmpty(options.indentStep);
       }
       return super.serialize(options);
     }

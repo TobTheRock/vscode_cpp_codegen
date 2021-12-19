@@ -2,13 +2,14 @@ import * as assert from "assert";
 import { describe, test } from "mocha";
 import { callItAsync } from "./utils";
 
-import { HeaderParser } from "../../io/HeaderParser";
-import {
-  MemberFunction,
-  PureVirtualMemberFunction,
-  VirtualMemberFunction,
-} from "../../cpp";
+import { HeaderParser } from "../../cpp/HeaderParser";
 import { TextFragment, SerializableMode, IClassNameProvider } from "../../io";
+import {
+  VirtualMemberFunction,
+  PureVirtualMemberFunction,
+  MemberFunction,
+} from "../../cpp/MemberFunction";
+import { SourceParser } from "../../cpp/SourceParser";
 
 const dummyClassNameProvider: IClassNameProvider = {
   originalName: "",
@@ -20,8 +21,16 @@ class OperatorData {
     public args: string,
     public returnVal: string
   ) {}
-  public toString(): string {
-    return this.returnVal + " " + this.funcName() + " (" + this.args + ")";
+  public toString(namespace: string = ""): string {
+    return (
+      this.returnVal +
+      " " +
+      namespace +
+      this.funcName() +
+      " (" +
+      this.args +
+      ")"
+    );
   }
 
   public funcName(): string {
@@ -104,9 +113,8 @@ const constVirtualOperatorData: OperatorData[] = constOperatorData.map(
 const constVirtualOperatorDataWithOverride = constVirtualOperatorData.concat(
   constOperatorData.map((data) => new OverrideOperatorData(data))
 );
-const constPureVirtualOperatorData: OperatorData[] = constVirtualOperatorData.map(
-  (data) => new PureVirtualOperatorData(data)
-);
+const constPureVirtualOperatorData: OperatorData[] =
+  constVirtualOperatorData.map((data) => new PureVirtualOperatorData(data));
 
 suite("HeaderParser: Class Operator Declarations", () => {
   describe("Operators are parsed correctly", () => {
@@ -243,6 +251,7 @@ suite("HeaderParser: Class Operator Declarations", () => {
       "With '${value}'",
       allocatorOperatorData,
       async (data: OperatorData) => {
+        const indentStep = "\t";
         const testContent = TextFragment.createFromString(
           data.toString() + ";"
         );
@@ -256,7 +265,7 @@ suite("HeaderParser: Class Operator Declarations", () => {
           data.returnVal +
           " TestClass::" +
           data.funcName() +
-          " (" +
+          "(" +
           data.args +
           ") {\n";
 
@@ -265,9 +274,12 @@ suite("HeaderParser: Class Operator Declarations", () => {
           (data.returnVal !== "void"
             ? "\t" + data.returnVal + " returnValue;\n\treturn returnValue;\n}"
             : "}");
-        const actualSerial = await parsedFunctions[0].serialize({
-          mode: SerializableMode.source,
-        });
+        const actualSerial = await parsedFunctions[0]
+          .serialize({
+            mode: SerializableMode.source,
+            indentStep,
+          })
+          .toString();
         assert.strictEqual(expectedSerial, actualSerial);
       }
     );
@@ -291,5 +303,36 @@ suite("HeaderParser: Class Operator Declarations", () => {
     assert.strictEqual(parsedFunctions[1].name, "operator new");
     assert.strictEqual(parsedFunctions[1].returnVal, "void*");
     assert.strictEqual(parsedFunctions[1].args, "std::size_t s");
+  });
+});
+
+suite("SourceParser: Class Operator Declarations", () => {
+  describe("Operators are parsed correctly", () => {
+    callItAsync("With '${value}'", operatorData, async (data: OperatorData) => {
+      const testContent = TextFragment.createFromString(data.toString() + "{}");
+
+      let parsedFunctions = SourceParser.parseStandaloneFunctions(testContent);
+      assert.strictEqual(parsedFunctions.length, 1);
+      assert.strictEqual(parsedFunctions[0].name, data.funcName());
+      assert.strictEqual(parsedFunctions[0].returnVal, data.returnVal);
+      assert.strictEqual(parsedFunctions[0].args, data.args);
+    });
+  });
+
+  describe("Operators with explicit namespace are parsed correctly", () => {
+    callItAsync("With '${value}'", operatorData, async (data: OperatorData) => {
+      const testContent = TextFragment.createFromString(
+        data.toString("Namespace::TestClass::") + "{}"
+      );
+
+      let parsedFunctions = SourceParser.parseStandaloneFunctions(testContent);
+      assert.strictEqual(parsedFunctions.length, 1);
+      assert.strictEqual(
+        parsedFunctions[0].name,
+        "Namespace::TestClass::" + data.funcName()
+      );
+      assert.strictEqual(parsedFunctions[0].returnVal, data.returnVal);
+      assert.strictEqual(parsedFunctions[0].args, data.args);
+    });
   });
 });

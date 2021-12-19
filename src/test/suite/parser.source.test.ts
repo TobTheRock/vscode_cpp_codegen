@@ -1,13 +1,9 @@
 import * as assert from "assert";
-import { Done, describe, it, test } from "mocha";
+import { describe, test } from "mocha";
 import { callItAsync } from "./utils";
-import { SourceParser } from "../../io/SourceParser";
-import {
-  TextFragment,
-  ISignaturable,
-  TextScope,
-  compareSignaturables,
-} from "../../io";
+import { TextFragment } from "../../io";
+import { IFunction } from "../../cpp";
+import { SourceParser } from "../../cpp/SourceParser";
 
 const argData = [
   "",
@@ -15,8 +11,18 @@ const argData = [
   "int test1, const Class* test2, void* test3",
   "int \ttest1,\t\n const\n Class* test2\n, void* test3\n\t",
 ];
+
+function compareFunctions(
+  a: IFunction,
+  name: string,
+  args: string,
+  returnVal: string
+): boolean {
+  return a.name === name && a.args === args && a.returnVal === returnVal;
+}
+
 suite("Parser Source Files Tests", () => {
-  describe("ParseStandaloneSignatures", function () {
+  describe("Parse standalone definitions", function () {
     callItAsync(
       "With function arguments ${value}",
       argData,
@@ -29,56 +35,37 @@ suite("Parser Source Files Tests", () => {
             std::shared_ptr<int> fncName2(${arg})  const {
                 //FUNCTION BODY
             }
-            const int* fncName3(${arg}) {
+            const int* namespace::namespace2::TestClass::fncName3(${arg}) {
                 //FUNCTION BODY
             }
         `
         );
-        const namespaces = SourceParser.parseNamespaces(testData);
-        const signatures = ([] as ISignaturable[]).concat(
-          ...namespaces.map((ns) => ns.getAllSignatures())
-        );
-        assert.strictEqual(signatures.length, 3);
+        const namespace = SourceParser.parseRootNamespace(testData);
+        const functions = namespace.functions;
+        assert.strictEqual(functions.length, 3);
 
-        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: [],
-              signature: `fncName(${argWithoutSpaces})`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
+        assert.ok(compareFunctions(functions[0], "fncName", arg, "int"));
+        assert.ok(
+          compareFunctions(
+            functions[1],
+            "fncName2",
+            arg,
+            "std::shared_ptr<int>"
+          )
         );
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: [],
-              signature: `fncName2(${argWithoutSpaces})const`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
-        );
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: [],
-              signature: `fncName3(${argWithoutSpaces})`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
+        assert.ok(
+          compareFunctions(
+            functions[2],
+            "namespace::namespace2::TestClass::fncName3",
+            arg,
+            "const int*"
+          )
         );
       }
     );
   });
 
-  describe("ParseStandaloneSingleSignatureWithBody", function () {
+  describe("Parse standalone single defintion with body containing brackets", function () {
     callItAsync(
       "With function arguments ${value}",
       argData,
@@ -87,180 +74,39 @@ suite("Parser Source Files Tests", () => {
             if (working) {
             }}`;
         const testData = TextFragment.createFromString(testStr);
-        const namespaces = SourceParser.parseNamespaces(testData);
-        const signatures = ([] as ISignaturable[]).concat(
-          ...namespaces.map((ns) => ns.getAllSignatures())
-        );
-        assert.strictEqual(signatures.length, 1);
-
-        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
-
-        assert.strictEqual(
-          signatures[0].signature,
-          `fncName(${argWithoutSpaces})`
-        );
-        assert.deepStrictEqual(signatures[0].namespaces, []);
-        assert.strictEqual(signatures[0].textScope.scopeStart, 0);
-        assert.strictEqual(
-          signatures[0].textScope.scopeEnd,
-          testStr.length - 1
-        );
-        assert.strictEqual(signatures[0].content, testStr);
+        const namespace = SourceParser.parseRootNamespace(testData);
+        const functions = namespace.functions;
+        assert.strictEqual(functions.length, 1);
+        assert.ok(compareFunctions(functions[0], "fncName", arg, "int"));
       }
     );
   });
 
-  describe("ParseMemberFunctionSignature", function () {
-    callItAsync(
-      "With function arguments ${value}",
-      argData,
-      async function (arg: string) {
-        const testData = TextFragment.createFromString(
-          `
-            int TestClass::fncName(${arg}) {
-                //FUNCTION BODY
-            }
-            std::shared_ptr<int> TestClass::fncName2(${arg})  const {
-                //FUNCTION BODY
-            }
-            const int* TestClass::fncName3(${arg}) {
-                //FUNCTION BODY
-            }
-        `
-        );
-        const namespaces = SourceParser.parseNamespaces(testData);
-        const signatures = ([] as ISignaturable[]).concat(
-          ...namespaces.map((ns) => ns.getAllSignatures())
-        );
-        assert.strictEqual(signatures.length, 3);
-
-        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: ["TestClass"],
-              signature: `fncName(${argWithoutSpaces})`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
-        );
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: ["TestClass"],
-              signature: `fncName2(${argWithoutSpaces})const`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
-        );
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: ["TestClass"],
-              signature: `fncName3(${argWithoutSpaces})`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
-        );
-      }
-    );
-  });
-
-  describe("FunctionSignatureHasCorrectTextScope", function () {
+  describe("Definition has correct text scope", function () {
     callItAsync(
       "With function arguments ${value}",
       argData,
       async function (arg: string) {
         const testDataStr = `
-        int TestClass::fncName(${arg}) {
+        int fncName(${arg}) {
             //FUNCTION BODY
         }
-        
+
         syncData TestClass::anotherFnc(){}`;
         const testData = TextFragment.createFromString(testDataStr);
-        const namespaces = SourceParser.parseNamespaces(testData);
-        const signatures = ([] as ISignaturable[]).concat(
-          ...namespaces.map((ns) => ns.getAllSignatures())
-        );
-        assert.strictEqual(signatures.length, 2);
+        const namespace = SourceParser.parseRootNamespace(testData);
+        const functions = namespace.functions;
+        assert.strictEqual(functions.length, 2);
 
         const sigStart = testDataStr.indexOf("int");
         const sigEnd = testDataStr.indexOf("syncData") - 1;
-        assert.strictEqual(signatures[0].textScope.scopeStart, sigStart);
-        assert.strictEqual(signatures[0].textScope.scopeEnd, sigEnd);
+        assert.strictEqual(functions[0].scopeStart, sigStart);
+        assert.strictEqual(functions[0].scopeEnd, sigEnd);
       }
     );
   });
 
-  describe("ParseExplicitNamespaceSignature", function () {
-    callItAsync(
-      "With function arguments ${value}",
-      argData,
-      async function (arg: string) {
-        const testData = TextFragment.createFromString(
-          `
-            int namespace::TestClass::fncName(${arg}) {
-                //FUNCTION BODY
-            }
-            std::shared_ptr<int> namespace::standAloneFnc(${arg})  const {
-                //FUNCTION BODY
-            }
-            const int* namespace::namespace2::TestClass::fncName2(${arg}) {
-                //FUNCTION BODY
-            }
-        `
-        );
-        const namespaces = SourceParser.parseNamespaces(testData);
-        const signatures = ([] as ISignaturable[]).concat(
-          ...namespaces.map((ns) => ns.getAllSignatures())
-        );
-        assert.strictEqual(signatures.length, 3);
-
-        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: ["namespace", "TestClass"],
-              signature: `fncName(${argWithoutSpaces})`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
-        );
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: ["namespace"],
-              signature: `standAloneFnc(${argWithoutSpaces})const`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
-        );
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: ["namespace", "namespace2", "TestClass"],
-              signature: `fncName2(${argWithoutSpaces})`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
-        );
-      }
-    );
-  });
-
-  describe("ParseImplicitNamespaceSignature", function () {
+  describe("Parse definitions within namespace", function () {
     callItAsync(
       "With function arguments ${value}",
       argData,
@@ -275,96 +121,97 @@ suite("Parser Source Files Tests", () => {
                     //FUNCTION BODY
                 }
 
-            namespace namespaceName2 {
-                const int* TestClass::fncName2(${arg}) {
-                    //FUNCTION BODY
-                }
+              namespace namespaceName2 {
+                  const int* TestClass::fncName2(${arg}) {
+                      //FUNCTION BODY
+                  }
 
             }}
         `
         );
         const namespaces = SourceParser.parseNamespaces(testData);
-        const signatures = ([] as ISignaturable[]).concat(
-          ...namespaces.map((ns) => ns.getAllSignatures())
-        );
-        assert.strictEqual(signatures.length, 3);
+        assert.strictEqual(namespaces.length, 1);
 
-        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: ["namespaceName", "TestClass"],
-              signature: `fncName(${argWithoutSpaces})`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
+        let namespace = namespaces[0];
+        let functions = namespace.functions;
+        assert.strictEqual(functions.length, 2);
+
+        assert.ok(
+          compareFunctions(functions[0], "TestClass::fncName", arg, "int")
         );
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: ["namespaceName"],
-              signature: `standAloneFnc(${argWithoutSpaces})const`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
+        assert.ok(
+          compareFunctions(
+            functions[1],
+            "standAloneFnc",
+            arg,
+            "std::shared_ptr<int>"
+          )
         );
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: ["namespaceName", "namespaceName2", "TestClass"],
-              signature: `fncName2(${argWithoutSpaces})`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
+        assert.strictEqual(namespace.subnamespaces.length, 1);
+
+        namespace = namespace.subnamespaces[0];
+        functions = namespace.functions;
+        assert.strictEqual(functions.length, 1);
+
+        assert.ok(
+          compareFunctions(
+            functions[0],
+            "TestClass::fncName2",
+            arg,
+            "const int*"
+          )
         );
       }
     );
   });
 
-  describe("ParseImplicitAndExplicitNamespaceSignature", function () {
+  describe("Parse definitions with and without namespace", function () {
     callItAsync(
       "With function arguments ${value}",
       argData,
       async function (arg: string) {
         const testData = TextFragment.createFromString(
           `
-            namespace namespaceName {
-                int namespaceName2::TestClass::fncName(${arg}) {
+          std::shared_ptr<int> standAloneFnc(${arg})  const {
+              //FUNCTION BODY
+          }
+          namespace namespaceName {
+                int TestClass::fncName(${arg}) {
                     //FUNCTION BODY
                 }
 
-            }}
+          }
         `
         );
         const namespaces = SourceParser.parseNamespaces(testData);
-        const signatures = ([] as ISignaturable[]).concat(
-          ...namespaces.map((ns) => ns.getAllSignatures())
-        );
-        assert.strictEqual(signatures.length, 1);
+        assert.strictEqual(namespaces.length, 1);
 
-        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: ["namespaceName", "namespaceName2", "TestClass"],
-              signature: `fncName(${argWithoutSpaces})`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
+        let namespace = namespaces[0];
+        let functions = namespace.functions;
+        assert.strictEqual(functions.length, 1);
+
+        assert.ok(
+          compareFunctions(functions[0], "TestClass::fncName", arg, "int")
+        );
+        assert.strictEqual(namespace.subnamespaces.length, 0);
+
+        namespace = SourceParser.parseRootNamespace(testData);
+        functions = namespace.functions;
+        assert.strictEqual(functions.length, 1);
+        assert.strictEqual(namespace.subnamespaces.length, 0);
+        assert.ok(
+          compareFunctions(
+            functions[0],
+            "standAloneFnc",
+            arg,
+            "std::shared_ptr<int>"
+          )
         );
       }
     );
   });
 
-  describe("ParseConstructorSignature", function () {
+  describe("Parse constructor definition as standalone function", function () {
     callItAsync(
       "With arguments ${value}",
       argData,
@@ -376,29 +223,18 @@ suite("Parser Source Files Tests", () => {
             }
         `
         );
-        const namespaces = SourceParser.parseNamespaces(testData);
-        const signatures = ([] as ISignaturable[]).concat(
-          ...namespaces.map((ns) => ns.getAllSignatures())
-        );
-        assert.strictEqual(signatures.length, 1);
+        const namespace = SourceParser.parseRootNamespace(testData);
+        let functions = namespace.functions;
+        assert.strictEqual(functions.length, 1);
 
-        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: ["ClassName"],
-              signature: `ClassName(${argWithoutSpaces})`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
+        assert.ok(
+          compareFunctions(functions[0], "ClassName::ClassName", arg, "")
         );
       }
     );
   });
 
-  describe("ParseConstructorWithInitializerListSignature", function () {
+  describe("Parse constructor definition with initializer list", function () {
     callItAsync(
       "With arguments ${value}",
       argData,
@@ -413,63 +249,18 @@ suite("Parser Source Files Tests", () => {
             }
         `
         );
-        const namespaces = SourceParser.parseNamespaces(testData);
-        const signatures = ([] as ISignaturable[]).concat(
-          ...namespaces.map((ns) => ns.getAllSignatures())
-        );
-        assert.strictEqual(signatures.length, 1);
+        const namespace = SourceParser.parseRootNamespace(testData);
+        let functions = namespace.functions;
+        assert.strictEqual(functions.length, 1);
 
-        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: ["ClassName"],
-              signature: `ClassName(${argWithoutSpaces})`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
+        assert.ok(
+          compareFunctions(functions[0], "ClassName::ClassName", arg, "")
         );
       }
     );
   });
 
-  describe("ParseConstructorWithExplicitNamespaceSignature", function () {
-    callItAsync(
-      "With arguments ${value}",
-      argData,
-      async function (arg: string) {
-        const testData = TextFragment.createFromString(
-          `
-            namespace::ClassName::ClassName(${arg}) {
-                //CTOR BODY
-            }
-        `
-        );
-        const namespaces = SourceParser.parseNamespaces(testData);
-        const signatures = ([] as ISignaturable[]).concat(
-          ...namespaces.map((ns) => ns.getAllSignatures())
-        );
-        assert.strictEqual(signatures.length, 1);
-
-        const argWithoutSpaces = `${arg}`.replace(/\s/g, "");
-        assert.strictEqual(
-          signatures.filter((sig) =>
-            compareSignaturables(sig, {
-              namespaces: ["namespace", "ClassName"],
-              signature: `ClassName(${argWithoutSpaces})`,
-              textScope: new TextScope(0, 0),
-              content: "",
-            })
-          ).length,
-          1
-        );
-      }
-    );
-  });
-
-  test("ParseDestructorSignature", () => {
+  test("Parse destructor definition", () => {
     const testData = TextFragment.createFromString(
       `
             ClassName::~ClassName() {
@@ -477,47 +268,26 @@ suite("Parser Source Files Tests", () => {
             }
         `
     );
-    const namespaces = SourceParser.parseNamespaces(testData);
-    const signatures = ([] as ISignaturable[]).concat(
-      ...namespaces.map((ns) => ns.getAllSignatures())
-    );
-    assert.strictEqual(signatures.length, 1);
-    assert.strictEqual(
-      signatures.filter((sig) =>
-        compareSignaturables(sig, {
-          namespaces: ["ClassName"],
-          signature: `~ClassName()`,
-          textScope: new TextScope(0, 0),
-          content: "",
-        })
-      ).length,
-      1
-    );
+    const namespace = SourceParser.parseRootNamespace(testData);
+    let functions = namespace.functions;
+    assert.strictEqual(functions.length, 1);
+
+    assert.ok(compareFunctions(functions[0], "ClassName::~ClassName", "", ""));
   });
 
-  test("ParseDestructorWithExplicitNamespaceSignature", () => {
+  test("Ignore static assignments", function () {
     const testData = TextFragment.createFromString(
       `
-            namespace::ClassName::~ClassName() {
-                //BODY
-            }
-        `
+        const utils::JsonDelimiter JsonObject::DELIM(LIM_OBJECT_L, LIM_OBJECT_R);
+        int fncName() {
+            //FUNCTION BODY
+        }
+    `
     );
-    const namespaces = SourceParser.parseNamespaces(testData);
-    const signatures = ([] as ISignaturable[]).concat(
-      ...namespaces.map((ns) => ns.getAllSignatures())
-    );
-    assert.strictEqual(signatures.length, 1);
-    assert.strictEqual(
-      signatures.filter((sig) =>
-        compareSignaturables(sig, {
-          namespaces: ["namespace", "ClassName"],
-          signature: `~ClassName()`,
-          textScope: new TextScope(0, 0),
-          content: "",
-        })
-      ).length,
-      1
-    );
+    const namespace = SourceParser.parseRootNamespace(testData);
+    const functions = namespace.functions;
+    assert.strictEqual(functions.length, 1);
+
+    assert.ok(compareFunctions(functions[0], "fncName", "", "int"));
   });
 });

@@ -1,175 +1,223 @@
 import * as cpp from "./cpp";
 import * as io from "./io";
 import * as vscode from "vscode";
-import { ISourceFileNamespace } from "./io";
+import { IFileMerger, FileMergerOptions } from "./IFileMerger";
+import { flatten } from "lodash";
 import {
-  CommonFileMerger,
-  FileMergerOptions,
-  InsertedText,
-} from "./CommonFileMerger";
+  Difference,
+  TextDocumentScopeAdder,
+  TextDocumentScopeDeleter,
+} from "./TextDocumentDifference";
 
-//TODO => utils.ts
-function flatten2dArray<T>(array: T[][]): T[] {
-  return ([] as T[]).concat(...array);
-}
+export class SourceFileMerger implements IFileMerger {
+  private _scopeAdder: TextDocumentScopeAdder;
+  private _scopeDeleter?: TextDocumentScopeDeleter;
+  private _existingSourceFile: cpp.SourceFile;
 
-interface NamespacePair {
-  generated: ISourceFileNamespace;
-  existing: ISourceFileNamespace;
-}
-
-//TODO options
-export class SourceFileMerger extends CommonFileMerger {
   constructor(
     options: FileMergerOptions,
-    private _filePath: string,
-    generatedSourceFileContent: string
+    private readonly _generatedHeaderFile: cpp.HeaderFile,
+    existingDocument: vscode.TextDocument,
+    edit: vscode.WorkspaceEdit,
+    private readonly _serializeOptions: io.SerializationOptions
   ) {
-    super(options);
-    this._generatedSourceFile = new cpp.SourceFile(
-      _filePath,
-      generatedSourceFileContent
-    );
-  }
-
-  merge(existingDocument: vscode.TextDocument, edit: vscode.WorkspaceEdit) {
-    const text = existingDocument.getText();
-    const existingSourceFile = new cpp.SourceFile(this._filePath, text);
-
-    const existingSignatures = flatten2dArray(
-      existingSourceFile.namespaces.map((ns) => ns.getAllSignatures())
+    this._scopeAdder = new TextDocumentScopeAdder(
+      existingDocument,
+      edit,
+      this._serializeOptions,
+      options.skipConfirmAdding
     );
 
-    const generatedSignatures = flatten2dArray(
-      this._generatedSourceFile.namespaces.map((ns) => ns.getAllSignatures())
-    );
-
-    if (!this._options.disableRemoving) {
-      this.checkRemovedDefinitions(
-        existingSignatures,
-        generatedSignatures,
-        existingSourceFile,
+    if (options.disableRemoving !== true) {
+      this._scopeDeleter = new TextDocumentScopeDeleter(
         existingDocument,
-        edit
+        edit,
+        options.skipConfirmRemoving
       );
     }
-    const namespacesWithAddedSignatures: ISourceFileNamespace[] = [
-      ...this._generatedSourceFile.namespaces,
-    ].filter((generatedNamespace) => {
-      generatedNamespace.removeContaining(existingSignatures);
-      return !generatedNamespace.isEmpty();
-    });
 
-    this.mergeOrAddNamespaces(
-      edit,
-      existingDocument,
-      namespacesWithAddedSignatures,
-      existingSourceFile.namespaces,
-      text.length
+    const text = existingDocument.getText();
+    this._existingSourceFile = new cpp.SourceFile(
+      existingDocument.fileName,
+      text
     );
   }
 
-  private checkRemovedDefinitions(
-    existingSignatures: io.ISignaturable[],
-    generatedSignatures: io.ISignaturable[],
-    existingSourceFile: cpp.SourceFile,
-    existingDocument: vscode.TextDocument,
-    edit: vscode.WorkspaceEdit
+  merge() {
+    this.mergeNamespaceWith(
+      this._existingSourceFile.rootNamespace,
+      this._generatedHeaderFile.rootNamespace,
+      (scope: io.TextScope, ...addedSerializables: io.ISerializable[]) =>
+        this._scopeAdder.addTextAfterScope(scope, ...addedSerializables)
+    );
+  }
+
+  private mergeNamespace(
+    existingNamespace: cpp.INamespace,
+    generatedNamespace: cpp.INamespace
   ) {
-    let removedSignatures = existingSignatures.filter(
-      (existingSignature) =>
-        !generatedSignatures.some((generatedSignature) =>
-          io.compareSignaturables(generatedSignature, existingSignature)
-        )
-    );
-    let namespacesToBeRemoved: ISourceFileNamespace[] = [
-      ...existingSourceFile.namespaces,
-    ];
-    namespacesToBeRemoved.forEach((existingNamespace) =>
-      existingNamespace.removeContaining(removedSignatures)
-    );
-    namespacesToBeRemoved = namespacesToBeRemoved.filter((existingNamespace) =>
-      existingNamespace.isEmpty()
-    );
-
-    removedSignatures = removedSignatures.filter(
-      (signature) =>
-        !namespacesToBeRemoved.some((removedNamespace) =>
-          removedNamespace.fullyContains(signature.textScope)
-        )
-    );
-    this.deleteTextScope(
-      edit,
-      existingDocument,
-      ...namespacesToBeRemoved,
-      ...removedSignatures.map((signature) => signature.textScope)
+    this.mergeNamespaceWith(
+      existingNamespace,
+      generatedNamespace,
+      (scope: io.TextScope, ...addedSerializables: io.ISerializable[]) =>
+        this._scopeAdder.addTextWithinScope(scope, ...addedSerializables)
     );
   }
 
-  private mergeOrAddNamespaces(
-    edit: vscode.WorkspaceEdit,
-    textDocument: vscode.TextDocument,
-    namespacesWithAddedSignatures: ISourceFileNamespace[],
-    existingNamespaces: ISourceFileNamespace[],
-    addContentAt: number
+  private mergeNamespaceWith(
+    existingNamespace: cpp.INamespace,
+    generatedNamespace: cpp.INamespace,
+    adderFunction: (
+      scope: io.TextScope,
+      ...addedSerializables: io.ISerializable[]
+    ) => void
   ) {
-    const addedNamespaces = namespacesWithAddedSignatures.filter(
-      (generatedNamespace) => {
-        return existingNamespaces.every(
-          (existingNamespace) =>
-            existingNamespace.name !== generatedNamespace.name
-        );
-      }
+    const subNamespaceDiff = this.createNamespaceDiff(
+      existingNamespace.subnamespaces,
+      generatedNamespace.subnamespaces
+    );
+    const definitionDiff = this.createDefintionDiff(
+      existingNamespace.functions,
+      generatedNamespace.functions,
+      generatedNamespace.classes
     );
 
-    const mergedNamespacePairs = namespacesWithAddedSignatures.reduce<
-      NamespacePair[]
-    >((acc, generatedNamespace) => {
-      const existingMatch = existingNamespaces.find(
-        (existingNamespace) =>
-          existingNamespace.name === generatedNamespace.name
-      );
-      if (existingMatch) {
-        return acc.concat({
-          generated: generatedNamespace,
-          existing: existingMatch,
-        });
-      }
-      return acc;
-    }, []);
+    adderFunction(
+      existingNamespace,
+      ...definitionDiff.added,
+      ...subNamespaceDiff.added
+    );
 
-    const addedFunctionContent: InsertedText[] = [];
-    mergedNamespacePairs.forEach((mergedNamespacePair) => {
-      addedFunctionContent.push(
-        ...mergedNamespacePair.generated.signatures.map((signature) => {
-          return {
-            where: mergedNamespacePair.existing.scopeEnd,
-            content: `\n${signature.content}`,
-          };
-        })
-      );
-      // yeah yet another recursion.
-      if (!mergedNamespacePair.generated.subnamespaces.length) {
-        return;
-      }
-      this.mergeOrAddNamespaces(
-        edit,
-        textDocument,
-        mergedNamespacePair.generated.subnamespaces,
-        mergedNamespacePair.existing.subnamespaces,
-        mergedNamespacePair.existing.scopeEnd
-      );
-    });
+    this._scopeDeleter?.deleteTextScope(
+      ...definitionDiff.removed,
+      ...subNamespaceDiff.removed
+    );
 
-    this.addTextScopeContent(
-      edit,
-      textDocument,
-      ...addedFunctionContent,
-      ...addedNamespaces.map((namespace) => {
-        return { where: addContentAt, content: `\n${namespace.serialize()}` };
-      })
+    subNamespaceDiff.changed.forEach((namespacePair) =>
+      this.mergeNamespace(namespacePair.existing, namespacePair.generated)
     );
   }
 
-  private _generatedSourceFile: cpp.SourceFile;
+  private createNamespaceDiff(
+    existingNamespaces: cpp.INamespace[],
+    generatedNamespaces: cpp.INamespace[]
+  ) {
+    const generatedNonEmptyNamespaces = generatedNamespaces.filter(
+      (namespace) => !this.isNamespaceEmpty(namespace)
+    );
+    const diff = this.createDiff(
+      existingNamespaces,
+      generatedNonEmptyNamespaces
+    );
+    return diff;
+  }
+
+  private isNamespaceEmpty(namespace: cpp.INamespace): boolean {
+    return (
+      (!namespace.functions.length &&
+        !namespace.classes.length &&
+        !namespace.subnamespaces.length) ||
+      namespace.serialize(this._serializeOptions).isEmpty() // TODO this might be quite inefficent => find a better way
+    );
+  }
+
+  private createDefintionDiff(
+    existingFunctions: cpp.IFunction[],
+    generatedFunctions: cpp.IFunction[],
+    generatedClasses: cpp.IClass[]
+  ): Difference<cpp.IDefinition> {
+    const existingDefinitions = existingFunctions.map((fnct) =>
+      cpp.SourceFileDefinition.createFromFunction(fnct, [])
+    );
+    const generatedDefinitions = flatten(
+      generatedClasses.map((cl) =>
+        this.extractDefinitionsFromClass(cl, this._serializeOptions.mode)
+      )
+    );
+    generatedDefinitions.push(
+      ...generatedFunctions.map((fnct) =>
+        cpp.SourceFileDefinition.createFromFunction(fnct, [])
+      )
+    );
+
+    return new Difference(
+      existingDefinitions,
+      generatedDefinitions,
+      this._serializeOptions
+    );
+  }
+
+  private extractDefinitionsFromClass(
+    cl: cpp.IClass,
+    mode: io.SerializableMode,
+    namespaceNames: string[] = [],
+    parentClassNames: string[] = []
+  ): cpp.IDefinition[] {
+    const className = mode ? cl.getName(mode) : cl.name;
+    const classNames = [...parentClassNames, className];
+    const definitions: cpp.IDefinition[] = [];
+
+    definitions.push(
+      ...flatten(
+        [cl.privateScope, cl.protectedScope, cl.publicScope].map((scope) =>
+          this.extractDefinitionsFromClassScope(
+            scope,
+            namespaceNames,
+            classNames,
+            mode
+          )
+        )
+      )
+    );
+
+    return definitions;
+  }
+
+  private extractDefinitionsFromClassScope(
+    scope: cpp.IClassScope,
+    namespaceNames: string[],
+    classNames: string[],
+    mode: io.SerializableMode
+  ): cpp.IDefinition[] {
+    const definitions: cpp.IDefinition[] = scope.constructors.map((ctor) =>
+      cpp.SourceFileDefinition.createFromConstructor(
+        ctor,
+        namespaceNames,
+        classNames
+      )
+    );
+    if (scope.destructor) {
+      definitions.push(
+        cpp.SourceFileDefinition.createFromDestructor(
+          scope.destructor,
+          namespaceNames,
+          classNames
+        )
+      );
+    }
+    definitions.push(
+      ...scope.memberFunctions.map((fnct) =>
+        cpp.SourceFileDefinition.createFromMemberFunction(
+          fnct,
+          namespaceNames,
+          classNames
+        )
+      )
+    );
+    definitions.push(
+      ...flatten(
+        scope.nestedClasses.map((cl) =>
+          this.extractDefinitionsFromClass(cl, mode, namespaceNames, classNames)
+        )
+      )
+    );
+    return definitions;
+  }
+
+  private createDiff<T extends cpp.Comparable<T>>(
+    existing: T[],
+    generated: T[]
+  ) {
+    return new Difference(existing, generated, this._serializeOptions);
+  }
 }

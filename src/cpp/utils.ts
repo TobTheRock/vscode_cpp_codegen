@@ -1,5 +1,21 @@
 import * as io from "../io";
 
+export function joinRegexStringsWithFiller(
+  strings: string[],
+  filler: string
+): string {
+  let joinedStrings = "";
+  for (let index = 0; index < strings.length - 1; index++) {
+    joinedStrings += strings[index] + filler;
+  }
+
+  return joinedStrings + strings[strings.length - 1];
+}
+
+export function joinRegexStringsWithWhiteSpace(...strings: string[]): string {
+  return joinRegexStringsWithFiller(strings, "\\s*");
+}
+
 export function removeDefaultInitializersFromArgs(args: string): string {
   const defaultArgumentRegex = "\\s*=(?:(?!,)[\\s\\S])+";
   const regexMatcherCurlyBracket = new io.RemovingRegexWithBodyMatcher(

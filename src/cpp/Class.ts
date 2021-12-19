@@ -4,13 +4,14 @@ import {
   IConstructor,
   IDestructor,
   IClassScope,
+  IParser,
 } from "./TypeInterfaces";
-import { HeaderParser } from "../io/HeaderParser";
 import * as io from "../io";
 import { joinNameScopesWithFunctionName, joinNameScopes } from "./utils";
 import { ClassNameGenerator } from "./ClassNameGenerator";
-import * as vscode from "vscode";
 import { asyncForEach } from "../utils";
+import { compact } from "lodash";
+import { ISerializable } from "../io";
 
 function getCtorDtorImplName(
   classNameProvider: io.IClassNameProvider,
@@ -42,30 +43,31 @@ export class ClassConstructor extends io.TextScope implements IConstructor {
     return this.args === other.args;
   }
 
-  serialize(options: io.SerializationOptions): string {
-    let serial = "";
+  serialize(options: io.SerializationOptions): io.Text {
+    const args = `(${this.args})`;
+    const text = io.Text.createEmpty(options.indentStep);
     switch (options.mode) {
       case io.SerializableMode.header:
       case io.SerializableMode.implHeader:
-        serial =
-          this._classNameProvider.getClassName(options.mode, true) +
-          "(" +
-          this.args +
-          ");";
+        text.addLine(
+          this._classNameProvider.getClassName(options.mode, true) + args + ";"
+        );
         break;
 
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
-        serial =
+        text.addLine(
           getCtorDtorImplName(this._classNameProvider, options, false) +
-          "(" +
-          this.args +
-          ") {\n}";
+            args +
+            " {"
+        );
+        text.addLine("}");
         break;
       case io.SerializableMode.interfaceHeader:
         break;
     }
-    return serial;
+
+    return text;
   }
 }
 
@@ -81,164 +83,200 @@ export class ClassDestructor extends io.TextScope implements IDestructor {
     return this.virtual === other.virtual;
   }
 
-  serialize(options: io.SerializationOptions): string {
-    let serial = "";
+  serialize(options: io.SerializationOptions): io.Text {
+    const className = this._classNameProvider.getClassName(options.mode, true);
+    const text = io.Text.createEmpty(options.indentStep);
     switch (options.mode) {
       case io.SerializableMode.header:
       case io.SerializableMode.interfaceHeader:
-        serial += this.virtual ? "virtual " : "";
-        serial +=
-          "~" +
-          this._classNameProvider.getClassName(options.mode, true) +
-          "();";
+        text.addLine((this.virtual ? "virtual " : "") + `~${className}();`);
         break;
       case io.SerializableMode.implHeader:
-        serial =
-          "~" +
-          this._classNameProvider.getClassName(options.mode, true) +
-          " ()";
-        serial += this.virtual ? " override;\n" : ";\n";
+        text.addLine(`~${className}()` + (this.virtual ? " override;" : ";"));
         break;
 
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
-        serial =
-          getCtorDtorImplName(this._classNameProvider, options, true) +
-          "() {\n}";
-        break;
+        text.addLine(
+          getCtorDtorImplName(this._classNameProvider, options, true)
+        );
+        text.add("() {");
+        text.addLine("}");
     }
-    return serial;
+    return text;
   }
 }
 
-class ClassScopeBase implements IClassScope {
+abstract class ClassScopeBase implements IClassScope {
+  destructor?: IDestructor;
+  readonly memberFunctions: IFunction[] = [];
+  readonly nestedClasses: IClass[] = [];
+  readonly constructors: IConstructor[] = [];
+
   constructor(private readonly _classNameProvider: io.IClassNameProvider) {}
 
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
+  protected extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
     throw new Error("Unimplemented!");
   }
 
-  getScopeHeader(): string {
+  protected getScopeHeader(): string {
     throw new Error("Unimplemented!");
   }
 
-  deserialize(data: io.TextFragment) {
-    let content: io.TextFragment = this.extractScopeTextFragment(data);
+  deserialize(data: io.TextFragment, parser: IParser) {
+    let content: io.TextFragment = this.extractScopeTextFragment(data, parser);
     this.nestedClasses.push(
-      ...HeaderParser.parseClasses(content, this._classNameProvider)
+      ...parser.parseClasses(content, this._classNameProvider)
     );
+    const dtors = parser.parseClassDestructors(
+      content,
+      this._classNameProvider
+    );
+    if (dtors.length > 0) {
+      this.destructor = dtors[0];
+    }
     this.constructors.push(
-      ...HeaderParser.parseClassConstructor(content, this._classNameProvider)
+      ...parser.parseClassConstructors(content, this._classNameProvider)
     );
     this.memberFunctions.push(
-      ...HeaderParser.parseClassMemberFunctions(
-        content,
-        this._classNameProvider
-      )
+      ...parser.parseClassMemberFunctions(content, this._classNameProvider)
     );
   }
 
-  serialize(options: io.SerializationOptions) {
+  serialize(options: io.SerializationOptions): io.Text {
+    const text = io.Text.createEmpty(options.indentStep);
     if (
       !this.constructors.length &&
       !this.nestedClasses.length &&
       !this.memberFunctions.length
     ) {
-      return "";
+      return text;
     }
 
-    let serial = "";
-    let arrayPrefix = "";
-    let arraySuffix = "";
     switch (options.mode) {
       case io.SerializableMode.header:
       case io.SerializableMode.interfaceHeader:
       case io.SerializableMode.implHeader:
-        serial += this.getScopeHeader();
-        arrayPrefix = "\t";
-        arraySuffix = "\n";
-        break;
+        return this.serializeDeclarations(options, text);
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
       default:
-        arraySuffix = "\n\n";
-        break;
+        return this.serializeDefinitions(options, text);
     }
-    serial += io.serializeArray(
-      this.constructors,
-      options,
-      arrayPrefix,
-      arraySuffix
-    );
-    serial += io.serializeArray(this.nestedClasses, options, arrayPrefix); // TODO formatting not working for multiline
-    serial += io.serializeArray(
-      this.memberFunctions,
-      options,
-      arrayPrefix,
-      arraySuffix
-    );
-
-    return serial;
   }
 
-  readonly memberFunctions: IFunction[] = [];
-  readonly nestedClasses: IClass[] = [];
-  readonly constructors: IConstructor[] = [];
+  private serializeDeclarations(
+    options: io.SerializationOptions,
+    text: io.Text
+  ): io.Text {
+    text.addLine(this.getScopeHeader());
+
+    const serializedMembers = io.serializeArray(
+      this.getSerializableMembers(),
+      options
+    );
+    text.append(serializedMembers, 1);
+
+    return text;
+  }
+
+  private serializeDefinitions(
+    options: io.SerializationOptions,
+    text: io.Text
+  ): io.Text {
+    const serializedMembers = io.serializeArrayWithNewLineSeperation(
+      this.getSerializableMembers(),
+      options
+    );
+    text.append(serializedMembers);
+
+    return text;
+  }
+
+  private getSerializableMembers(): ISerializable[] {
+    return compact([
+      ...this.constructors,
+      this.destructor,
+      ...this.memberFunctions,
+      ...this.nestedClasses,
+    ]);
+  }
 }
 
 class ClassPrivateScope extends ClassScopeBase {
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
-    return HeaderParser.parseClassPrivateScope(data);
+  protected extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
+    return parser.parseClassPrivateScope(data);
   }
 
-  getScopeHeader(): string {
-    return "private:\n";
+  protected getScopeHeader(): string {
+    return "private:";
   }
 }
 class ClassPublicScope extends ClassScopeBase {
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
-    return HeaderParser.parseClassPublicScope(data);
+  protected extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
+    return parser.parseClassPublicScope(data);
   }
 
-  getScopeHeader(): string {
-    return "public:\n";
+  protected getScopeHeader(): string {
+    return "public:";
   }
 }
 class ClassProtectedScope extends ClassScopeBase {
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
-    return HeaderParser.parseClassProtectedScope(data);
+  protected extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
+    return parser.parseClassProtectedScope(data);
   }
 
-  getScopeHeader(): string {
-    return "protected:\n";
+  protected getScopeHeader(): string {
+    return "protected:";
   }
 }
 
 class StructPrivateScope extends ClassScopeBase {
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
-    return HeaderParser.parseStructPrivateScope(data);
+  protected extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
+    return parser.parseStructPrivateScope(data);
   }
 
-  getScopeHeader(): string {
-    return "private:\n";
+  protected getScopeHeader(): string {
+    return "private:";
   }
 }
 class StructPublicScope extends ClassScopeBase {
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
-    return HeaderParser.parseStructPublicScope(data);
+  protected extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
+    return parser.parseStructPublicScope(data);
   }
 
-  getScopeHeader(): string {
-    return "public:\n";
+  protected getScopeHeader(): string {
+    return "public:";
   }
 }
 class StructProtectedScope extends ClassScopeBase {
-  extractScopeTextFragment(data: io.TextFragment): io.TextFragment {
-    return HeaderParser.parseStructProtectedScope(data);
+  protected extractScopeTextFragment(
+    data: io.TextFragment,
+    parser: IParser
+  ): io.TextFragment {
+    return parser.parseStructProtectedScope(data);
   }
 
-  getScopeHeader(): string {
-    return "protected:\n";
+  protected getScopeHeader(): string {
+    return "protected:";
   }
 }
 
@@ -319,65 +357,71 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
     return new ClassScopeFactory(classNameProvider);
   }
 
-  deserialize(data: io.TextFragment) {
-    const dtors = HeaderParser.parseClassDestructors(
-      data,
-      this._classNameProvider
-    );
-
-    if (dtors.length >= 1) {
-      if (dtors.length > 1) {
-        vscode.window.showWarningMessage(
-          "Class " + this.name + " has multiple destructors!"
-        );
-      }
-      this.destructor = dtors[0];
-    }
-
-    this.publicScope.deserialize(data);
-    this.privateScope.deserialize(data);
-    this.protectedScope.deserialize(data);
+  deserialize(data: io.TextFragment, parser: IParser) {
+    this.publicScope.deserialize(data, parser);
+    this.privateScope.deserialize(data, parser);
+    this.protectedScope.deserialize(data, parser);
   }
 
-  serialize(options: io.SerializationOptions) {
-    let serial = "";
-    let suffix = "";
+  private serializeDefinitions(
+    text: io.Text,
+    options: io.SerializationOptions
+  ): io.Text {
+    return text.append(
+      io.serializeArrayWithNewLineSeperation(
+        this.getSerializableMembers(),
+        options
+      )
+    );
+  }
 
-    if (!this.acceptSerializableMode(options.mode)) {
-      return serial;
-    }
-
+  private serializeDeclarations(
+    text: io.Text,
+    options: io.SerializationOptions
+  ): io.Text {
     const serializedName = this._classNameGen.get(options);
+
+    return text
+      .addLine(this.getHeaderSerialStart(serializedName))
+      .append(io.serializeArray(this.getSerializableMembers(), options))
+      .addLine("};");
+  }
+
+  private serializeImplHeader(
+    text: io.Text,
+    options: io.SerializationOptions
+  ): io.Text {
+    const serializedName = this._classNameGen.get(options);
+
+    return text
+      .addLine(
+        this.getHeaderSerialStart(serializedName, ["public " + this.name])
+      )
+      .append(io.serializeArray(this.getSerializableMembers(), options))
+      .addLine("};");
+  }
+
+  private getSerializableMembers(): ISerializable[] {
+    return [this.publicScope, this.protectedScope, this.privateScope];
+  }
+
+  serialize(options: io.SerializationOptions): io.Text {
+    const text = io.Text.createEmpty(options.indentStep);
 
     switch (options.mode) {
       case io.SerializableMode.header:
       case io.SerializableMode.interfaceHeader:
-        serial += this.getHeaderSerialStart(serializedName);
-        suffix = "};";
-        break;
+        return this.serializeDeclarations(text, options);
       case io.SerializableMode.implHeader:
-        serial += this.getHeaderSerialStart(serializedName, [
-          "public " + this.name,
-        ]);
-        suffix = "};\n";
-        break;
+        return this.serializeImplHeader(text, options);
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
       default:
-        break;
+        return this.serializeDefinitions(text, options);
     }
-
-    if (this.destructor) {
-      serial += this.destructor.serialize(options) + "\n\n";
-    }
-    serial += this.publicScope.serialize(options);
-    serial += this.protectedScope.serialize(options);
-    serial += this.privateScope.serialize(options);
-    serial += suffix;
-    return serial;
   }
 
-  getHeaderSerialStart(
+  private getHeaderSerialStart(
     serializedName: string,
     inheritance: string[] = this.inheritance
   ) {
@@ -392,7 +436,7 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
       }
     });
 
-    serial += " {\n";
+    serial += " {";
 
     return serial;
   }
@@ -400,7 +444,6 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
   readonly publicScope: IClassScope;
   readonly privateScope: IClassScope;
   readonly protectedScope: IClassScope;
-  destructor: IDestructor | undefined;
   private readonly _classNameGen: ClassNameGenerator;
   private _classNameProvider: io.IClassNameProvider;
 }

@@ -9,15 +9,11 @@ import * as io from "./io";
 import * as vscode from "vscode";
 import * as ui from "./ui";
 import * as path from "path";
-import {
-  IExtensionConfiguration,
-  DirectorySelectorMode,
-} from "./Configuration";
+import { IExtensionConfiguration, RefactoringPreview } from "./Configuration";
 import { asyncForEach, awaitMapEntries } from "./utils";
-import { flatten, compact } from "lodash";
-import { resolve } from "dns";
 import { HeaderFileMerger } from "./HeaderFileMerger";
-import { FileMergerOptions } from "./CommonFileMerger";
+import { FileMergerOptions } from "./IFileMerger";
+import { compact } from "lodash";
 
 interface SerializedContent {
   mode: io.SerializableMode;
@@ -72,14 +68,24 @@ class ImplementationNameHelper
 export class HeaderFileHandler {
   private _userInput: ui.UserInput;
   private _disableRemoveOnMerge = false;
+  private _indentStep: string;
 
   constructor(
     private readonly _headerFile: cpp.HeaderFile,
     private readonly _edit: vscode.WorkspaceEdit,
     private readonly _workspaceDirectoryFinder: WorkspaceDirectoryFinder,
-    private readonly _opt: IExtensionConfiguration
+    private readonly _config: IExtensionConfiguration
   ) {
     this._userInput = new ui.UserInput();
+    this._indentStep = this.getIndentStep();
+  }
+
+  private getIndentStep(): string {
+    const activeEditor = vscode.window.activeTextEditor;
+    const useSpaces = activeEditor?.options.insertSpaces;
+    const tabSize = activeEditor?.options.tabSize as number;
+
+    return useSpaces && tabSize ? " ".repeat(tabSize) : "\t";
   }
 
   async writeFileAs(...modes: io.SerializableMode[]) {
@@ -133,7 +139,7 @@ export class HeaderFileHandler {
     return this._userInput.registerElement(
       ui.DirectoryPicker,
       this._workspaceDirectoryFinder,
-      this._opt.outputDirectorySelector.mode,
+      this._config.outputDirectorySelector.mode,
       vscode.Uri.file(this._headerFile.directory)
     );
   }
@@ -145,10 +151,9 @@ export class HeaderFileHandler {
       this._userInput.registerElement(ui.InterfaceNamePicker, origName)
     );
 
-    const namesProvidePromise = asyncForEach(
-      this._headerFile.namespaces,
-      (namespace) => namespace.provideNames(helper, ...modes)
-    ).then(() => undefined);
+    const namesProvidePromise = this._headerFile.rootNamespace
+      .provideNames(helper, ...modes)
+      .then(() => undefined);
 
     return Promise.race([namesProvidePromise, helper.onFirstCall]);
   }
@@ -183,7 +188,7 @@ export class HeaderFileHandler {
       mode === io.SerializableMode.implHeader;
     const cannotDeduce = isImplMode && !firstImplementationNamePromise;
 
-    if (!this._opt.deduceOutputFileNames || cannotDeduce) {
+    if (!this._config.deduceOutputFileNames || cannotDeduce) {
       return this._userInput.registerElement(
         ui.FileNamePicker,
         this._headerFile.basename
@@ -218,7 +223,11 @@ export class HeaderFileHandler {
           outputDirectory.fsPath,
           zip.fileName
         );
-        const fileBody = this._headerFile.serialize({ mode, range: selection });
+        const fileBody = this._headerFile.serialize({
+          mode,
+          range: selection,
+          indentStep: this._indentStep,
+        });
         if (!fileBody) {
           return;
         }
@@ -242,11 +251,11 @@ export class HeaderFileHandler {
       case io.SerializableMode.header:
       case io.SerializableMode.interfaceHeader:
       case io.SerializableMode.implHeader:
-        fileName += "." + this._opt.outputFileExtension.forCppHeader;
+        fileName += "." + this._config.outputFileExtension.forCppHeader;
         break;
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
-        fileName += "." + this._opt.outputFileExtension.forCppSource;
+        fileName += "." + this._config.outputFileExtension.forCppSource;
         break;
     }
     return vscode.Uri.joinPath(outputDirectory, fileName);
@@ -260,7 +269,7 @@ export class HeaderFileHandler {
     let fileHeader: string;
     switch (mode) {
       case io.SerializableMode.implHeader:
-        fileHeader = this._opt.fileHeader.forCppHeader;
+        fileHeader = this._config.fileHeader.forCppHeader;
         fileHeader += this.createIncludeStatements(
           outputDirectory,
           this._headerFile.getPath()
@@ -268,20 +277,20 @@ export class HeaderFileHandler {
         break;
       case io.SerializableMode.header:
       case io.SerializableMode.interfaceHeader:
-        fileHeader = this._opt.fileHeader.forCppHeader;
+        fileHeader = this._config.fileHeader.forCppHeader;
         break;
       case io.SerializableMode.source:
-        fileHeader = this._opt.fileHeader.forCppSource;
+        fileHeader = this._config.fileHeader.forCppSource;
         fileHeader += this.createIncludeStatements(
           outputDirectory,
           this._headerFile.getPath()
         );
         break;
       case io.SerializableMode.implSource:
-        fileHeader = this._opt.fileHeader.forCppSource;
+        fileHeader = this._config.fileHeader.forCppSource;
         const include = path.join(
           outputDirectory,
-          outputFileName + "." + this._opt.outputFileExtension.forCppHeader
+          outputFileName + "." + this._config.outputFileExtension.forCppHeader
         );
         fileHeader += this.createIncludeStatements(outputDirectory, include);
         break;
@@ -340,16 +349,29 @@ export class HeaderFileHandler {
   ) {
     const mergerOptions: FileMergerOptions = {
       disableRemoving: this._disableRemoveOnMerge,
+      skipConfirmAdding:
+        this._config.refactoringPreview === RefactoringPreview.never ||
+        this._config.refactoringPreview === RefactoringPreview.deletion,
+      skipConfirmRemoving:
+        this._config.refactoringPreview === RefactoringPreview.never ||
+        this._config.refactoringPreview === RefactoringPreview.adding,
     };
+
     switch (serialized.mode) {
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
         const sourceFileMerger = new SourceFileMerger(
           mergerOptions,
-          serialized.outputUri.fsPath,
-          serialized.content
+          this._headerFile,
+          existingDocument,
+          this._edit,
+          {
+            mode: serialized.mode,
+            range: selection,
+            indentStep: this._indentStep,
+          }
         );
-        sourceFileMerger.merge(existingDocument, this._edit);
+        sourceFileMerger.merge();
         break;
 
       case io.SerializableMode.header:
@@ -358,12 +380,15 @@ export class HeaderFileHandler {
         const headerFileMerger = new HeaderFileMerger(
           mergerOptions,
           this._headerFile,
+          existingDocument,
+          this._edit,
           {
             mode: serialized.mode,
             range: selection,
+            indentStep: this._indentStep,
           }
         );
-        headerFileMerger.merge(existingDocument, this._edit);
+        headerFileMerger.merge();
         break;
 
       default:

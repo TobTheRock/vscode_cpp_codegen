@@ -1,5 +1,4 @@
-import { IClass, IFunction, INamespace } from "./TypeInterfaces";
-import { HeaderParser } from "../io/HeaderParser";
+import { IClass, IFunction, INamespace, IParser } from "./TypeInterfaces";
 import * as io from "../io";
 import {
   Configuration,
@@ -7,6 +6,7 @@ import {
 } from "../Configuration";
 import clone = require("clone");
 import { asyncForEach } from "../utils";
+import { Text } from "../io";
 export class Namespace extends io.TextScope implements INamespace {
   constructor(name: string, scope: io.TextScope) {
     super(scope.scopeStart, scope.scopeEnd);
@@ -44,38 +44,49 @@ export class Namespace extends io.TextScope implements INamespace {
     return newOptions;
   }
 
-  serialize(options: io.SerializationOptions) {
+  private serializeMembers(options: io.SerializationOptions): io.Text {
+    return io
+      .serializeArrayWithNewLineSeperation(this.functions, options)
+      .append(io.serializeArrayWithNewLineSeperation(this.classes, options))
+      .append(io.serializeArray(this.subnamespaces, options));
+  }
+
+  private serializeWithNamedDeclaration(
+    options: io.SerializationOptions
+  ): io.Text {
+    const serializedText = this.serializeMembers(options);
+    if (serializedText.isEmpty()) {
+      return serializedText;
+    }
+
+    return Text.createEmpty(options.indentStep)
+      .addLine(`namespace ${this.name} {`)
+      .addNewLineSeperation()
+      .append(serializedText)
+      .addLine("}");
+  }
+
+  private serializePrepended(options: io.SerializationOptions): io.Text {
+    return this.serializeMembers(this.addNamespaceToOptions(options));
+  }
+
+  serialize(options: io.SerializationOptions): io.Text {
     const config = Configuration.get();
 
-    let serial = "";
-    let prefix = "";
-    let suffix = "";
     if (
       config.sourceFileNamespaceSerialization ===
         SourceFileNamespaceSerialization.named ||
       !io.isSourceFileSerializationMode(options.mode)
     ) {
-      prefix = "namespace " + this.name + " {\n";
-      suffix = "}\n";
-    } else {
-      options = this.addNamespaceToOptions(options);
+      return this.serializeWithNamedDeclaration(options);
     }
-
-    serial += io.serializeArray(this.subnamespaces, options);
-    serial += io.serializeArray(this.functions, options);
-    serial += io.serializeArray(this.classes, options);
-
-    if (!serial.length) {
-      return "";
-    }
-
-    return prefix + serial + suffix;
+    return this.serializePrepended(options);
   }
 
-  deserialize(data: io.TextFragment) {
-    this.subnamespaces = HeaderParser.parseNamespaces(data);
-    this.classes = HeaderParser.parseClasses(data);
-    this.functions = HeaderParser.parseStandaloneFunctiones(data);
+  deserialize(data: io.TextFragment, parser: IParser) {
+    this.subnamespaces = parser.parseNamespaces(data);
+    this.classes = parser.parseClasses(data);
+    this.functions = parser.parseStandaloneFunctions(data);
   }
 
   name: string;
@@ -84,7 +95,7 @@ export class Namespace extends io.TextScope implements INamespace {
   subnamespaces: INamespace[];
 }
 
-export class NoneNamespace extends io.TextScope implements INamespace {
+export class RootNamespace extends io.TextScope implements INamespace {
   constructor(scope: io.TextScope) {
     super(scope.scopeStart, scope.scopeEnd);
     this.name = "";
@@ -106,22 +117,24 @@ export class NoneNamespace extends io.TextScope implements INamespace {
   }
 
   serialize(options: io.SerializationOptions) {
-    let serial: string = io.serializeArray(this.functions, options);
-    serial += io.serializeArray(this.classes, options);
-    return serial;
+    return io
+      .serializeArrayWithNewLineSeperation(this.functions, options)
+      .append(io.serializeArrayWithNewLineSeperation(this.classes, options))
+      .append(io.serializeArray(this.subnamespaces, options));
   }
+
   equals(other: INamespace): boolean {
     return this.name === other.name;
   }
 
-  deserialize(data: io.TextFragment) {
-    this.classes = HeaderParser.parseClasses(data);
-    this.functions = HeaderParser.parseStandaloneFunctiones(data);
+  deserialize(data: io.TextFragment, parser: IParser) {
+    this.subnamespaces = parser.parseNamespaces(data);
+    this.classes = parser.parseClasses(data);
+    this.functions = parser.parseStandaloneFunctions(data);
   }
 
   readonly name: string;
   classes: IClass[];
   functions: IFunction[];
   subnamespaces: INamespace[];
-  private readonly _nameInputProvider: io.INameInputProvider | undefined;
 }

@@ -1,14 +1,10 @@
-import { HeaderParser } from "../../io/HeaderParser";
-import {
-  IClass,
-  ClassInterface,
-  ClassImplementation,
-  IClassScope,
-} from "../../cpp";
+import { HeaderParser } from "../../cpp/HeaderParser";
+import { IClass, IClassScope } from "../../cpp";
 import { callItAsync } from "./utils";
 import { TextFragment, SerializableMode } from "../../io";
 import * as assert from "assert";
 import { describe } from "mocha";
+import { ClassImplementation, ClassInterface } from "../../cpp/Class";
 
 const argData = [
   "",
@@ -84,7 +80,7 @@ export function structAndClassTests(specifier: string) {
     assertClassScopeEmpty(classLike[0].publicScope);
     assertClassScopeEmpty(classLike[0].privateScope);
     assertClassScopeEmpty(classLike[0].protectedScope);
-    assert.strictEqual(classLike[0].destructor, undefined);
+    assert.strictEqual(classLike[0].publicScope.destructor, undefined);
     assert.strictEqual(classLike[0].inheritance.length, 0);
     assert.ok(classLike[0] instanceof ClassImplementation);
   });
@@ -107,7 +103,7 @@ export function structAndClassTests(specifier: string) {
     assert.strictEqual(classLike[0].publicScope.memberFunctions.length, 1);
     assert.strictEqual(classLike[0].publicScope.constructors.length, 0);
     assert.strictEqual(classLike[0].publicScope.nestedClasses.length, 0);
-    assert.strictEqual(classLike[0].destructor, undefined);
+    assert.strictEqual(classLike[0].publicScope.destructor, undefined);
     assert.strictEqual(classLike[0].inheritance.length, 0);
     assert.ok(classLike[0] instanceof ClassInterface);
   });
@@ -138,7 +134,10 @@ export function structAndClassTests(specifier: string) {
       assertClassScopeEmpty(classLike[index - 1].publicScope);
       assertClassScopeEmpty(classLike[index - 1].privateScope);
       assertClassScopeEmpty(classLike[index - 1].protectedScope);
-      assert.strictEqual(classLike[index - 1].destructor, undefined);
+      assert.strictEqual(
+        classLike[index - 1].publicScope.destructor,
+        undefined
+      );
       assert.strictEqual(classLike[index - 1].inheritance.length, 0);
     }
   });
@@ -167,7 +166,7 @@ export function structAndClassTests(specifier: string) {
     assertClassScopeEmpty(nestedClass.publicScope);
     assertClassScopeEmpty(nestedClass.privateScope);
     assertClassScopeEmpty(nestedClass.protectedScope);
-    assert.strictEqual(nestedClass.destructor, undefined);
+    assert.strictEqual(nestedClass.publicScope.destructor, undefined);
     assert.strictEqual(nestedClass.inheritance.length, 0);
   });
 
@@ -195,7 +194,7 @@ export function structAndClassTests(specifier: string) {
     assertClassScopeEmpty(nestedClass.publicScope);
     assertClassScopeEmpty(nestedClass.privateScope);
     assertClassScopeEmpty(nestedClass.protectedScope);
-    assert.strictEqual(nestedClass.destructor, undefined);
+    assert.strictEqual(nestedClass.publicScope.destructor, undefined);
     assert.strictEqual(nestedClass.inheritance.length, 0);
   });
 
@@ -223,7 +222,7 @@ export function structAndClassTests(specifier: string) {
     assertClassScopeEmpty(nestedClass.publicScope);
     assertClassScopeEmpty(nestedClass.privateScope);
     assertClassScopeEmpty(nestedClass.protectedScope);
-    assert.strictEqual(nestedClass.destructor, undefined);
+    assert.strictEqual(nestedClass.publicScope.destructor, undefined);
     assert.strictEqual(nestedClass.inheritance.length, 0);
   });
 
@@ -253,14 +252,14 @@ export function structAndClassTests(specifier: string) {
     assertClassScopeEmpty(nestedClass.publicScope);
     assertClassScopeEmpty(nestedClass.privateScope);
     assertClassScopeEmpty(nestedClass.protectedScope);
-    assert.strictEqual(nestedClass.destructor, undefined);
+    assert.strictEqual(nestedClass.publicScope.destructor, undefined);
     assert.strictEqual(nestedClass.inheritance.length, 0);
 
     assert.strictEqual(classLike[1].name, "TestClass2");
     assertClassScopeEmpty(classLike[1].publicScope);
     assertClassScopeEmpty(classLike[1].privateScope);
     assertClassScopeEmpty(classLike[1].protectedScope);
-    assert.strictEqual(classLike[1].destructor, undefined);
+    assert.strictEqual(classLike[1].publicScope.destructor, undefined);
     assert.strictEqual(classLike[1].inheritance.length, 0);
   });
 
@@ -432,14 +431,14 @@ export function structAndClassTests(specifier: string) {
     assertClassScopeEmpty(classLike[0].privateScope);
     assertClassScopeEmpty(classLike[0].protectedScope);
     assert.strictEqual(classLike[0].inheritance.length, 0);
-    assert.notStrictEqual(classLike[0].destructor, undefined);
-    assert.strictEqual(classLike[0].destructor?.virtual, false);
+    assert.notStrictEqual(classLike[0].publicScope.destructor, undefined);
+    assert.strictEqual(classLike[0].publicScope.destructor?.virtual, false);
   });
 
   test(`Parse ${specifier} with virtual destructor`, () => {
     const testContent = TextFragment.createFromString(
       `${specifier} TestClass {
-            //implicit private
+              public:
                 virtual ~TestClass ();
             };
             `
@@ -452,14 +451,14 @@ export function structAndClassTests(specifier: string) {
     assertClassScopeEmpty(classLike[0].privateScope);
     assertClassScopeEmpty(classLike[0].protectedScope);
     assert.strictEqual(classLike[0].inheritance.length, 0);
-    assert.notStrictEqual(classLike[0].destructor, undefined);
-    assert.strictEqual(classLike[0].destructor?.virtual, true);
+    assert.notStrictEqual(classLike[0].publicScope.destructor, undefined);
+    assert.strictEqual(classLike[0].publicScope.destructor?.virtual, true);
   });
 
   test(`Parse ${specifier} with override destructor`, () => {
     const testContent = TextFragment.createFromString(
       `${specifier} TestClass {
-            //implicit private
+          public:
                 ~TestClass () override;
             };
             `
@@ -472,11 +471,11 @@ export function structAndClassTests(specifier: string) {
     assertClassScopeEmpty(classLike[0].privateScope);
     assertClassScopeEmpty(classLike[0].protectedScope);
     assert.strictEqual(classLike[0].inheritance.length, 0);
-    assert.notStrictEqual(classLike[0].destructor, undefined);
-    assert.strictEqual(classLike[0].destructor?.virtual, true);
+    assert.notStrictEqual(classLike[0].publicScope.destructor, undefined);
+    assert.strictEqual(classLike[0].publicScope.destructor?.virtual, true);
   });
 
-  test(`Parse ${specifier} with virtual default destructor and member function`, () => {
+  test(`Parse ${specifier} with virtual default publicScope.destructor and member function`, () => {
     const testContent = TextFragment.createFromString(
       `${specifier} TestClass {
         public:
@@ -493,7 +492,7 @@ export function structAndClassTests(specifier: string) {
     assert.strictEqual(classLike[0].publicScope.memberFunctions.length, 1);
     assertClassScopeEmpty(classLike[0].protectedScope);
     assert.strictEqual(classLike[0].inheritance.length, 0);
-    assert.strictEqual(classLike[0].destructor, undefined);
+    assert.strictEqual(classLike[0].publicScope.destructor, undefined);
   });
 
   describe(`Parse inheritance`, function () {
@@ -513,7 +512,7 @@ export function structAndClassTests(specifier: string) {
         assertClassScopeEmpty(classLike[0].publicScope);
         assertClassScopeEmpty(classLike[0].privateScope);
         assertClassScopeEmpty(classLike[0].protectedScope);
-        assert.strictEqual(classLike[0].destructor, undefined);
+        assert.strictEqual(classLike[0].publicScope.destructor, undefined);
         assert.strictEqual(classLike[0].inheritance.length, inheritData.nDates);
       }
     );
@@ -539,7 +538,7 @@ export function structAndClassTests(specifier: string) {
         assertClassScopeEmpty(classLike[0].privateScope);
         assert.strictEqual(classLike[0].publicScope.memberFunctions.length, 1);
         assertClassScopeEmpty(classLike[0].protectedScope);
-        assert.strictEqual(classLike[0].destructor, undefined);
+        assert.strictEqual(classLike[0].publicScope.destructor, undefined);
         assert.strictEqual(classLike[0].inheritance.length, inheritData.nDates);
       }
     );
@@ -561,9 +560,11 @@ export function structAndClassTests(specifier: string) {
     assert.strictEqual(classLike.length, 1);
     let nestedClass: IClass = classLike[0].publicScope.nestedClasses[0];
     assert.strictEqual(classLike[0].publicScope.nestedClasses.length, 1);
-    const serialized = classLike[0].serialize({
-      mode: SerializableMode.source,
-    });
+    const serialized = classLike[0]
+      .serialize({
+        mode: SerializableMode.source,
+      })
+      .toString();
     assert.ok(serialized.includes("TestClass::NestedClass::fncName"));
   });
 
@@ -587,7 +588,7 @@ export function structAndClassTests(specifier: string) {
         assertClassScopeEmpty(classLike[0].privateScope);
         assert.strictEqual(classLike[0].publicScope.memberFunctions.length, 1);
         assertClassScopeEmpty(classLike[0].protectedScope);
-        assert.strictEqual(classLike[0].destructor, undefined);
+        assert.strictEqual(classLike[0].publicScope.destructor, undefined);
         assert.strictEqual(classLike[0].inheritance.length, inheritData.nDates);
       }
     );

@@ -1,57 +1,56 @@
 import * as io from "../io";
+import { FunctionBase } from "./CommonFunction";
 import { IFunction } from "./TypeInterfaces";
 import {
   joinNameScopesWithFunctionName,
   removeDefaultInitializersFromArgs,
 } from "./utils";
-class StandaloneFunctionBase extends io.TextScope implements IFunction {
+
+class StandaloneFunctionBase extends FunctionBase implements IFunction {
   constructor(
     public readonly name: string,
     public readonly returnVal: string,
     public readonly args: string,
     scope: io.TextScope
   ) {
-    super(scope.scopeStart, scope.scopeEnd);
-  }
-  equals(other: IFunction): boolean {
-    return (
-      this.name === other.name &&
-      this.args === other.args &&
-      this.returnVal === other.returnVal
-    );
+    super(name, returnVal, args, scope);
   }
 
-  serialize(options: io.SerializationOptions) {
-    let serial = "";
-
+  protected getHeading(options: io.SerializationOptions) {
     switch (options.mode) {
+      case io.SerializableMode.header:
+      case io.SerializableMode.implHeader:
+      case io.SerializableMode.interfaceHeader:
+        return this.returnVal + " " + this.name + "(" + this.args + ")";
       case io.SerializableMode.source:
-        serial =
+      case io.SerializableMode.implSource:
+        return (
           this.returnVal +
           " " +
           joinNameScopesWithFunctionName(options.nameScopes, this.name) +
-          " (" +
+          "(" +
           removeDefaultInitializersFromArgs(this.args) +
-          " )" +
-          " {\n";
-        if (this.returnVal !== "void") {
-          serial =
-            serial + this.returnVal + " returnValue;\n return returnValue;\n";
-        }
-        serial += "}\n";
-        break;
-
-      case io.SerializableMode.interfaceHeader:
-      case io.SerializableMode.implHeader:
-        serial =
-          this.returnVal + " " + this.name + " (" + this.args + " )" + "\n;";
-        break;
-
+          ")"
+        );
       default:
         break;
     }
+  }
 
-    return serial;
+  serialize(options: io.SerializationOptions): io.Text {
+    const text = io.Text.createEmpty(options.indentStep);
+
+    switch (options.mode) {
+      case io.SerializableMode.source:
+        return this.serializeDefinition(text, options);
+
+      case io.SerializableMode.interfaceHeader:
+      case io.SerializableMode.implHeader:
+        return this.serializeDeclaration(text, options);
+
+      default:
+        return text;
+    }
   }
 }
 

@@ -15,20 +15,11 @@ function getConfigBool(section: string): boolean {
   return config.get(section) ?? false;
 }
 
-interface IFileHeaderSection {
-  forCppSource: string;
-  forCppHeader: string;
+export enum DirectorySelectorMode {
+  disabled = "Disabled",
+  quickPick = "QuickPick",
+  ui = "UI",
 }
-interface IOutputFileExtensionSection {
-  forCppSource: string;
-  forCppHeader: string;
-}
-interface IOutputDirectorySelectorSection {
-  mode: DirectorySelectorMode;
-  ignoredDirectories: string[];
-  useGitIgnore: boolean;
-}
-
 function getOutputDirectorySelectorMode(): DirectorySelectorMode {
   switch (getConfigString("codegen-cpp.OutputDirectorySelector.Mode")) {
     case DirectorySelectorMode.quickPick:
@@ -42,7 +33,11 @@ function getOutputDirectorySelectorMode(): DirectorySelectorMode {
   }
 }
 
-function getSourceFileNamespaceSerialization() {
+export enum SourceFileNamespaceSerialization {
+  named = "Named",
+  prepended = "Prepended",
+}
+function getSourceFileNamespaceSerialization(): SourceFileNamespaceSerialization {
   switch (getConfigString("codegen-cpp.SourceFileNamespace.Serialization")) {
     case SourceFileNamespaceSerialization.prepended:
       return SourceFileNamespaceSerialization.prepended;
@@ -52,15 +47,38 @@ function getSourceFileNamespaceSerialization() {
   }
 }
 
-export enum DirectorySelectorMode {
-  disabled = "Disabled",
-  quickPick = "QuickPick",
-  ui = "UI",
+export enum RefactoringPreview {
+  always = "Always",
+  never = "Never",
+  deletion = "Deletion",
+  adding = "Adding",
+}
+function getRefactorPreview(): RefactoringPreview {
+  switch (getConfigString("codegen-cpp.RefactoringPreview")) {
+    case RefactoringPreview.adding:
+      return RefactoringPreview.adding;
+    case RefactoringPreview.deletion:
+      return RefactoringPreview.deletion;
+    case RefactoringPreview.never:
+      return RefactoringPreview.never;
+    case RefactoringPreview.always:
+    default:
+      return RefactoringPreview.always;
+  }
 }
 
-export enum SourceFileNamespaceSerialization {
-  named = "Named",
-  prepended = "Prepended",
+interface IFileHeaderSection {
+  forCppSource: string;
+  forCppHeader: string;
+}
+interface IOutputFileExtensionSection {
+  forCppSource: string;
+  forCppHeader: string;
+}
+interface IOutputDirectorySelectorSection {
+  mode: DirectorySelectorMode;
+  ignoredDirectories: string[];
+  useGitIgnore: boolean;
 }
 export interface IExtensionConfiguration {
   fileHeader: IFileHeaderSection;
@@ -68,6 +86,7 @@ export interface IExtensionConfiguration {
   outputDirectorySelector: IOutputDirectorySelectorSection;
   deduceOutputFileNames: boolean;
   sourceFileNamespaceSerialization: SourceFileNamespaceSerialization;
+  refactoringPreview: RefactoringPreview;
 }
 
 export class Configuration {
@@ -116,7 +135,10 @@ export class Configuration {
       ),
     };
 
-    const sourceFileNamespaceSerialization = getSourceFileNamespaceSerialization();
+    const sourceFileNamespaceSerialization =
+      getSourceFileNamespaceSerialization();
+
+    const refactoringPreview = getRefactorPreview();
 
     return {
       fileHeader,
@@ -124,6 +146,7 @@ export class Configuration {
       outputDirectorySelector,
       deduceOutputFileNames: getConfigBool("codegen-cpp.deduceOutputFileNames"),
       sourceFileNamespaceSerialization,
+      refactoringPreview,
     };
   }
 

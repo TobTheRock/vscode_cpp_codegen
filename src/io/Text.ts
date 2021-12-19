@@ -1,10 +1,64 @@
-import { throws } from "assert";
+import { last } from "lodash";
 
 // TODO utils
 function error(condition: boolean, errMsg: string = "") {
   if (!condition) {
     throw new Error(errMsg);
   }
+}
+
+export class Text {
+  private constructor(private readonly _indentStep: string = "") {
+    this._lines = [];
+  }
+
+  static createEmpty(_indentStep: string = "") {
+    return new Text(_indentStep);
+  }
+
+  add(str: string): Text {
+    if (!this._lines.length) {
+      this._lines.push(str);
+    } else {
+      this._lines[this._lines.length - 1] += str;
+    }
+    return this;
+  }
+
+  addLine(line: string, indent: number = 0): Text {
+    this._lines.push(`${this._indentStep.repeat(indent)}${line}`);
+    return this;
+  }
+
+  append(other: Text, indent: number = 0): Text {
+    const otherLines = indent
+      ? other._lines.map((line) => `${this._indentStep.repeat(indent)}${line}`)
+      : other._lines;
+
+    this._lines.push(...otherLines);
+    return this;
+  }
+
+  toString(): string {
+    return this._lines.join("\n");
+  }
+
+  isEmpty(): boolean {
+    return (
+      this._lines.length === 0 ||
+      (this._lines.length === 1 && this._lines[0].length === 0)
+    );
+  }
+
+  addNewLineSeperation(): Text {
+    const lastLine = last(this._lines);
+    if (lastLine) {
+      this._lines.push("");
+    }
+    return this;
+  }
+
+  private _lines: string[];
 }
 
 export class TextScope {
@@ -15,6 +69,10 @@ export class TextScope {
     error(scopeStart <= scopeEnd, "scopeEnd must be greater than scopeStart");
     error(scopeStart >= 0, "Scope start muss be greater zero!");
     error(scopeEnd >= 0, "Scope end muss be greater zero!");
+  }
+
+  static createEmpty() {
+    return new TextScope(0, 0);
   }
 
   fullyContains(other: TextScope): boolean {
@@ -214,10 +272,18 @@ export class TextFragment {
   }
 
   getScopeStart() {
+    if (!this.blocks.length) {
+      return 0;
+    }
+
     return Math.min(...Array.from(this.blocks, (block) => block.scopeStart));
   }
 
   getScopeEnd() {
+    if (!this.blocks.length) {
+      return 0;
+    }
+
     return Math.max(...Array.from(this.blocks, (block) => block.scopeEnd));
   }
 }
