@@ -46,7 +46,6 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 
 ### Known
 
-- Updating existing header files is not supported
 - `using` statements are not evaluated
 - preprocessor macros after `class` specifier are not working
 - enum classes are deserialized as classes
@@ -59,6 +58,12 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 - ...
 
 ## Release Notes
+
+### 0.2.1
+
+- fixed: crash when merging a previously empty file
+- fixed: formatting issues
+- added: option to toggle refactoring preview on/off
 
 ### 0.2.0
 
