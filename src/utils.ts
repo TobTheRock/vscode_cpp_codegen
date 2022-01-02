@@ -25,3 +25,7 @@ export async function awaitMapEntries<KeyType, ValueType>(
   }
   return syncedMap;
 }
+
+export function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "UNKOWN";
+}

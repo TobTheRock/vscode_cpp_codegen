@@ -2,7 +2,7 @@ import {
   WorkspaceDirectoryFinder,
   DirectoryItem,
   GoBackItem,
-} from "../WorkspaceDirectories";
+} from "./WorkspaceDirectories";
 import { DirectorySelectorMode } from "../Configuration";
 import {
   USER_INPUT_TITLE,

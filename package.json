@@ -127,6 +127,19 @@
             "show the refactoring preview when definitions are deleted",
             "show the refactoring preview when definitions are added"
           ]
+        },
+        "codegen-cpp.Interface.NamePattern": {
+          "type": "string",
+          "default": "I${name}",
+          "maxLength": "255",
+          "pattern": "^\\S*\\$\\{name\\}\\S+|\\S+\\$\\{name\\}\\S*$",
+          "patternErrorMessage": "Must contain ${name} and some non whitespace characters before/after!",
+          "markdownDescription": "Pattern for generated interface names of a given class name(`${name}`)"
+        },
+        "codegen-cpp.Interface.DeduceImplementationName": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Whether to deduce the name of an implementation for an interface from the name pattern. Else an input prompt is displayed."
         }
       }
     },

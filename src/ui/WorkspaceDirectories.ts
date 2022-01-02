@@ -2,8 +2,8 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { readFileSync, existsSync, Stats, stat } from "fs";
 import { FSWatcher } from "chokidar";
-import { IExtensionConfiguration } from "./Configuration";
-import { asyncForEach } from "./utils";
+import { IExtensionConfiguration } from "../Configuration";
+import { asyncForEach } from "../utils";
 
 const RELATIVE_ROOT = "." + path.sep;
 
