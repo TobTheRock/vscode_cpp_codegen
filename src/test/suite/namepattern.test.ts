@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { IExtensionConfiguration } from "../../Configuration";
 import { NamePattern } from "../../NamePattern";
 
-suite.only("Name patterns test", () => {
+suite("Name patterns test", () => {
   const prefix = "I";
   const suffix = "Bla";
   const namePattern = new NamePattern({

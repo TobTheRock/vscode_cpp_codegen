@@ -39,6 +39,12 @@ The following settings are available:
 - `codegen-cpp.SourceFileNamespace.Serialization`: Sets how namespaces are serialized in generated source files
   - _Named_: Serialized with an explicit named definition, e.g. `namespace myNamespace{...}`
   - _Prepended_: Serialized prepended in front of function definitions, e.g. `void myNamespace::MyClass::funct()`
+- `codegen-cpp.RefactoringPreview`: Configure when the refactoring preview is displayed when merging files
+  - _Always_: Always show the refactoring preview
+  - _Never_: Never show the refactoring preview
+  - _Deletion_: Show the refactoring preview when definitions are deleted
+  - _Adding_: Show the refactoring preview when definitions are added
+- `codegen-cpp.Interface.NamePattern`: Pattern for generated interface names of a given class name(`${name}`): `codegen-cpp.Interface.DeduceImplementationName`: Whether to deduce the name of an implementation for an interface from the name pattern. Else an input prompt is displayed.
 
 ## Issues
 

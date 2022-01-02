@@ -122,10 +122,10 @@
             "Adding"
           ],
           "enumDescriptions": [
-            "always show the refactoring preview ",
-            "never show the refactoring preview ",
-            "show the refactoring preview when definitions are deleted",
-            "show the refactoring preview when definitions are added"
+            "Always show the refactoring preview",
+            "Never show the refactoring preview",
+            "Show the refactoring preview when definitions are deleted",
+            "Show the refactoring preview when definitions are added"
           ]
         },
         "codegen-cpp.Interface.NamePattern": {
