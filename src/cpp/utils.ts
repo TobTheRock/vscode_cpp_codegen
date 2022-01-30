@@ -57,3 +57,9 @@ export function joinNameScopesWithMemberFunctionName(
   nameScopes = nameScopes ?? [];
   return [...nameScopes, className, functionName].join("::");
 }
+
+export class EmptySerializer implements io.ISerializable {
+  serialize(options: io.SerializationOptions): io.Text {
+    return io.Text.createEmpty(options.indentStep);
+  }
+}

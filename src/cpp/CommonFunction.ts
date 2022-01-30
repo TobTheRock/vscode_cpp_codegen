@@ -1,7 +1,7 @@
 import * as io from "../io";
 import { IFunction } from "./TypeInterfaces";
 
-export class FunctionBase
+export abstract class FunctionBase
   extends io.TextScope
   implements IFunction, io.ISerializable
 {

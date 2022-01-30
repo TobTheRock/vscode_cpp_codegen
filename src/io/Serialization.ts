@@ -1,5 +1,5 @@
 import { Text, TextFragment, TextScope } from "./Text";
-import { flatten } from "lodash";
+import { flatten, isEmpty } from "lodash";
 
 export enum SerializableMode {
   header, // matching header file (respective to current file, which is a Source)
@@ -7,30 +7,42 @@ export enum SerializableMode {
   implHeader, // implementation header file (respective to current file, which has a class with pure virtual functions)
   implSource, // implementation source file (respective to current file, which has a class with pure virtual functions)
   interfaceHeader, // interface header file (respective to current file, which has a class with  virtual functions => pure virtual ones are generated)
+  abstractFactoryHeader, // header file of abstract factory for implementations of interfaces in current file
 }
 
-const HEADER_SOURCE_GROUP = [SerializableMode.header, SerializableMode.source];
-const INTERFACE_IMPLEMENTATION_GROUP = [
+export const HEADER_SOURCE_GROUP = [
+  SerializableMode.header,
+  SerializableMode.source,
+];
+export const INTERFACE_IMPLEMENTATION_GROUP = [
   SerializableMode.implHeader,
   SerializableMode.implSource,
 ];
 
 export function isSourceFileSerializationMode(mode: SerializableMode): boolean {
-  return (
-    mode === SerializableMode.implSource || mode === SerializableMode.source
-  );
+  return [SerializableMode.implSource, SerializableMode.source].includes(mode);
+}
+
+export function isAbstractFactorySerializationMode(
+  mode: SerializableMode
+): boolean {
+  return [SerializableMode.abstractFactoryHeader].includes(mode);
 }
 
 export function getSerializableModeGroup(
   mode: SerializableMode
 ): SerializableMode[] {
-  return flatten(
+  const groupModes = flatten(
     [
       INTERFACE_IMPLEMENTATION_GROUP,
       HEADER_SOURCE_GROUP,
       [SerializableMode.interfaceHeader],
     ].filter((group) => group.includes(mode))
   );
+  if (isEmpty(groupModes)) {
+    return [mode];
+  }
+  return groupModes;
 }
 export interface IClassNameProvider {
   getClassName(mode: SerializableMode, withOuterScope: boolean): string;
@@ -38,6 +50,7 @@ export interface IClassNameProvider {
 }
 
 export interface INameInputProvider {
+  getAbstractFactoryName(origName: string): string | Promise<string>;
   getImplementationName(origName: string): string | Promise<string>;
 }
 

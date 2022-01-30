@@ -5,7 +5,11 @@ import * as vscode from "vscode";
 import { WorkspaceDirectoryFinder } from "./WorkspaceDirectories";
 import { IExtensionConfiguration } from "../Configuration";
 import { DirectoryPicker } from "./DirectoryPicker";
-import { InterfaceNamePicker, FileNamePicker } from "./InputBoxPickers";
+import {
+  InterfaceNamePicker,
+  FileNamePicker,
+  AbstractFactoryNamePicker,
+} from "./InputBoxPickers";
 import { NamePattern } from "../NamePattern";
 
 export const USER_INPUT_TITLE = "Creating Stubs...";
@@ -45,47 +49,66 @@ class UserInputPromptRegistry<ReturnType> {
   }
 }
 
-interface IImplementationNameHelper {
-  get firstImplementationName(): Promise<string> | undefined;
-}
-
-class ImplementationNameHelper
-  implements IImplementationNameHelper, io.INameInputProvider
-{
-  private _firstImplementationName: Promise<string> | undefined;
-  private _onFirstCallPromise: Promise<IImplementationNameHelper>;
-  private _resolveOnFirstCall:
-    | ((value: IImplementationNameHelper) => void)
-    | undefined;
-
+class NameInput implements io.INameInputProvider {
   constructor(
-    private readonly _implNameProviderClosure: (
-      origName: string
-    ) => Promise<string>
-  ) {
-    this._onFirstCallPromise = new Promise<IImplementationNameHelper>(
-      (resolve) => {
-        this._resolveOnFirstCall = resolve;
-      }
+    private readonly _config: IExtensionConfiguration,
+    private readonly _inputPromptRegistry: UserInputPromptRegistry<any>,
+    private readonly _namePattern: NamePattern
+  ) {}
+
+  getAbstractFactoryName(origName: string): string | Promise<string> {
+    const abstractFactoryName = this._namePattern.getFactoryName(origName);
+    return this._inputPromptRegistry.registerElement(
+      AbstractFactoryNamePicker,
+      origName,
+      abstractFactoryName
     );
   }
 
   getImplementationName(origName: string): string | Promise<string> {
-    const implNamePromise = this._implNameProviderClosure(origName);
-    if (this._resolveOnFirstCall) {
-      this._firstImplementationName = implNamePromise;
-      this._resolveOnFirstCall(this);
-      this._resolveOnFirstCall = undefined;
+    const implName = this._namePattern.deduceImplementationName(origName);
+
+    if (this._config.interface.deduceImplementationName && implName) {
+      return implName;
     }
-    return implNamePromise;
+
+    return this._inputPromptRegistry.registerElement(
+      InterfaceNamePicker,
+      origName,
+      implName
+    );
+  }
+}
+
+class NameInputDeducingOutputFileNames implements io.INameInputProvider {
+  constructor(
+    private readonly _nameInputProvider: io.INameInputProvider,
+    private readonly _filePromiseMap: Map<io.SerializableMode, Promise<string>>
+  ) {}
+  getAbstractFactoryName(origName: string): string | Promise<string> {
+    const abstractFactoryName =
+      this._nameInputProvider.getAbstractFactoryName(origName);
+    this.setNamePromiseForModes(
+      abstractFactoryName,
+      io.SerializableMode.abstractFactoryHeader
+    );
+    return abstractFactoryName;
+  }
+  getImplementationName(origName: string): string | Promise<string> {
+    const implName = this._nameInputProvider.getImplementationName(origName);
+    this.setNamePromiseForModes(implName, ...io.INTERFACE_IMPLEMENTATION_GROUP);
+    return implName;
   }
 
-  get onFirstCall(): Promise<IImplementationNameHelper> {
-    return this._onFirstCallPromise;
-  }
-
-  get firstImplementationName(): Promise<string> | undefined {
-    return this._firstImplementationName;
+  private setNamePromiseForModes(
+    namePromise: string | Promise<string>,
+    ...modes: io.SerializableMode[]
+  ) {
+    modes.forEach((mode) => {
+      if (!this._filePromiseMap.has(mode)) {
+        this._filePromiseMap.set(mode, Promise.resolve(namePromise));
+      }
+    });
   }
 }
 
@@ -108,13 +131,12 @@ export class UserDialog {
 
   async prompt(modes: io.SerializableMode[]): Promise<IUserInput> {
     const outputDirectoryPromise = this.pickOutputDirectory();
-    const helper = await this.pickInterfaceImplementationNames(modes);
-    const fileNamePromiseMap = this.getFileNameForMode(
-      modes,
-      helper?.firstImplementationName
-    );
+    let fileNamePromiseMap = new Map<io.SerializableMode, Promise<string>>();
+    const provideNamesPromise = this.provideNames(modes, fileNamePromiseMap);
+    fileNamePromiseMap = this.getFileNameForMode(modes, fileNamePromiseMap);
 
     await this._inputPromptRegistry.promptAll();
+    await provideNamesPromise;
     const outputDirectory = await outputDirectoryPromise;
     const fileNameMap = await awaitMapEntries(fileNamePromiseMap);
 
@@ -130,69 +152,49 @@ export class UserDialog {
     );
   }
 
-  private pickInterfaceImplementationNames(
-    modes: io.SerializableMode[]
-  ): Promise<IImplementationNameHelper | undefined> {
-    const helper = new ImplementationNameHelper(async (origName) => {
-      const implName = this._namePattern.deduceImplementationName(origName);
-
-      if (this._config.interface.deduceImplementationName && implName) {
-        return implName;
-      }
-
-      return this._inputPromptRegistry.registerElement(
-        InterfaceNamePicker,
-        origName,
-        implName
+  private provideNames(
+    modes: io.SerializableMode[],
+    fileNamePromiseMap: Map<io.SerializableMode, Promise<string>>
+  ): Promise<void> {
+    let nameInput: io.INameInputProvider = new NameInput(
+      this._config,
+      this._inputPromptRegistry,
+      this._namePattern
+    );
+    if (this._config.deduceOutputFileNames) {
+      nameInput = new NameInputDeducingOutputFileNames(
+        nameInput,
+        fileNamePromiseMap
       );
-    });
-
-    const namesProvidePromise = this._file.rootNamespace
-      .provideNames(helper, ...modes)
-      .then(() => undefined);
-
-    return Promise.race([namesProvidePromise, helper.onFirstCall]);
+    }
+    return this._file.rootNamespace.provideNames(nameInput, ...modes);
   }
 
   private getFileNameForMode(
     modes: io.SerializableMode[],
-    firstImplementationNamePromise?: Promise<string>
+    fileNamePromiseMap: Map<io.SerializableMode, Promise<string>>
   ): Map<io.SerializableMode, Promise<string>> {
-    const fileNameMap = new Map<io.SerializableMode, Promise<string>>();
-
     for (const mode of modes) {
-      if (!fileNameMap.has(mode)) {
-        const fileNamePromise = this.pickFileName(
-          mode,
-          firstImplementationNamePromise
-        );
+      if (!fileNamePromiseMap.has(mode)) {
+        const fileNamePromise = this.pickFileName(mode);
         io.getSerializableModeGroup(mode).forEach((groupMode) =>
-          fileNameMap.set(groupMode, fileNamePromise)
+          fileNamePromiseMap.set(groupMode, fileNamePromise)
         );
       }
     }
-
-    return fileNameMap;
+    return fileNamePromiseMap;
   }
 
-  private pickFileName(
-    mode: io.SerializableMode,
-    firstImplementationNamePromise?: Promise<string>
-  ): Promise<string> {
-    const isImplMode =
-      mode === io.SerializableMode.implSource ||
-      mode === io.SerializableMode.implHeader;
-    const cannotDeduce = isImplMode && !firstImplementationNamePromise;
-
-    if (!this._config.deduceOutputFileNames || cannotDeduce) {
-      return this._inputPromptRegistry.registerElement(
-        FileNamePicker,
-        this._file.basename
-      );
-    } else if (isImplMode) {
-      return firstImplementationNamePromise!;
-    } else {
+  private pickFileName(mode: io.SerializableMode): Promise<string> {
+    if (
+      this._config.deduceOutputFileNames &&
+      mode === io.SerializableMode.source
+    ) {
       return Promise.resolve(this._file.basename);
     }
+    return this._inputPromptRegistry.registerElement(
+      FileNamePicker,
+      this._file.basename
+    );
   }
 }

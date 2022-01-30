@@ -128,16 +128,10 @@ export class HeaderFileHandler {
     outputDirectory: vscode.Uri,
     fileName: string
   ): vscode.Uri {
-    switch (mode) {
-      case io.SerializableMode.header:
-      case io.SerializableMode.interfaceHeader:
-      case io.SerializableMode.implHeader:
-        fileName += "." + this._config.outputFileExtension.forCppHeader;
-        break;
-      case io.SerializableMode.source:
-      case io.SerializableMode.implSource:
-        fileName += "." + this._config.outputFileExtension.forCppSource;
-        break;
+    if (io.isSourceFileSerializationMode(mode)) {
+      fileName += "." + this._config.outputFileExtension.forCppSource;
+    } else {
+      fileName += "." + this._config.outputFileExtension.forCppHeader;
     }
     return vscode.Uri.joinPath(outputDirectory, fileName);
   }
@@ -150,6 +144,7 @@ export class HeaderFileHandler {
     let fileHeader: string;
     switch (mode) {
       case io.SerializableMode.implHeader:
+      case io.SerializableMode.abstractFactoryHeader:
         fileHeader = this._config.fileHeader.forCppHeader;
         fileHeader += this.createIncludeStatements(
           outputDirectory,
@@ -237,46 +232,32 @@ export class HeaderFileHandler {
         this._config.refactoringPreview === RefactoringPreview.never ||
         this._config.refactoringPreview === RefactoringPreview.adding,
     };
-
-    switch (serialized.mode) {
-      case io.SerializableMode.source:
-      case io.SerializableMode.implSource:
-        const sourceFileMerger = new SourceFileMerger(
-          mergerOptions,
-          this._headerFile,
-          existingDocument,
-          this._edit,
-          {
-            mode: serialized.mode,
-            range: selection,
-            indentStep: this._indentStep,
-          }
-        );
-        sourceFileMerger.merge();
-        break;
-
-      case io.SerializableMode.header:
-      case io.SerializableMode.implHeader:
-      case io.SerializableMode.interfaceHeader:
-        const headerFileMerger = new HeaderFileMerger(
-          mergerOptions,
-          this._headerFile,
-          existingDocument,
-          this._edit,
-          {
-            mode: serialized.mode,
-            range: selection,
-            indentStep: this._indentStep,
-          }
-        );
-        headerFileMerger.merge();
-        break;
-
-      default:
-        vscode.window.showErrorMessage(
-          `Cannot write stubs, file ${existingDocument.fileName} already exists`
-        );
-        break;
+    if (io.isSourceFileSerializationMode(serialized.mode)) {
+      const sourceFileMerger = new SourceFileMerger(
+        mergerOptions,
+        this._headerFile,
+        existingDocument,
+        this._edit,
+        {
+          mode: serialized.mode,
+          range: selection,
+          indentStep: this._indentStep,
+        }
+      );
+      sourceFileMerger.merge();
+    } else {
+      const headerFileMerger = new HeaderFileMerger(
+        mergerOptions,
+        this._headerFile,
+        existingDocument,
+        this._edit,
+        {
+          mode: serialized.mode,
+          range: selection,
+          indentStep: this._indentStep,
+        }
+      );
+      headerFileMerger.merge();
     }
   }
 }

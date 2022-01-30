@@ -5,6 +5,7 @@ import { TextFragment, SerializableMode } from "../../io";
 import * as assert from "assert";
 import { describe } from "mocha";
 import { ClassImplementation, ClassInterface } from "../../cpp/Class";
+import { SourceParser } from "../../cpp/SourceParser";
 
 const argData = [
   "",
@@ -592,5 +593,50 @@ export function structAndClassTests(specifier: string) {
         assert.strictEqual(classLike[0].inheritance.length, inheritData.nDates);
       }
     );
+  });
+
+  test(`Create abstract factory for ${specifier}`, async () => {
+    const testContent = TextFragment.createFromString(
+      `${specifier} TestClass { 
+      };
+      `
+    );
+    let classes: IClass[] = HeaderParser.parseClasses(testContent);
+    assert.strictEqual(classes.length, 1);
+
+    const classLike = classes[0];
+    const promise = classLike.provideNames(
+      {
+        getImplementationName: () => "",
+        getAbstractFactoryName: () => "TestClassFactory",
+      },
+      SerializableMode.abstractFactoryHeader
+    );
+    await promise;
+
+    let generatedHeaderText = classLike
+      .serialize({ mode: SerializableMode.abstractFactoryHeader })
+      .toString();
+
+    let generatedClasses: IClass[] = HeaderParser.parseClasses(
+      TextFragment.createFromString(generatedHeaderText)
+    );
+
+    assert.strictEqual(generatedClasses.length, 1);
+    assert.strictEqual(generatedClasses[0].name, "TestClassFactory");
+    assertClassScopeEmpty(generatedClasses[0].privateScope);
+    assertClassScopeEmpty(generatedClasses[0].protectedScope);
+    assert.strictEqual(
+      generatedClasses[0].publicScope.memberFunctions.length,
+      1
+    );
+    const factoryFunction = generatedClasses[0].publicScope.memberFunctions[0];
+    assert.strictEqual(factoryFunction.args, "");
+    assert.strictEqual(factoryFunction.returnVal, "TestClass");
+    // TODO: default dtors are not parsed
+    // assert.notStrictEqual(
+    // generatedClasses[0].publicScope.destructor,
+    // undefined
+    // );
   });
 }

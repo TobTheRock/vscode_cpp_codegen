@@ -71,7 +71,7 @@ export class Namespace extends io.TextScope implements INamespace {
   }
 
   serialize(options: io.SerializationOptions): io.Text {
-    const config = Configuration.get();
+    const config = Configuration.get(); // TODO pass the config via SerializationOptions
 
     if (
       config.sourceFileNamespaceSerialization ===

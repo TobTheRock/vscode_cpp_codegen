@@ -1,4 +1,4 @@
-import { Configuration, IExtensionConfiguration } from "./Configuration";
+import { IExtensionConfiguration } from "./Configuration";
 
 export class NamePattern {
   static readonly namePlaceHolder = "${name}";
@@ -24,5 +24,10 @@ export class NamePattern {
       NamePattern.namePlaceHolder,
       implementationName
     );
+  }
+
+  getFactoryName(className: string): string {
+    const factoryName = className + "Factory";
+    return factoryName;
   }
 }

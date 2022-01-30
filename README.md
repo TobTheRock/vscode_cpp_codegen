@@ -55,12 +55,12 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 - `using` statements are not evaluated
 - preprocessor macros after `class` specifier are not working
 - enum classes are deserialized as classes
+- default constructors/destructors are not detected
 
 ## Possible features in future
 
 - Prettifying the generated output
 - more configuration possibilities (e.g. for namespaces)
-- Generating abstract factories
 - ...
 
 ## Release Notes

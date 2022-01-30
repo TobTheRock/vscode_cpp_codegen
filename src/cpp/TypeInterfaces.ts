@@ -4,6 +4,10 @@ export interface Comparable<T> {
   equals(other: T, mode?: io.SerializableMode): boolean;
 }
 
+export interface IParsedDeserializable {
+  deserialize(data: io.TextFragment, parser: IParser): void;
+}
+
 export interface IFunction
   extends io.ISerializable,
     io.TextScope,
@@ -27,16 +31,16 @@ export interface IDestructor
   readonly virtual: boolean;
 }
 
-export interface IClassScope extends io.ISerializable {
+export interface IClassScope extends io.ISerializable, IParsedDeserializable {
   readonly memberFunctions: IFunction[];
   readonly nestedClasses: IClass[];
   readonly constructors: IConstructor[];
   readonly destructor?: IDestructor;
-  deserialize(data: io.TextFragment, parser: IParser): void;
 }
 
 export interface IClass
   extends io.ISerializable,
+    IParsedDeserializable,
     io.INameInputReceiver,
     io.TextScope,
     Comparable<IClass> {
@@ -47,11 +51,11 @@ export interface IClass
   readonly inheritance: string[]; // TODO -> IClass?
 
   getName(mode: io.SerializableMode): string;
-  deserialize(data: io.TextFragment, parser: IParser): void;
 }
 
 export interface INamespace
   extends io.ISerializable,
+    IParsedDeserializable,
     io.INameInputReceiver,
     io.TextScope,
     Comparable<INamespace> {
@@ -59,7 +63,6 @@ export interface INamespace
   readonly classes: IClass[];
   readonly functions: IFunction[];
   readonly subnamespaces: INamespace[];
-  deserialize(data: io.TextFragment, parser: IParser): void;
 }
 
 export interface IDefinition extends IFunction {

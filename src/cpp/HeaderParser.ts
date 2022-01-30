@@ -3,8 +3,6 @@ import { CommonParser } from "./CommonParser";
 import * as vscode from "vscode";
 import { joinRegexStringsWithWhiteSpace } from "./utils";
 import {
-  ClassConstructor,
-  ClassDestructor,
   ClassInterface,
   ClassImplementation,
   StructInterface,
@@ -19,7 +17,12 @@ import {
 } from "./MemberFunction";
 import { StandaloneFunction } from "./StandaloneFunction";
 import { IClassNameProvider } from "../io";
-import { IConstructor, IFunction, IClass } from "./TypeInterfaces";
+import { IConstructor, IFunction, IClass, IDestructor } from "./TypeInterfaces";
+import {
+  ClassConstructor,
+  ClassDestructor,
+  ClassVirtualDestructor,
+} from "./ClassConstructor";
 
 class ClassMatchBase {
   constructor(regexMatch: io.TextMatch) {
@@ -107,7 +110,10 @@ class ClassConstructorMatch {
   }
 
   static getRegexStr(classname: string) {
-    return joinRegexStringsWithWhiteSpace("[^~]" + classname);
+    return joinRegexStringsWithWhiteSpace(
+      // word boundary with tilde
+      `(?:(?<![\\w~])(?=[\\w~])|(?<=[\\w~])(?![\\w~]))${classname}`
+    );
   }
 
   static readonly postBracketRegex = ";";
@@ -397,16 +403,15 @@ class HeaderParserImpl extends CommonParser {
   parseClassDestructors(
     data: io.TextFragment,
     classNameProvider: IClassNameProvider
-  ): ClassDestructor[] {
-    let deconstructors: ClassDestructor[] = [];
+  ): IDestructor[] {
+    let deconstructors: IDestructor[] = [];
     const matcher = new io.RemovingRegexMatcher(
       ClassDestructorMatch.getRegexStr(classNameProvider.originalName)
     );
     matcher.match(data).forEach((regexMatch) => {
       let match = new ClassDestructorMatch(regexMatch);
       deconstructors.push(
-        new ClassDestructor(
-          match.isVirtual,
+        new (match.isVirtual ? ClassVirtualDestructor : ClassDestructor)(
           classNameProvider,
           regexMatch as io.TextScope
         )

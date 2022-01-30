@@ -32,7 +32,7 @@ suite("Comments Tests", () => {
     callItAsync(
       "With function arguments ${value}",
       argData,
-      async function (done: Done, arg: string) {
+      async function (arg: string) {
         const testContent = TextFragment.createFromString(
           "/* int fncName(" + arg + "); */"
         );

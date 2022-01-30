@@ -167,6 +167,18 @@
         "title": "codegen-cpp: Generate interface implementation source/header stub(s) for selection",
         "when": "editorLangId == cpp",
         "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+      },
+      {
+        "command": "codegen-cpp.cppAbstractFactoryFromHeader",
+        "title": "codegen-cpp: Generate abstract factory(s) from header",
+        "when": "editorLangId == cpp",
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+      },
+      {
+        "command": "codegen-cpp.cppAbstractFactoryFromHeaderSelection",
+        "title": "codegen-cpp: Generate abstract factory(s) from header for selection",
+        "when": "editorLangId == cpp && editorHasSelection",
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
       }
     ],
     "menus": {
@@ -187,11 +199,19 @@
           "when": "!editorHasSelection"
         },
         {
+          "command": "codegen-cpp.cppAbstractFactoryFromHeader",
+          "when": "!editorHasSelection"
+        },
+        {
           "command": "codegen-cpp.cppSourceFromHeaderSelection",
           "when": "editorHasSelection"
         },
         {
           "command": "codegen-cpp.cppInterfaceImplFromHeaderSelection",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "codegen-cpp.cppAbstractFactoryFromHeaderSelection",
           "when": "editorHasSelection"
         }
       ]
