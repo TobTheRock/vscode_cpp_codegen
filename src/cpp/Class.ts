@@ -177,6 +177,7 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
 
   async provideNames(
     nameInputProvider: io.INameInputProvider,
+    selection?: io.TextScope,
     ...modes: io.SerializableMode[]
   ): Promise<void> {
     const generatePromise = this._classNameGen.generate(
@@ -192,6 +193,7 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
         asyncForEach(scope.nestedClasses, (subClass) =>
           subClass.provideNames(
             nameInputProvider,
+            selection,
             ...modesForwardedToSubclasses
           )
         )
@@ -228,7 +230,7 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
     }
   }
 }
-export class ClassBase extends io.makeRangedSerializable(ClassBaseUnranged) {}
+export class ClassBase extends io.makeRanged(ClassBaseUnranged) {}
 
 export class ClassImplementation extends ClassBase {
   constructor(

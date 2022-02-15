@@ -4,7 +4,12 @@ import { callItAsync } from "./utils";
 import { TextFragment, SerializableMode } from "../../io";
 import * as assert from "assert";
 import { describe } from "mocha";
-import { ClassImplementation, ClassInterface } from "../../cpp/Class";
+import {
+  ClassImplementation,
+  ClassInterface,
+  StructImplementation,
+  StructInterface,
+} from "../../cpp/Class";
 import { SourceParser } from "../../cpp/SourceParser";
 
 const argData = [
@@ -83,7 +88,10 @@ export function structAndClassTests(specifier: string) {
     assertClassScopeEmpty(classLike[0].protectedScope);
     assert.strictEqual(classLike[0].publicScope.destructor, undefined);
     assert.strictEqual(classLike[0].inheritance.length, 0);
-    assert.ok(classLike[0] instanceof ClassImplementation);
+    assert.ok(
+      classLike[0] instanceof ClassImplementation ||
+        classLike[0] instanceof StructImplementation
+    );
   });
 
   test(`Parse interface`, () => {
@@ -106,7 +114,10 @@ export function structAndClassTests(specifier: string) {
     assert.strictEqual(classLike[0].publicScope.nestedClasses.length, 0);
     assert.strictEqual(classLike[0].publicScope.destructor, undefined);
     assert.strictEqual(classLike[0].inheritance.length, 0);
-    assert.ok(classLike[0] instanceof ClassInterface);
+    assert.ok(
+      classLike[0] instanceof ClassInterface ||
+        classLike[0] instanceof StructInterface
+    );
   });
 
   test(`Parse multiple ${specifier} without member functions`, () => {
@@ -605,14 +616,14 @@ export function structAndClassTests(specifier: string) {
     assert.strictEqual(classes.length, 1);
 
     const classLike = classes[0];
-    const promise = classLike.provideNames(
+    await classLike.provideNames(
       {
         getImplementationName: () => "",
         getAbstractFactoryName: () => "TestClassFactory",
       },
+      undefined,
       SerializableMode.abstractFactoryHeader
     );
-    await promise;
 
     let generatedHeaderText = classLike
       .serialize({ mode: SerializableMode.abstractFactoryHeader })

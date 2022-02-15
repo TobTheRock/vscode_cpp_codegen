@@ -1,5 +1,5 @@
 import { Text, TextFragment, TextScope } from "./Text";
-import { flatten, isEmpty } from "lodash";
+import { flatten, isEmpty, isObject } from "lodash";
 
 export enum SerializableMode {
   header, // matching header file (respective to current file, which is a Source)
@@ -57,6 +57,7 @@ export interface INameInputProvider {
 export interface INameInputReceiver {
   provideNames(
     nameInputProvider: INameInputProvider,
+    selection?: TextScope,
     ...modes: SerializableMode[]
   ): Promise<void>;
 }
@@ -101,6 +102,7 @@ export interface IDeserializable {
   deserialize: (data: TextFragment) => void;
 }
 
+// TODO use decorators for this
 class ISerializeDummyImpl implements ISerializable {
   serialize(options: SerializationOptions): Text {
     throw new Error("This class should not be used directly");
@@ -118,4 +120,38 @@ export function makeRangedSerializable<
       return super.serialize(options);
     }
   };
+}
+
+class INameInputReceiverDummy implements INameInputReceiver {
+  provideNames(
+    nameInputProvider: INameInputProvider,
+    selection?: TextScope,
+    ...modes: SerializableMode[]
+  ): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+}
+export function makeRangedNameInputReceiver<
+  TBase extends Constructor<TextScope & INameInputReceiverDummy>
+>(base: TBase) {
+  return class RangedNameInputReceiver extends base {
+    provideNames(
+      nameInputProvider: INameInputProvider,
+      selection?: TextScope,
+      ...modes: SerializableMode[]
+    ): Promise<void> {
+      if (selection && !this.contains(selection)) {
+        return Promise.resolve();
+      }
+      return super.provideNames(nameInputProvider, selection, ...modes);
+    }
+  };
+}
+
+export function makeRanged<
+  TBase extends Constructor<
+    TextScope & INameInputReceiverDummy & ISerializeDummyImpl
+  >
+>(base: TBase) {
+  return makeRangedNameInputReceiver(makeRangedSerializable(base));
 }

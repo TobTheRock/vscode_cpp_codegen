@@ -11,6 +11,7 @@ import {
   AbstractFactoryNamePicker,
 } from "./InputBoxPickers";
 import { NamePattern } from "../NamePattern";
+import { TextScope } from "../io";
 
 export const USER_INPUT_TITLE = "Creating Stubs...";
 
@@ -129,10 +130,17 @@ export class UserDialog {
     this._namePattern = new NamePattern(this._config);
   }
 
-  async prompt(modes: io.SerializableMode[]): Promise<IUserInput> {
+  async prompt(
+    modes: io.SerializableMode[],
+    selection?: TextScope
+  ): Promise<IUserInput> {
     const outputDirectoryPromise = this.pickOutputDirectory();
     let fileNamePromiseMap = new Map<io.SerializableMode, Promise<string>>();
-    const provideNamesPromise = this.provideNames(modes, fileNamePromiseMap);
+    const provideNamesPromise = this.provideNames(
+      modes,
+      fileNamePromiseMap,
+      selection
+    );
     fileNamePromiseMap = this.getFileNameForMode(modes, fileNamePromiseMap);
 
     await this._inputPromptRegistry.promptAll();
@@ -154,7 +162,8 @@ export class UserDialog {
 
   private provideNames(
     modes: io.SerializableMode[],
-    fileNamePromiseMap: Map<io.SerializableMode, Promise<string>>
+    fileNamePromiseMap: Map<io.SerializableMode, Promise<string>>,
+    selection?: TextScope
   ): Promise<void> {
     let nameInput: io.INameInputProvider = new NameInput(
       this._config,
@@ -167,7 +176,11 @@ export class UserDialog {
         fileNamePromiseMap
       );
     }
-    return this._file.rootNamespace.provideNames(nameInput, ...modes);
+    return this._file.rootNamespace.provideNames(
+      nameInput,
+      selection,
+      ...modes
+    );
   }
 
   private getFileNameForMode(

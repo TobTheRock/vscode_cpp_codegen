@@ -61,7 +61,7 @@ export class HeaderFileHandler {
   ) {
     let userInput;
     try {
-      userInput = await this._userDialog.prompt(modes);
+      userInput = await this._userDialog.prompt(modes, selection);
     } catch (error) {
       vscode.window.showWarningMessage("Aborting: " + getErrorMessage(error));
       return;

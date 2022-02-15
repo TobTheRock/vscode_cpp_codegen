@@ -6,7 +6,7 @@ import {
 } from "../Configuration";
 import clone = require("clone");
 import { asyncForEach } from "../utils";
-import { Text } from "../io";
+import { Text, TextScope } from "../io";
 export class Namespace extends io.TextScope implements INamespace {
   constructor(name: string, scope: io.TextScope) {
     super(scope.scopeStart, scope.scopeEnd);
@@ -18,13 +18,14 @@ export class Namespace extends io.TextScope implements INamespace {
 
   async provideNames(
     nameInputProvider: io.INameInputProvider,
+    selection?: TextScope,
     ...modes: io.SerializableMode[]
   ): Promise<void> {
     const subNameInputReceiver: io.INameInputReceiver[] = (
       this.classes as io.INameInputReceiver[]
     ).concat(this.subnamespaces);
     return asyncForEach(subNameInputReceiver, async (receiver) =>
-      receiver.provideNames(nameInputProvider, ...modes)
+      receiver.provideNames(nameInputProvider, selection, ...modes)
     );
   }
 
@@ -106,13 +107,14 @@ export class RootNamespace extends io.TextScope implements INamespace {
 
   async provideNames(
     nameInputProvider: io.INameInputProvider,
+    selection?: TextScope,
     ...modes: io.SerializableMode[]
   ): Promise<void> {
     const subNameInputReceiver: io.INameInputReceiver[] = (
       this.classes as io.INameInputReceiver[]
     ).concat(this.subnamespaces);
     return asyncForEach(subNameInputReceiver, async (receiver) =>
-      receiver.provideNames(nameInputProvider, ...modes)
+      receiver.provideNames(nameInputProvider, selection, ...modes)
     );
   }
 
