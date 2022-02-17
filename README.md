@@ -13,10 +13,20 @@ The following commands are provided while a C++ header file (extension: `hpp`, `
 
   ![](./docu/showcase_generate_interface_impl_stubs.gif)
 
-- `codegen-cpp: Generate source file from header`: Parses the currently opened header file and generates the source stubs. The output directory can be provided via the UI. In case a source file exists, changes can be evaluated with the refactoring view;
+- `codegen-cpp: Generate source file from header`: Parses the currently opened header file and generates source stubs for the given declarations.
 - `codegen-cpp: Generate source stub(s) for selection`: Same as above, but only for a certain text selection in the currently opened header file
 
   ![](./docu/showcase_merge_source_files.gif)
+
+- `codegen-cpp: Generate abstract factory(s) from header`: Parses the currently opened header file and generates abstract factory interfaces for the given classes.
+- `codegen-cpp: Generate abstract factory(s) from header for selection`: Same as above, but only for a certain text selection in the currently open header file
+
+Additional features:
+
+- _Merging header/source files_: in case new file is generated, but one with the same name already exists, a refactoring preview is displayed in VS Code to help merging the files manually (configurable)
+- _Directory Quick Picker_: You can select the output directory of the created files easily and fastly via a VS Code quick pick (configurable)
+- custom, configurable file headers for the generated files
+- names of to newly created files can be either entered via an input field or deduced from a namepattern
 
 ## Extension Settings
 
@@ -68,6 +78,13 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 - ...
 
 ## Release Notes
+
+### 0.3.0
+
+- added: Creating abstract factories from a header
+- added: Namepattern support for interfaces/abstract factories
+- fix: UI directory selection not working
+- fix: Name input dialogue is only shown for interfaces when generating implementation stubs
 
 ### 0.2.1
 
