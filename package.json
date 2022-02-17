@@ -140,6 +140,19 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Whether to deduce the name of an implementation for an interface from the name pattern. Else an input prompt is displayed."
+        },
+        "codegen-cpp.AbstractFactory.NamePattern": {
+          "type": "string",
+          "default": "${name}Factory",
+          "maxLength": "255",
+          "pattern": "^\\S*\\$\\{name\\}\\S+|\\S+\\$\\{name\\}\\S*$",
+          "patternErrorMessage": "Must contain ${name} and some non whitespace characters before/after!",
+          "markdownDescription": "Pattern for generated abstract factory names of a given class name(`${name}`)"
+        },
+        "codegen-cpp.AbstractFactory.DeduceFactoryName": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Whether to deduce the name of an abstract factory from the name pattern. Else an input prompt is displayed."
         }
       }
     },

@@ -86,6 +86,11 @@ interface IInterfaceSection {
   deduceImplementationName: boolean;
 }
 
+interface IAbstractFactorySection {
+  namePattern: string;
+  deduceImplementationName: boolean;
+}
+
 export interface IExtensionConfiguration {
   fileHeader: IFileHeaderSection;
   outputFileExtension: IOutputFileExtensionSection;
@@ -94,6 +99,7 @@ export interface IExtensionConfiguration {
   sourceFileNamespaceSerialization: SourceFileNamespaceSerialization;
   refactoringPreview: RefactoringPreview;
   interface: IInterfaceSection;
+  abstractFactory: IAbstractFactorySection;
 }
 
 export class Configuration {
@@ -154,6 +160,13 @@ export class Configuration {
       ),
     };
 
+    const abstractFactory = {
+      namePattern: getConfigString("codegen-cpp.AbstractFactory.NamePattern"),
+      deduceImplementationName: getConfigBool(
+        "codegen-cpp.AbstractFactory.DeduceFactoryName"
+      ),
+    };
+
     return {
       fileHeader,
       outputFileExtension,
@@ -162,6 +175,7 @@ export class Configuration {
       sourceFileNamespaceSerialization,
       refactoringPreview,
       interface: interfaceSection,
+      abstractFactory,
     };
   }
 

@@ -44,7 +44,11 @@ The following settings are available:
   - _Never_: Never show the refactoring preview
   - _Deletion_: Show the refactoring preview when definitions are deleted
   - _Adding_: Show the refactoring preview when definitions are added
-- `codegen-cpp.Interface.NamePattern`: Pattern for generated interface names of a given class name(`${name}`): `codegen-cpp.Interface.DeduceImplementationName`: Whether to deduce the name of an implementation for an interface from the name pattern. Else an input prompt is displayed.
+- `codegen-cpp.Interface.NamePattern`: Pattern for generated interface names of a given class name(`${name}`):
+- `codegen-cpp.Interface.DeduceImplementationName`: Whether to deduce the name of an implementation for an interface from the name pattern. Else an input prompt is displayed.
+
+- `codegen-cpp.AbstractFactory.NamePattern`: PPattern for generated abstract factory names of a given class name(`${name}`)
+- `codegen-cpp.AbstractFactory.DeduceImplementationName`: Whether to deduce the name of an abstract factoryfrom the name pattern. Else an input prompt is displayed.
 
 ## Issues
 

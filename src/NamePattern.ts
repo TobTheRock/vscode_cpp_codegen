@@ -27,7 +27,9 @@ export class NamePattern {
   }
 
   getFactoryName(className: string): string {
-    const factoryName = className + "Factory";
-    return factoryName;
+    return this._configuration.abstractFactory.namePattern.replace(
+      NamePattern.namePlaceHolder,
+      className
+    );
   }
 }

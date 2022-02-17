@@ -59,6 +59,11 @@ class NameInput implements io.INameInputProvider {
 
   getAbstractFactoryName(origName: string): string | Promise<string> {
     const abstractFactoryName = this._namePattern.getFactoryName(origName);
+
+    if (this._config.abstractFactory.deduceImplementationName) {
+      return abstractFactoryName;
+    }
+
     return this._inputPromptRegistry.registerElement(
       AbstractFactoryNamePicker,
       origName,
