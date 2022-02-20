@@ -3,13 +3,10 @@
 import * as vscode from "vscode";
 import * as io from "./io";
 import * as cpp from "./cpp";
+import * as ui from "./ui";
 import { Configuration, IExtensionConfiguration } from "./Configuration";
-import { WorkspaceDirectoryFinder } from "./WorkspaceDirectories";
 import { HeaderFileHandler } from "./HeaderFileHandler";
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "UNKOWN";
-}
+import { getErrorMessage } from "./utils";
 
 function createHeaderFile(
   textEditor: vscode.TextEditor
@@ -42,7 +39,7 @@ function getSelection(textEditor: vscode.TextEditor): io.TextScope | undefined {
 
 async function generateStubsFromHeader(
   headerFile: cpp.HeaderFile,
-  workspaceDirectoryFinder: WorkspaceDirectoryFinder,
+  workspaceDirectoryFinder: ui.WorkspaceDirectoryFinder,
   config: IExtensionConfiguration,
   selection?: io.TextScope,
   ...modes: io.SerializableMode[]
@@ -69,7 +66,7 @@ async function generateStubsFromHeader(
 export async function activate(context: vscode.ExtensionContext) {
   console.log("Activating code-gen.cpp!"); // TODO logger!
   let config = Configuration.get();
-  let workspaceDirectoryFinder = new WorkspaceDirectoryFinder(config);
+  let workspaceDirectoryFinder = new ui.WorkspaceDirectoryFinder(config);
 
   context.subscriptions.push(
     Configuration.registerOnChanged(async (updatedConfig) => {
@@ -79,7 +76,9 @@ export async function activate(context: vscode.ExtensionContext) {
         config.outputDirectorySelector.useGitIgnore !==
           updatedConfig.outputDirectorySelector.useGitIgnore
       ) {
-        workspaceDirectoryFinder = new WorkspaceDirectoryFinder(updatedConfig);
+        workspaceDirectoryFinder = new ui.WorkspaceDirectoryFinder(
+          updatedConfig
+        );
         await workspaceDirectoryFinder.scan();
       }
       config = updatedConfig;
@@ -92,7 +91,7 @@ export async function activate(context: vscode.ExtensionContext) {
       async (textEditor, edit) => {
         const headerFile = createHeaderFile(textEditor);
         if (headerFile) {
-          generateStubsFromHeader(
+          await generateStubsFromHeader(
             headerFile,
             workspaceDirectoryFinder,
             config,
@@ -111,7 +110,7 @@ export async function activate(context: vscode.ExtensionContext) {
         const headerFile = createHeaderFile(textEditor);
         if (headerFile) {
           const selection = getSelection(textEditor);
-          generateStubsFromHeader(
+          await generateStubsFromHeader(
             headerFile,
             workspaceDirectoryFinder,
             config,
@@ -129,7 +128,7 @@ export async function activate(context: vscode.ExtensionContext) {
       async (textEditor, edit) => {
         const headerFile = createHeaderFile(textEditor);
         if (headerFile) {
-          generateStubsFromHeader(
+          await generateStubsFromHeader(
             headerFile,
             workspaceDirectoryFinder,
             config,
@@ -149,7 +148,7 @@ export async function activate(context: vscode.ExtensionContext) {
         const headerFile = createHeaderFile(textEditor);
         if (headerFile) {
           const selection = getSelection(textEditor);
-          generateStubsFromHeader(
+          await generateStubsFromHeader(
             headerFile,
             workspaceDirectoryFinder,
             config,
@@ -158,6 +157,40 @@ export async function activate(context: vscode.ExtensionContext) {
             io.SerializableMode.implHeader
           );
         }
+      }
+    )
+  );
+
+  async function createAbstractFactory(
+    textEditor: vscode.TextEditor,
+    selection?: io.TextScope
+  ) {
+    const headerFile = createHeaderFile(textEditor);
+    if (headerFile) {
+      generateStubsFromHeader(
+        headerFile,
+        workspaceDirectoryFinder,
+        config,
+        selection,
+        io.SerializableMode.abstractFactoryHeader
+      );
+    }
+  }
+  context.subscriptions.push(
+    vscode.commands.registerTextEditorCommand(
+      "codegen-cpp.cppAbstractFactoryFromHeader",
+      async (textEditor, edit) => {
+        await createAbstractFactory(textEditor);
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerTextEditorCommand(
+      "codegen-cpp.cppAbstractFactoryFromHeaderSelection",
+      async (textEditor, edit) => {
+        const selection = getSelection(textEditor);
+        await createAbstractFactory(textEditor, selection);
       }
     )
   );

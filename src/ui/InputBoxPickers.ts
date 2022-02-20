@@ -50,7 +50,8 @@ async function showInputBox(params: InputBoxParameters): Promise<string> {
 export class InterfaceNamePicker implements UserInputPrompt {
   constructor(
     private readonly _userInputReturn: UserInputReturn<string>,
-    private readonly _originalName: string
+    private readonly _originalName: string,
+    private readonly _nameSuggestion?: string
   ) {}
 
   async prompt(step: number, nTotalSteps: number): Promise<void> {
@@ -58,8 +59,29 @@ export class InterfaceNamePicker implements UserInputPrompt {
       step,
       nTotalSteps,
       prompt: `Enter name for implementation of interface ${this._originalName}`,
-      placeHolder: this._originalName + "Impl",
+      placeHolder: this._nameSuggestion ?? this._originalName + "Impl",
       abortMessage: `No name was provided for interface ${this._originalName}`,
+      value: this._nameSuggestion,
+    });
+
+    this._userInputReturn.resolve(input);
+  }
+}
+export class AbstractFactoryNamePicker implements UserInputPrompt {
+  constructor(
+    private readonly _userInputReturn: UserInputReturn<string>,
+    private readonly _originalName: string,
+    private readonly _nameSuggestion?: string
+  ) {}
+
+  async prompt(step: number, nTotalSteps: number): Promise<void> {
+    let input = await showInputBox({
+      step,
+      nTotalSteps,
+      prompt: `Enter abstract factory name for class ${this._originalName}`,
+      placeHolder: this._nameSuggestion ?? this._originalName + "Factory",
+      abortMessage: `No abstract factory name was provided for class ${this._originalName}`,
+      value: this._nameSuggestion,
     });
 
     this._userInputReturn.resolve(input);

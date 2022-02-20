@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/HerrFroehlich/vscode_cpp_codegen"
   },
-  "version": "0.2.1",
+  "version": "0.3.0",
   "engines": {
     "vscode": "^1.51.0"
   },
@@ -122,11 +122,37 @@
             "Adding"
           ],
           "enumDescriptions": [
-            "always show the refactoring preview ",
-            "never show the refactoring preview ",
-            "show the refactoring preview when definitions are deleted",
-            "show the refactoring preview when definitions are added"
+            "Always show the refactoring preview",
+            "Never show the refactoring preview",
+            "Show the refactoring preview when definitions are deleted",
+            "Show the refactoring preview when definitions are added"
           ]
+        },
+        "codegen-cpp.Interface.NamePattern": {
+          "type": "string",
+          "default": "I${name}",
+          "maxLength": "255",
+          "pattern": "^\\S*\\$\\{name\\}\\S+|\\S+\\$\\{name\\}\\S*$",
+          "patternErrorMessage": "Must contain ${name} and some non whitespace characters before/after!",
+          "markdownDescription": "Pattern for generated interface names of a given class name(`${name}`)"
+        },
+        "codegen-cpp.Interface.DeduceImplementationName": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Whether to deduce the name of an implementation for an interface from the name pattern. Else an input prompt is displayed."
+        },
+        "codegen-cpp.AbstractFactory.NamePattern": {
+          "type": "string",
+          "default": "${name}Factory",
+          "maxLength": "255",
+          "pattern": "^\\S*\\$\\{name\\}\\S+|\\S+\\$\\{name\\}\\S*$",
+          "patternErrorMessage": "Must contain ${name} and some non whitespace characters before/after!",
+          "markdownDescription": "Pattern for generated abstract factory names of a given class name(`${name}`)"
+        },
+        "codegen-cpp.AbstractFactory.DeduceFactoryName": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Whether to deduce the name of an abstract factory from the name pattern. Else an input prompt is displayed."
         }
       }
     },
@@ -154,6 +180,18 @@
         "title": "codegen-cpp: Generate interface implementation source/header stub(s) for selection",
         "when": "editorLangId == cpp",
         "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+      },
+      {
+        "command": "codegen-cpp.cppAbstractFactoryFromHeader",
+        "title": "codegen-cpp: Generate abstract factory(s) from header",
+        "when": "editorLangId == cpp",
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+      },
+      {
+        "command": "codegen-cpp.cppAbstractFactoryFromHeaderSelection",
+        "title": "codegen-cpp: Generate abstract factory(s) from header for selection",
+        "when": "editorLangId == cpp && editorHasSelection",
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
       }
     ],
     "menus": {
@@ -174,11 +212,19 @@
           "when": "!editorHasSelection"
         },
         {
+          "command": "codegen-cpp.cppAbstractFactoryFromHeader",
+          "when": "!editorHasSelection"
+        },
+        {
           "command": "codegen-cpp.cppSourceFromHeaderSelection",
           "when": "editorHasSelection"
         },
         {
           "command": "codegen-cpp.cppInterfaceImplFromHeaderSelection",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "codegen-cpp.cppAbstractFactoryFromHeaderSelection",
           "when": "editorHasSelection"
         }
       ]

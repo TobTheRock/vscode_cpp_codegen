@@ -2,7 +2,7 @@ import {
   WorkspaceDirectoryFinder,
   DirectoryItem,
   GoBackItem,
-} from "../WorkspaceDirectories";
+} from "./WorkspaceDirectories";
 import { DirectorySelectorMode } from "../Configuration";
 import {
   USER_INPUT_TITLE,
@@ -49,8 +49,9 @@ export class DirectoryPicker implements UserInputPrompt {
       .then((uris) => {
         if (uris?.length) {
           this._userInputReturn.resolve(uris[0]);
+        } else {
+          throw new Error("No output directory was selected!");
         }
-        throw new Error("No output directory was selected!");
       });
   }
 

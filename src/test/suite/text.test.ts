@@ -1,11 +1,5 @@
 import * as assert from "assert";
-
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
-import * as vscode from "vscode";
-// import * as myExtension from '../../extension';
-import { HeaderParser } from "../../cpp/HeaderParser";
-import { IFunction } from "../../cpp";
+import * as os from "os";
 import * as io from "../../io";
 import { Text } from "../../io";
 
@@ -249,5 +243,13 @@ suite("Text Utility Tests", () => {
       .append(indentedText, 2);
 
     assert.strictEqual(text.toString(), `${testContent}\n\t\t${testContent}`);
+  });
+
+  test("Text from multiline string", function () {
+    const eol = os.EOL;
+    const testContent = `BLA${eol}BLA${eol}`;
+    const text = Text.fromString(testContent);
+
+    assert.strictEqual(text.toString(), testContent);
   });
 });

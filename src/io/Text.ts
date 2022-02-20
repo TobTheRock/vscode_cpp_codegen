@@ -8,12 +8,18 @@ function error(condition: boolean, errMsg: string = "") {
 }
 
 export class Text {
-  private constructor(private readonly _indentStep: string = "") {
-    this._lines = [];
-  }
+  private static readonly _eol: string = "\n";
+  private constructor(
+    private readonly _indentStep: string = "",
+    private readonly _lines: string[] = []
+  ) {}
 
-  static createEmpty(_indentStep: string = "") {
-    return new Text(_indentStep);
+  static createEmpty(indentStep: string = ""): Text {
+    return new Text(indentStep);
+  }
+  static fromString(text: string, indentStep: string = ""): Text {
+    const lines = text.split(Text._eol);
+    return new Text(indentStep, lines);
   }
 
   add(str: string): Text {
@@ -40,7 +46,7 @@ export class Text {
   }
 
   toString(): string {
-    return this._lines.join("\n");
+    return this._lines.join(Text._eol);
   }
 
   isEmpty(): boolean {
@@ -57,8 +63,6 @@ export class Text {
     }
     return this;
   }
-
-  private _lines: string[];
 }
 
 export class TextScope {

@@ -80,6 +80,17 @@ interface IOutputDirectorySelectorSection {
   ignoredDirectories: string[];
   useGitIgnore: boolean;
 }
+
+interface IInterfaceSection {
+  namePattern: string;
+  deduceImplementationName: boolean;
+}
+
+interface IAbstractFactorySection {
+  namePattern: string;
+  deduceImplementationName: boolean;
+}
+
 export interface IExtensionConfiguration {
   fileHeader: IFileHeaderSection;
   outputFileExtension: IOutputFileExtensionSection;
@@ -87,6 +98,8 @@ export interface IExtensionConfiguration {
   deduceOutputFileNames: boolean;
   sourceFileNamespaceSerialization: SourceFileNamespaceSerialization;
   refactoringPreview: RefactoringPreview;
+  interface: IInterfaceSection;
+  abstractFactory: IAbstractFactorySection;
 }
 
 export class Configuration {
@@ -140,6 +153,20 @@ export class Configuration {
 
     const refactoringPreview = getRefactorPreview();
 
+    const interfaceSection = {
+      namePattern: getConfigString("codegen-cpp.Interface.NamePattern"),
+      deduceImplementationName: getConfigBool(
+        "codegen-cpp.Interface.DeduceImplementationName"
+      ),
+    };
+
+    const abstractFactory = {
+      namePattern: getConfigString("codegen-cpp.AbstractFactory.NamePattern"),
+      deduceImplementationName: getConfigBool(
+        "codegen-cpp.AbstractFactory.DeduceFactoryName"
+      ),
+    };
+
     return {
       fileHeader,
       outputFileExtension,
@@ -147,6 +174,8 @@ export class Configuration {
       deduceOutputFileNames: getConfigBool("codegen-cpp.deduceOutputFileNames"),
       sourceFileNamespaceSerialization,
       refactoringPreview,
+      interface: interfaceSection,
+      abstractFactory,
     };
   }
 

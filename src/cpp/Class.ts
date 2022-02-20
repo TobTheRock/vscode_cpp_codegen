@@ -1,349 +1,205 @@
-import {
-  IClass,
-  IFunction,
-  IConstructor,
-  IDestructor,
-  IClassScope,
-  IParser,
-} from "./TypeInterfaces";
+import { IClass, IClassScope, IParser } from "./TypeInterfaces";
 import * as io from "../io";
-import { joinNameScopesWithFunctionName, joinNameScopes } from "./utils";
 import { ClassNameGenerator } from "./ClassNameGenerator";
 import { asyncForEach } from "../utils";
-import { compact } from "lodash";
-import { ISerializable } from "../io";
-
-function getCtorDtorImplName(
-  classNameProvider: io.IClassNameProvider,
-  options: io.SerializationOptions,
-  isDtor: boolean
-) {
-  const prefix = isDtor ? "~" : "";
-
-  const functionName =
-    prefix + classNameProvider.getClassName(options.mode, false);
-  const classNameScope = classNameProvider.getClassName(options.mode, true);
-  const scopes = options.nameScopes
-    ? [...options.nameScopes, classNameScope]
-    : [classNameScope];
-
-  return joinNameScopesWithFunctionName(scopes, functionName);
-}
-
-export class ClassConstructor extends io.TextScope implements IConstructor {
-  constructor(
-    public readonly args: string,
-    private readonly _classNameProvider: io.IClassNameProvider,
-    scope: io.TextScope
-  ) {
-    super(scope.scopeStart, scope.scopeEnd);
-  }
-
-  equals(other: IConstructor): boolean {
-    return this.args === other.args;
-  }
-
-  serialize(options: io.SerializationOptions): io.Text {
-    const args = `(${this.args})`;
-    const text = io.Text.createEmpty(options.indentStep);
-    switch (options.mode) {
-      case io.SerializableMode.header:
-      case io.SerializableMode.implHeader:
-        text.addLine(
-          this._classNameProvider.getClassName(options.mode, true) + args + ";"
-        );
-        break;
-
-      case io.SerializableMode.source:
-      case io.SerializableMode.implSource:
-        text.addLine(
-          getCtorDtorImplName(this._classNameProvider, options, false) +
-            args +
-            " {"
-        );
-        text.addLine("}");
-        break;
-      case io.SerializableMode.interfaceHeader:
-        break;
-    }
-
-    return text;
-  }
-}
-
-export class ClassDestructor extends io.TextScope implements IDestructor {
-  constructor(
-    public readonly virtual: boolean,
-    private readonly _classNameProvider: io.IClassNameProvider,
-    scope: io.TextScope
-  ) {
-    super(scope.scopeStart, scope.scopeEnd);
-  }
-  equals(other: IDestructor): boolean {
-    return this.virtual === other.virtual;
-  }
-
-  serialize(options: io.SerializationOptions): io.Text {
-    const className = this._classNameProvider.getClassName(options.mode, true);
-    const text = io.Text.createEmpty(options.indentStep);
-    switch (options.mode) {
-      case io.SerializableMode.header:
-      case io.SerializableMode.interfaceHeader:
-        text.addLine((this.virtual ? "virtual " : "") + `~${className}();`);
-        break;
-      case io.SerializableMode.implHeader:
-        text.addLine(`~${className}()` + (this.virtual ? " override;" : ";"));
-        break;
-
-      case io.SerializableMode.source:
-      case io.SerializableMode.implSource:
-        text.addLine(
-          getCtorDtorImplName(this._classNameProvider, options, true)
-        );
-        text.add("() {");
-        text.addLine("}");
-    }
-    return text;
-  }
-}
-
-abstract class ClassScopeBase implements IClassScope {
-  destructor?: IDestructor;
-  readonly memberFunctions: IFunction[] = [];
-  readonly nestedClasses: IClass[] = [];
-  readonly constructors: IConstructor[] = [];
-
-  constructor(private readonly _classNameProvider: io.IClassNameProvider) {}
-
-  protected extractScopeTextFragment(
-    data: io.TextFragment,
-    parser: IParser
-  ): io.TextFragment {
-    throw new Error("Unimplemented!");
-  }
-
-  protected getScopeHeader(): string {
-    throw new Error("Unimplemented!");
-  }
+import {
+  ClassScopeFactory,
+  IClassScopeFactory,
+  StructScopeFactory,
+} from "./ClassScope";
+import { isAbstractFactorySerializationMode } from "../io";
+import { AbstractFactoryClassPublicScope } from "./Factory";
+import { remove } from "lodash";
+class ClassBodyDeserializer {
+  constructor(private readonly _class: IClass) {}
 
   deserialize(data: io.TextFragment, parser: IParser) {
-    let content: io.TextFragment = this.extractScopeTextFragment(data, parser);
-    this.nestedClasses.push(
-      ...parser.parseClasses(content, this._classNameProvider)
+    this._class.publicScope.deserialize(data, parser);
+    this._class.privateScope.deserialize(data, parser);
+    this._class.protectedScope.deserialize(data, parser);
+  }
+}
+
+type ClassType = "struct" | "class";
+class ClassSpecifier {
+  constructor(
+    private readonly _inheritance: string[],
+    private readonly _classNameProvider: io.IClassNameProvider,
+    private readonly _type: ClassType
+  ) {}
+
+  asText(options: io.SerializationOptions): io.Text {
+    const serializedName = this._classNameProvider.getClassName(
+      options.mode,
+      false
     );
-    const dtors = parser.parseClassDestructors(
-      content,
-      this._classNameProvider
+    const inheritanceDeclaration = this.getInheritanceDeclaration();
+    return io.Text.fromString(
+      `${this._type} ${serializedName}${inheritanceDeclaration}`
     );
-    if (dtors.length > 0) {
-      this.destructor = dtors[0];
+  }
+
+  private getInheritanceDeclaration(): string {
+    if (!this._inheritance.length) {
+      return "";
     }
-    this.constructors.push(
-      ...parser.parseClassConstructors(content, this._classNameProvider)
-    );
-    this.memberFunctions.push(
-      ...parser.parseClassMemberFunctions(content, this._classNameProvider)
-    );
+    return `: ${this._inheritance.join(",")}`;
   }
+}
 
-  serialize(options: io.SerializationOptions): io.Text {
-    const text = io.Text.createEmpty(options.indentStep);
-    if (
-      !this.constructors.length &&
-      !this.nestedClasses.length &&
-      !this.memberFunctions.length
-    ) {
-      return text;
-    }
-
-    switch (options.mode) {
-      case io.SerializableMode.header:
-      case io.SerializableMode.interfaceHeader:
-      case io.SerializableMode.implHeader:
-        return this.serializeDeclarations(options, text);
-      case io.SerializableMode.source:
-      case io.SerializableMode.implSource:
-      default:
-        return this.serializeDefinitions(options, text);
-    }
-  }
-
-  private serializeDeclarations(
-    options: io.SerializationOptions,
-    text: io.Text
-  ): io.Text {
-    text.addLine(this.getScopeHeader());
-
-    const serializedMembers = io.serializeArray(
-      this.getSerializableMembers(),
-      options
-    );
-    text.append(serializedMembers, 1);
-
-    return text;
-  }
-
-  private serializeDefinitions(
-    options: io.SerializationOptions,
-    text: io.Text
-  ): io.Text {
-    const serializedMembers = io.serializeArrayWithNewLineSeperation(
-      this.getSerializableMembers(),
-      options
-    );
-    text.append(serializedMembers);
-
-    return text;
-  }
-
-  private getSerializableMembers(): ISerializable[] {
-    return compact([
-      ...this.constructors,
-      this.destructor,
-      ...this.memberFunctions,
-      ...this.nestedClasses,
+class ClassDefinitionSerializer implements io.ISerializable {
+  static fromClass(cl: IClass): ClassDefinitionSerializer {
+    return new ClassDefinitionSerializer([
+      cl.publicScope,
+      cl.protectedScope,
+      cl.privateScope,
     ]);
   }
-}
-
-class ClassPrivateScope extends ClassScopeBase {
-  protected extractScopeTextFragment(
-    data: io.TextFragment,
-    parser: IParser
-  ): io.TextFragment {
-    return parser.parseClassPrivateScope(data);
+  static fromScopes(classScopes: IClassScope[]) {
+    return new ClassDefinitionSerializer(classScopes);
   }
 
-  protected getScopeHeader(): string {
-    return "private:";
-  }
-}
-class ClassPublicScope extends ClassScopeBase {
-  protected extractScopeTextFragment(
-    data: io.TextFragment,
-    parser: IParser
-  ): io.TextFragment {
-    return parser.parseClassPublicScope(data);
-  }
-
-  protected getScopeHeader(): string {
-    return "public:";
-  }
-}
-class ClassProtectedScope extends ClassScopeBase {
-  protected extractScopeTextFragment(
-    data: io.TextFragment,
-    parser: IParser
-  ): io.TextFragment {
-    return parser.parseClassProtectedScope(data);
-  }
-
-  protected getScopeHeader(): string {
-    return "protected:";
+  private constructor(private readonly _classScopes: IClassScope[]) {}
+  serialize(options: io.SerializationOptions): io.Text {
+    return io.serializeArrayWithNewLineSeperation(this._classScopes, options);
   }
 }
 
-class StructPrivateScope extends ClassScopeBase {
-  protected extractScopeTextFragment(
-    data: io.TextFragment,
-    parser: IParser
-  ): io.TextFragment {
-    return parser.parseStructPrivateScope(data);
+class ClassDeclarationSerializer implements io.ISerializable {
+  private _classSpecifier: ClassSpecifier;
+  static fromClass(
+    cl: IClass,
+    classNameProvider: io.IClassNameProvider,
+    inheritance: string[] = cl.inheritance
+  ): ClassDeclarationSerializer {
+    return new ClassDeclarationSerializer(
+      [cl.publicScope, cl.protectedScope, cl.privateScope],
+      classNameProvider,
+      inheritance
+    );
   }
-
-  protected getScopeHeader(): string {
-    return "private:";
+  static fromScopes(
+    classScopes: IClassScope[],
+    classNameProvider: io.IClassNameProvider,
+    inheritance: string[] = []
+  ): ClassDeclarationSerializer {
+    return new ClassDeclarationSerializer(
+      classScopes,
+      classNameProvider,
+      inheritance
+    );
   }
-}
-class StructPublicScope extends ClassScopeBase {
-  protected extractScopeTextFragment(
-    data: io.TextFragment,
-    parser: IParser
-  ): io.TextFragment {
-    return parser.parseStructPublicScope(data);
+  private constructor(
+    private readonly _classScopes: IClassScope[],
+    classNameProvider: io.IClassNameProvider,
+    inheritance: string[]
+  ) {
+    this._classSpecifier = new ClassSpecifier(
+      inheritance,
+      classNameProvider,
+      "class"
+    );
   }
-
-  protected getScopeHeader(): string {
-    return "public:";
-  }
-}
-class StructProtectedScope extends ClassScopeBase {
-  protected extractScopeTextFragment(
-    data: io.TextFragment,
-    parser: IParser
-  ): io.TextFragment {
-    return parser.parseStructProtectedScope(data);
-  }
-
-  protected getScopeHeader(): string {
-    return "protected:";
-  }
-}
-
-class ClassScopeFactory {
-  constructor(readonly classNameProvider: io.IClassNameProvider) {}
-  createPrivateScope(): IClassScope {
-    return new ClassPrivateScope(this.classNameProvider);
-  }
-
-  createPublicScope(): IClassScope {
-    return new ClassPublicScope(this.classNameProvider);
-  }
-
-  createProtectedScope(): IClassScope {
-    return new ClassProtectedScope(this.classNameProvider);
+  serialize(options: io.SerializationOptions): io.Text {
+    const classBody = io.serializeArray(this._classScopes, options);
+    if (classBody.isEmpty()) {
+      return io.Text.createEmpty();
+    }
+    return this._classSpecifier
+      .asText(options)
+      .add(" {")
+      .append(classBody)
+      .addLine("};");
   }
 }
 
+class ClassImplDeclarationSerializer implements io.ISerializable {
+  private _classDeclarationSerializer: ClassDeclarationSerializer;
+  constructor(cl: IClass, classNameProvider: io.IClassNameProvider) {
+    this._classDeclarationSerializer = ClassDeclarationSerializer.fromClass(
+      cl,
+      classNameProvider,
+      [`public ${cl.name}`]
+    );
+  }
+  serialize(options: io.SerializationOptions): io.Text {
+    return this._classDeclarationSerializer.serialize(options);
+  }
+}
+class AbstractFactorySerializer implements io.ISerializable {
+  private _factoryPublicScope: AbstractFactoryClassPublicScope;
+  constructor(
+    originalClass: IClass,
+    private readonly _classNameProvider: io.IClassNameProvider
+  ) {
+    this._factoryPublicScope = new AbstractFactoryClassPublicScope(
+      originalClass,
+      this._classNameProvider
+    );
+  }
+  serialize(options: io.SerializationOptions): io.Text {
+    if (io.isSourceFileSerializationMode(options.mode)) {
+      return ClassDefinitionSerializer.fromScopes([
+        this._factoryPublicScope,
+      ]).serialize(options);
+    } else {
+      return ClassDeclarationSerializer.fromScopes(
+        [this._factoryPublicScope],
+        this._classNameProvider
+      ).serialize(options);
+    }
+  }
+}
 class ClassBaseUnranged extends io.TextScope implements IClass {
+  readonly publicScope: IClassScope;
+  readonly privateScope: IClassScope;
+  readonly protectedScope: IClassScope;
+  private _classDeserializer: ClassBodyDeserializer;
   constructor(
     scope: io.TextScope,
     public readonly name: string,
     public readonly inheritance: string[],
-    outerClassNameProvider?: io.IClassNameProvider
+    private readonly _classNameGen: ClassNameGenerator,
+    scopeFactory: IClassScopeFactory
   ) {
     super(scope.scopeStart, scope.scopeEnd);
 
-    this._classNameGen = new ClassNameGenerator(name);
-    this._classNameProvider = this._classNameGen.getClassNameProvider(
-      outerClassNameProvider
-    );
-    const scopeFactory = this.getScopeFactory(this._classNameProvider);
     this.publicScope = scopeFactory.createPublicScope();
     this.privateScope = scopeFactory.createPrivateScope();
     this.protectedScope = scopeFactory.createProtectedScope();
+
+    this._classDeserializer = new ClassBodyDeserializer(this);
   }
 
   getName(mode: io.SerializableMode): string {
-    return this._classNameGen.has({ mode })
-      ? this._classNameGen.get({ mode })
-      : this.name;
+    return this._classNameGen.getClassName(mode, false);
   }
 
   async provideNames(
     nameInputProvider: io.INameInputProvider,
+    selection?: io.TextScope,
     ...modes: io.SerializableMode[]
   ): Promise<void> {
-    const generatePromises = this._classNameGen.generate(
+    const generatePromise = this._classNameGen.generate(
       nameInputProvider,
-      ...modes.filter(this.acceptSerializableMode)
+      ...modes
     );
-
+    const modesForwardedToSubclasses = modes.filter(
+      (mode) => mode !== io.SerializableMode.abstractFactoryHeader
+    );
     const subclassPromises = asyncForEach(
       [this.publicScope, this.privateScope, this.protectedScope],
       async (scope) =>
         asyncForEach(scope.nestedClasses, (subClass) =>
-          subClass.provideNames(nameInputProvider, ...modes)
+          subClass.provideNames(
+            nameInputProvider,
+            selection,
+            ...modesForwardedToSubclasses
+          )
         )
     );
 
-    return Promise.all([generatePromises, subclassPromises]).then(
-      () => undefined
-    );
-  }
-
-  protected acceptSerializableMode(mode: io.SerializableMode): boolean {
-    throw new Error("Method not implemented.");
+    await Promise.all([generatePromise, subclassPromises]);
   }
 
   equals(other: IClass, mode?: io.SerializableMode): boolean {
@@ -353,101 +209,28 @@ class ClassBaseUnranged extends io.TextScope implements IClass {
     return this.name === other.name;
   }
 
-  protected getScopeFactory(classNameProvider: io.IClassNameProvider) {
-    return new ClassScopeFactory(classNameProvider);
-  }
-
   deserialize(data: io.TextFragment, parser: IParser) {
-    this.publicScope.deserialize(data, parser);
-    this.privateScope.deserialize(data, parser);
-    this.protectedScope.deserialize(data, parser);
-  }
-
-  private serializeDefinitions(
-    text: io.Text,
-    options: io.SerializationOptions
-  ): io.Text {
-    return text.append(
-      io.serializeArrayWithNewLineSeperation(
-        this.getSerializableMembers(),
-        options
-      )
-    );
-  }
-
-  private serializeDeclarations(
-    text: io.Text,
-    options: io.SerializationOptions
-  ): io.Text {
-    const serializedName = this._classNameGen.get(options);
-
-    return text
-      .addLine(this.getHeaderSerialStart(serializedName))
-      .append(io.serializeArray(this.getSerializableMembers(), options))
-      .addLine("};");
-  }
-
-  private serializeImplHeader(
-    text: io.Text,
-    options: io.SerializationOptions
-  ): io.Text {
-    const serializedName = this._classNameGen.get(options);
-
-    return text
-      .addLine(
-        this.getHeaderSerialStart(serializedName, ["public " + this.name])
-      )
-      .append(io.serializeArray(this.getSerializableMembers(), options))
-      .addLine("};");
-  }
-
-  private getSerializableMembers(): ISerializable[] {
-    return [this.publicScope, this.protectedScope, this.privateScope];
+    this._classDeserializer.deserialize(data, parser);
   }
 
   serialize(options: io.SerializationOptions): io.Text {
-    const text = io.Text.createEmpty(options.indentStep);
+    const serializer = this.getSerializerByMode(options.mode);
+    return serializer.serialize(options);
+  }
 
-    switch (options.mode) {
-      case io.SerializableMode.header:
-      case io.SerializableMode.interfaceHeader:
-        return this.serializeDeclarations(text, options);
-      case io.SerializableMode.implHeader:
-        return this.serializeImplHeader(text, options);
-      case io.SerializableMode.source:
-      case io.SerializableMode.implSource:
-      default:
-        return this.serializeDefinitions(text, options);
+  private getSerializerByMode(mode: io.SerializableMode): io.ISerializable {
+    if (isAbstractFactorySerializationMode(mode)) {
+      return new AbstractFactorySerializer(this, this._classNameGen);
+    } else if (io.isSourceFileSerializationMode(mode)) {
+      return ClassDefinitionSerializer.fromClass(this);
+    } else if (mode === io.SerializableMode.implHeader) {
+      return new ClassImplDeclarationSerializer(this, this._classNameGen);
+    } else {
+      return ClassDeclarationSerializer.fromClass(this, this._classNameGen);
     }
   }
-
-  private getHeaderSerialStart(
-    serializedName: string,
-    inheritance: string[] = this.inheritance
-  ) {
-    let serial = "class " + serializedName;
-    inheritance.forEach((inheritedClass, index) => {
-      if (index === 0) {
-        serial += " : ";
-      }
-      serial += inheritedClass;
-      if (index < inheritance.length - 1) {
-        serial += ", ";
-      }
-    });
-
-    serial += " {";
-
-    return serial;
-  }
-
-  readonly publicScope: IClassScope;
-  readonly privateScope: IClassScope;
-  readonly protectedScope: IClassScope;
-  private readonly _classNameGen: ClassNameGenerator;
-  private _classNameProvider: io.IClassNameProvider;
 }
-class ClassBase extends io.makeRangedSerializable(ClassBaseUnranged) {}
+export class ClassBase extends io.makeRanged(ClassBaseUnranged) {}
 
 export class ClassImplementation extends ClassBase {
   constructor(
@@ -456,20 +239,18 @@ export class ClassImplementation extends ClassBase {
     inheritance: string[],
     outerClassNameProvider?: io.IClassNameProvider
   ) {
-    super(scope, name, inheritance, outerClassNameProvider);
-  }
-
-  protected acceptSerializableMode(mode: io.SerializableMode): boolean {
-    switch (mode) {
-      case io.SerializableMode.implHeader:
-      case io.SerializableMode.implSource:
-        return false;
-      case io.SerializableMode.source:
-      case io.SerializableMode.interfaceHeader:
-      case io.SerializableMode.header:
-      default:
-        return true;
-    }
+    const classNameGenerator = new ClassNameGenerator(
+      name,
+      [
+        io.SerializableMode.source,
+        io.SerializableMode.interfaceHeader,
+        io.SerializableMode.header,
+        io.SerializableMode.abstractFactoryHeader,
+      ],
+      outerClassNameProvider
+    );
+    const classScopeFactory = new ClassScopeFactory(classNameGenerator);
+    super(scope, name, inheritance, classNameGenerator, classScopeFactory);
   }
 }
 
@@ -480,63 +261,62 @@ export class ClassInterface extends ClassBase {
     inheritance: string[],
     outerClassNameProvider?: io.IClassNameProvider
   ) {
-    super(scope, name, inheritance, outerClassNameProvider);
-  }
-  protected acceptSerializableMode(mode: io.SerializableMode): boolean {
-    switch (mode) {
-      case io.SerializableMode.source:
-        //TODO warning
-        return false;
-      case io.SerializableMode.interfaceHeader:
-      case io.SerializableMode.header:
-      case io.SerializableMode.implHeader:
-      case io.SerializableMode.implSource:
-      default:
-        return true;
-    }
+    const classNameGenerator = new ClassNameGenerator(
+      name,
+      [
+        io.SerializableMode.header,
+        io.SerializableMode.implHeader,
+        io.SerializableMode.implSource,
+        io.SerializableMode.abstractFactoryHeader,
+      ],
+      outerClassNameProvider
+    );
+    const classScopeFactory = new ClassScopeFactory(classNameGenerator);
+    super(scope, name, inheritance, classNameGenerator, classScopeFactory);
   }
 }
 
-class StructScopeFactory extends ClassScopeFactory {
-  createPrivateScope(): IClassScope {
-    return new StructPrivateScope(this.classNameProvider);
-  }
-
-  createPublicScope(): IClassScope {
-    return new StructPublicScope(this.classNameProvider);
-  }
-
-  createProtectedScope(): IClassScope {
-    return new StructProtectedScope(this.classNameProvider);
-  }
-}
-
-export class StructImplementation extends ClassImplementation {
+export class StructImplementation extends ClassBase {
   constructor(
     scope: io.TextScope,
     name: string,
     inheritance: string[],
     outerClassNameProvider?: io.IClassNameProvider
   ) {
-    super(scope, name, inheritance, outerClassNameProvider);
-  }
-
-  protected getScopeFactory(classNameProvider: io.IClassNameProvider) {
-    return new StructScopeFactory(classNameProvider);
+    const classNameGenerator = new ClassNameGenerator(
+      name,
+      [
+        io.SerializableMode.source,
+        io.SerializableMode.interfaceHeader,
+        io.SerializableMode.header,
+        io.SerializableMode.abstractFactoryHeader,
+      ],
+      outerClassNameProvider
+    );
+    const structScopeFactory = new StructScopeFactory(classNameGenerator);
+    super(scope, name, inheritance, classNameGenerator, structScopeFactory);
   }
 }
 
-export class StructInterface extends ClassInterface {
+export class StructInterface extends ClassBase {
   constructor(
     scope: io.TextScope,
     name: string,
     inheritance: string[],
     outerClassNameProvider?: io.IClassNameProvider
   ) {
-    super(scope, name, inheritance, outerClassNameProvider);
-  }
+    const classNameGenerator = new ClassNameGenerator(
+      name,
+      [
+        io.SerializableMode.header,
+        io.SerializableMode.implHeader,
+        io.SerializableMode.implSource,
+        io.SerializableMode.abstractFactoryHeader,
+      ],
+      outerClassNameProvider
+    );
+    const structScopeFactory = new StructScopeFactory(classNameGenerator);
 
-  protected getScopeFactory(classNameProvider: io.IClassNameProvider) {
-    return new StructScopeFactory(classNameProvider);
+    super(scope, name, inheritance, classNameGenerator, structScopeFactory);
   }
 }

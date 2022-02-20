@@ -4,7 +4,14 @@ import * as path from "path";
 import { HeaderParser } from "./HeaderParser";
 import { SourceParser } from "./SourceParser";
 
-abstract class FileBase implements io.IDeserializable {
+export interface IFile extends io.IDeserializable {
+  readonly directory: string;
+  readonly basename: string;
+  readonly extension: string;
+  readonly rootNamespace: INamespace;
+}
+
+abstract class FileBase implements IFile {
   constructor(filePath: string, content: string, private _parser: IParser) {
     this.directory = path.dirname(filePath);
     this.extension = filePath.split(".").slice(-1)[0];

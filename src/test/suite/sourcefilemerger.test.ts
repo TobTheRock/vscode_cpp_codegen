@@ -116,7 +116,7 @@ suite("Source file merger", async () => {
     return new vscode.Range(end, end);
   }
 
-  test("Should not add/delete anything if there are no changeS", function () {
+  test("Should not add/delete anything if there are no changes", function () {
     const sourceFileMerger = createSourceFileMerger();
     sourceFileMerger.merge();
     expect(edit.get(testSourceDocument.uri)).to.be.empty;

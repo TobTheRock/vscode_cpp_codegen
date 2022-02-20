@@ -6,7 +6,7 @@ import {
 } from "./utils";
 import * as io from "../io";
 import { FunctionBase } from "./CommonFunction";
-class MemberFunctionBase
+export class MemberFunctionBase
   extends FunctionBase
   implements IFunction, io.ISerializable
 {
@@ -23,7 +23,6 @@ class MemberFunctionBase
 
   serialize(options: io.SerializationOptions): io.Text {
     const text = io.Text.createEmpty(options.indentStep);
-
     switch (options.mode) {
       case io.SerializableMode.source:
         return this.serializeDefinition(text, options);
@@ -35,36 +34,30 @@ class MemberFunctionBase
   }
 
   protected getHeading(options: io.SerializationOptions) {
-    switch (options.mode) {
-      case io.SerializableMode.header:
-      case io.SerializableMode.implHeader:
-      case io.SerializableMode.interfaceHeader:
-        return (
-          this.returnVal +
-          " " +
-          this.name +
-          "(" +
-          this.args +
-          ")" +
-          (this.isConst ? " const" : "")
-        );
-      case io.SerializableMode.source:
-      case io.SerializableMode.implSource:
-        return (
-          this.returnVal +
-          " " +
-          joinNameScopesWithMemberFunctionName(
-            options.nameScopes,
-            this._classNameProvider.getClassName(options.mode, true),
-            this.name
-          ) +
-          "(" +
-          removeDefaultInitializersFromArgs(this.args) +
-          ")" +
-          (this.isConst ? " const" : "")
-        );
-      default:
-        break;
+    if (io.isSourceFileSerializationMode(options.mode)) {
+      return (
+        this.returnVal +
+        " " +
+        joinNameScopesWithMemberFunctionName(
+          options.nameScopes,
+          this._classNameProvider.getClassName(options.mode, true),
+          this.name
+        ) +
+        "(" +
+        removeDefaultInitializersFromArgs(this.args) +
+        ")" +
+        (this.isConst ? " const" : "")
+      );
+    } else {
+      return (
+        this.returnVal +
+        " " +
+        this.name +
+        "(" +
+        this.args +
+        ")" +
+        (this.isConst ? " const" : "")
+      );
     }
   }
 }
