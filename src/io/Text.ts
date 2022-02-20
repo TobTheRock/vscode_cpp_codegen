@@ -1,5 +1,4 @@
 import { last } from "lodash";
-import * as os from "os";
 
 // TODO utils
 function error(condition: boolean, errMsg: string = "") {
@@ -9,6 +8,7 @@ function error(condition: boolean, errMsg: string = "") {
 }
 
 export class Text {
+  private static readonly _eol: string = "\n";
   private constructor(
     private readonly _indentStep: string = "",
     private readonly _lines: string[] = []
@@ -18,7 +18,7 @@ export class Text {
     return new Text(indentStep);
   }
   static fromString(text: string, indentStep: string = ""): Text {
-    const lines = text.split(os.EOL);
+    const lines = text.split(Text._eol);
     return new Text(indentStep, lines);
   }
 
@@ -46,7 +46,7 @@ export class Text {
   }
 
   toString(): string {
-    return this._lines.join(os.EOL);
+    return this._lines.join(Text._eol);
   }
 
   isEmpty(): boolean {
