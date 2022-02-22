@@ -79,6 +79,9 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 
 ## Release Notes
 
+### 0.3.1
+- Rerelease due to faulty bundling, new commands are not available
+
 ### 0.3.0
 
 - added: Creating abstract factories from a header

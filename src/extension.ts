@@ -167,7 +167,7 @@ export async function activate(context: vscode.ExtensionContext) {
   ) {
     const headerFile = createHeaderFile(textEditor);
     if (headerFile) {
-      generateStubsFromHeader(
+      await generateStubsFromHeader(
         headerFile,
         workspaceDirectoryFinder,
         config,
@@ -176,6 +176,7 @@ export async function activate(context: vscode.ExtensionContext) {
       );
     }
   }
+  
   context.subscriptions.push(
     vscode.commands.registerTextEditorCommand(
       "codegen-cpp.cppAbstractFactoryFromHeader",

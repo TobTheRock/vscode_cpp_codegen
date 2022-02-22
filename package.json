@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/HerrFroehlich/vscode_cpp_codegen"
   },
-  "version": "0.3.0",
+  "version": "0.3.1",
   "engines": {
     "vscode": "^1.51.0"
   },
