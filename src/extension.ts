@@ -39,7 +39,6 @@ function getSelection(textEditor: vscode.TextEditor): io.TextScope | undefined {
 
 async function generateStubsFromHeader(
   headerFile: cpp.HeaderFile,
-  workspaceDirectoryFinder: ui.WorkspaceDirectoryFinder,
   config: IExtensionConfiguration,
   selection?: io.TextScope,
   ...modes: io.SerializableMode[]
@@ -47,7 +46,6 @@ async function generateStubsFromHeader(
   const fileHandler = new HeaderFileHandler(
     headerFile,
     new vscode.WorkspaceEdit(),
-    workspaceDirectoryFinder,
     config
   );
   try {
@@ -64,23 +62,10 @@ async function generateStubsFromHeader(
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-  console.log("Activating code-gen.cpp!"); // TODO logger!
   let config = Configuration.get();
-  let workspaceDirectoryFinder = new ui.WorkspaceDirectoryFinder(config);
 
   context.subscriptions.push(
     Configuration.registerOnChanged(async (updatedConfig) => {
-      if (
-        config.outputDirectorySelector.ignoredDirectories !==
-          updatedConfig.outputDirectorySelector.ignoredDirectories &&
-        config.outputDirectorySelector.useGitIgnore !==
-          updatedConfig.outputDirectorySelector.useGitIgnore
-      ) {
-        workspaceDirectoryFinder = new ui.WorkspaceDirectoryFinder(
-          updatedConfig
-        );
-        await workspaceDirectoryFinder.scan();
-      }
       config = updatedConfig;
     })
   );
@@ -93,7 +78,6 @@ export async function activate(context: vscode.ExtensionContext) {
         if (headerFile) {
           await generateStubsFromHeader(
             headerFile,
-            workspaceDirectoryFinder,
             config,
             undefined,
             io.SerializableMode.source
@@ -112,7 +96,6 @@ export async function activate(context: vscode.ExtensionContext) {
           const selection = getSelection(textEditor);
           await generateStubsFromHeader(
             headerFile,
-            workspaceDirectoryFinder,
             config,
             selection,
             io.SerializableMode.source
@@ -130,7 +113,6 @@ export async function activate(context: vscode.ExtensionContext) {
         if (headerFile) {
           await generateStubsFromHeader(
             headerFile,
-            workspaceDirectoryFinder,
             config,
             undefined,
             io.SerializableMode.implHeader,
@@ -150,7 +132,6 @@ export async function activate(context: vscode.ExtensionContext) {
           const selection = getSelection(textEditor);
           await generateStubsFromHeader(
             headerFile,
-            workspaceDirectoryFinder,
             config,
             selection,
             io.SerializableMode.implSource,
@@ -169,14 +150,13 @@ export async function activate(context: vscode.ExtensionContext) {
     if (headerFile) {
       await generateStubsFromHeader(
         headerFile,
-        workspaceDirectoryFinder,
         config,
         selection,
         io.SerializableMode.abstractFactoryHeader
       );
     }
   }
-  
+
   context.subscriptions.push(
     vscode.commands.registerTextEditorCommand(
       "codegen-cpp.cppAbstractFactoryFromHeader",
@@ -195,8 +175,6 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     )
   );
-
-  await workspaceDirectoryFinder.scan();
 }
 
 // this method is called when your extension is deactivated

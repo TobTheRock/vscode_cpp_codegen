@@ -2,7 +2,6 @@ import { awaitMapEntries } from "../utils";
 import * as cpp from "../cpp";
 import * as io from "../io";
 import * as vscode from "vscode";
-import { WorkspaceDirectoryFinder } from "./WorkspaceDirectories";
 import { IExtensionConfiguration } from "../Configuration";
 import { DirectoryPicker } from "./DirectoryPicker";
 import {
@@ -129,7 +128,6 @@ export class UserDialog {
 
   constructor(
     private readonly _file: cpp.IFile,
-    private readonly _workspaceDirectoryFinder: WorkspaceDirectoryFinder,
     private readonly _config: IExtensionConfiguration
   ) {
     this._namePattern = new NamePattern(this._config);
@@ -159,8 +157,7 @@ export class UserDialog {
   private pickOutputDirectory(): Promise<vscode.Uri> {
     return this._inputPromptRegistry.registerElement(
       DirectoryPicker,
-      this._workspaceDirectoryFinder,
-      this._config.outputDirectorySelector.mode,
+      this._config,
       vscode.Uri.file(this._file.directory)
     );
   }

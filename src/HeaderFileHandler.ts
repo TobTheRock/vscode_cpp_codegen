@@ -24,14 +24,9 @@ export class HeaderFileHandler {
   constructor(
     private readonly _headerFile: cpp.HeaderFile,
     private readonly _edit: vscode.WorkspaceEdit,
-    workspaceDirectoryFinder: ui.WorkspaceDirectoryFinder,
     private readonly _config: IExtensionConfiguration
   ) {
-    this._userDialog = new ui.UserDialog(
-      this._headerFile,
-      workspaceDirectoryFinder,
-      this._config
-    );
+    this._userDialog = new ui.UserDialog(this._headerFile, this._config);
     this._indentStep = this.getIndentStep();
   }
 
