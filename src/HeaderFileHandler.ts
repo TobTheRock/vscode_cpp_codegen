@@ -141,6 +141,7 @@ export class HeaderFileHandler {
       case io.SerializableMode.implHeader:
       case io.SerializableMode.abstractFactoryHeader:
         fileHeader = this._config.fileHeader.forCppHeader;
+        fileHeader += "#pragma once\n\n";
         fileHeader += this.createIncludeStatements(
           outputDirectory,
           this._headerFile.getPath()

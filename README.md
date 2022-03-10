@@ -82,6 +82,7 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 ### 0.3.2
 
 - reworked directory quick pick
+- fix: missing header guards
 
 ### 0.3.1
 
