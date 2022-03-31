@@ -1,7 +1,14 @@
-import { compact, isEqual, last, zip } from "lodash";
+import { compact, flatten, isEqual, last, zip } from "lodash";
 
 import * as io from "../io";
-import { IDefinition, ignoresClassNames, isDefinition } from "./TypeInterfaces";
+import {
+  IClass,
+  IClassScope,
+  IDefinition,
+  ignoresClassNames,
+  INamespace,
+  isDefinition,
+} from "./TypeInterfaces";
 import { IConstructor, IDestructor, IFunction } from ".";
 
 export class SourceFileDefinition extends io.TextScope implements IDefinition {
@@ -150,4 +157,83 @@ export class SourceFileDefinition extends io.TextScope implements IDefinition {
 
     return true;
   }
+}
+
+export function extractDefinitionsFromNamespace(
+  namespace: INamespace,
+  mode: io.SerializableMode,
+  namespaceNames: string[] = []
+) {
+  return [
+    ...namespace.functions.map((funct) =>
+      SourceFileDefinition.createFromFunction(funct, namespaceNames)
+    ),
+    ...flatten(
+      namespace.classes.map((cl) => extractDefinitionsFromClass(cl, mode))
+    ),
+  ];
+}
+
+// TODO this is recursive, how to differ from the non recursive extractDefinitionsFromNamespace?
+export function extractDefinitionsFromClass(
+  cl: IClass,
+  mode: io.SerializableMode,
+  namespaceNames: string[] = [],
+  parentClassNames: string[] = []
+): IDefinition[] {
+  const className = mode ? cl.getName(mode) : cl.name;
+  const classNames = [...parentClassNames, className];
+  const definitions: IDefinition[] = [];
+
+  definitions.push(
+    ...flatten(
+      [cl.privateScope, cl.protectedScope, cl.publicScope].map((scope) =>
+        extractDefinitionsFromClassScope(
+          scope,
+          namespaceNames,
+          classNames,
+          mode
+        )
+      )
+    )
+  );
+
+  return definitions;
+}
+
+function extractDefinitionsFromClassScope(
+  scope: IClassScope,
+  namespaceNames: string[],
+  classNames: string[],
+  mode: io.SerializableMode
+): IDefinition[] {
+  const definitions: IDefinition[] = scope.constructors.map((ctor) =>
+    SourceFileDefinition.createFromConstructor(ctor, namespaceNames, classNames)
+  );
+  if (scope.destructor) {
+    definitions.push(
+      SourceFileDefinition.createFromDestructor(
+        scope.destructor,
+        namespaceNames,
+        classNames
+      )
+    );
+  }
+  definitions.push(
+    ...scope.memberFunctions.map((fnct) =>
+      SourceFileDefinition.createFromMemberFunction(
+        fnct,
+        namespaceNames,
+        classNames
+      )
+    )
+  );
+  definitions.push(
+    ...flatten(
+      scope.nestedClasses.map((cl) =>
+        extractDefinitionsFromClass(cl, mode, namespaceNames, classNames)
+      )
+    )
+  );
+  return definitions;
 }

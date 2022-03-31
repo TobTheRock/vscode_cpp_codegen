@@ -28,26 +28,20 @@ export class MemberFunctionBase
         return this.serializeDefinition(text, options);
       case io.SerializableMode.header:
         return this.serializeDeclaration(text, options);
+      case io.SerializableMode.completionItemLabel:
+        return this.serializeCompletionItemLable(options);
       default:
         return text;
     }
   }
 
-  protected getHeading(options: io.SerializationOptions) {
+  protected getHeading(options: io.SerializationOptions): string {
     if (io.isSourceFileSerializationMode(options.mode)) {
       return (
-        this.returnVal +
-        " " +
-        joinNameScopesWithMemberFunctionName(
-          options.nameScopes,
-          this._classNameProvider.getClassName(options.mode, true),
-          this.name
-        ) +
-        "(" +
-        removeDefaultInitializersFromArgs(this.args) +
-        ")" +
-        (this.isConst ? " const" : "")
+        this.returnVal + " " + this.getDefinitionFunctionSignature(options)
       );
+    } else if (options.mode === io.SerializableMode.completionItemLabel) {
+      return this.getDefinitionFunctionSignature(options);
     } else {
       return (
         this.returnVal +
@@ -59,6 +53,22 @@ export class MemberFunctionBase
         (this.isConst ? " const" : "")
       );
     }
+  }
+
+  private getDefinitionFunctionSignature(
+    options: io.SerializationOptions
+  ): string {
+    return (
+      joinNameScopesWithMemberFunctionName(
+        options.nameScopes,
+        this._classNameProvider.getClassName(options.mode, true),
+        this.name
+      ) +
+      "(" +
+      removeDefaultInitializersFromArgs(this.args) +
+      ")" +
+      (this.isConst ? " const" : "")
+    );
   }
 }
 export class MemberFunction extends io.makeRangedSerializable(
@@ -112,6 +122,8 @@ class StaticMemberFunctionUnranged extends MemberFunctionBase {
         return this.serializeDefinition(text, options);
       case io.SerializableMode.header:
         return this.serializeDeclaration(text, options, "static ");
+      case io.SerializableMode.completionItemLabel:
+        return this.serializeCompletionItemLable(options);
       default:
         return text;
     }
@@ -146,6 +158,9 @@ export class PureVirtualMemberFunctionUnranged extends MemberFunctionBase {
 
       case io.SerializableMode.implSource:
         return this.serializeDefinition(text, options);
+
+      case io.SerializableMode.completionItemLabel:
+        return this.serializeCompletionItemLable(options);
 
       case io.SerializableMode.interfaceHeader:
       case io.SerializableMode.source:
@@ -188,7 +203,7 @@ class FriendFunctionUnranged
     }
   }
 
-  protected getHeading(options: io.SerializationOptions) {
+  protected getHeading(options: io.SerializationOptions): string {
     const friendPrefix = "friend ";
     switch (options.mode) {
       case io.SerializableMode.header:
@@ -206,18 +221,20 @@ class FriendFunctionUnranged
         );
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
-        return (
-          this.returnVal +
-          " " +
-          joinNameScopesWithFunctionName(options.nameScopes, this.name) +
-          "(" +
-          removeDefaultInitializersFromArgs(this.args) +
-          ")" +
-          (this.isConst ? " const" : "")
-        );
+        return `${this.returnVal} ${this.getDefinitionSignature(options)}`;
       default:
-        break;
+        return "";
     }
+  }
+
+  private getDefinitionSignature(options: io.SerializationOptions): string {
+    return (
+      joinNameScopesWithFunctionName(options.nameScopes, this.name) +
+      "(" +
+      removeDefaultInitializersFromArgs(this.args) +
+      ")" +
+      (this.isConst ? " const" : "")
+    );
   }
 }
 export class FriendFunction extends io.makeRangedSerializable(

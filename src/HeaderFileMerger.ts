@@ -7,7 +7,7 @@ import {
   Difference,
   TextDocumentScopeAdder,
   TextDocumentScopeDeleter,
-} from "./TextDocumentDifference";
+} from "./TextDocumentManipulation";
 
 export class HeaderFileMerger implements IFileMerger {
   private _scopeAdder: TextDocumentScopeAdder;

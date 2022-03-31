@@ -2,12 +2,13 @@ import { Text, TextFragment, TextScope } from "./Text";
 import { flatten, isEmpty, isObject } from "lodash";
 
 export enum SerializableMode {
-  header, // matching header file (respective to current file, which is a Source)
-  source, // matching source file (respective to current file, which is a Header)
-  implHeader, // implementation header file (respective to current file, which has a class with pure virtual functions)
-  implSource, // implementation source file (respective to current file, which has a class with pure virtual functions)
-  interfaceHeader, // interface header file (respective to current file, which has a class with  virtual functions => pure virtual ones are generated)
-  abstractFactoryHeader, // header file of abstract factory for implementations of interfaces in current file
+  header,
+  source,
+  implHeader,
+  implSource,
+  interfaceHeader,
+  abstractFactoryHeader,
+  completionItemLabel,
 }
 
 export const HEADER_SOURCE_GROUP = [

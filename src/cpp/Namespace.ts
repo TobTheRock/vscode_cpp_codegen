@@ -72,6 +72,12 @@ export class Namespace extends io.TextScope implements INamespace {
   }
 
   serialize(options: io.SerializationOptions): io.Text {
+    if (options.mode === io.SerializableMode.completionItemLabel) {
+      return Text.createEmpty(options.indentStep).addLine(
+        `namespace ${this.name}`
+      );
+    }
+
     const config = Configuration.get(); // TODO pass the config via SerializationOptions
 
     if (

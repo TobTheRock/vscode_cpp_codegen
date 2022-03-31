@@ -91,6 +91,10 @@ interface IAbstractFactorySection {
   deduceImplementationName: boolean;
 }
 
+interface ISourceFileCompletionProviderSection {
+  trigger: string;
+  enable: boolean;
+}
 export interface IExtensionConfiguration {
   fileHeader: IFileHeaderSection;
   outputFileExtension: IOutputFileExtensionSection;
@@ -100,6 +104,7 @@ export interface IExtensionConfiguration {
   refactoringPreview: RefactoringPreview;
   interface: IInterfaceSection;
   abstractFactory: IAbstractFactorySection;
+  sourceFileCompletionProvider: ISourceFileCompletionProviderSection;
 }
 
 export class Configuration {
@@ -167,6 +172,13 @@ export class Configuration {
       ),
     };
 
+    const sourceFileCompletionProvider = {
+      trigger: getConfigString(
+        "codegen-cpp.SourceFileCompletionProvider.Trigger"
+      ),
+      enable: getConfigBool("codegen-cpp.SourceFileCompletionProvider.Enable"),
+    };
+
     return {
       fileHeader,
       outputFileExtension,
@@ -176,6 +188,7 @@ export class Configuration {
       refactoringPreview,
       interface: interfaceSection,
       abstractFactory,
+      sourceFileCompletionProvider,
     };
   }
 

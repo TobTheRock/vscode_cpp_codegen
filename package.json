@@ -153,6 +153,18 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Whether to deduce the name of an abstract factory from the name pattern. Else an input prompt is displayed."
+        },
+        "codegen-cpp.SourceFileCompletionProvider.Enable": {
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether to enable the completion provider feature for source files"
+        },
+        "codegen-cpp.SourceFileCompletionProvider.Trigger": {
+          "type": "string",
+          "default": ".",
+          "pattern": "^[^a-zA-Z\\d\\s]?$",
+          "patternErrorMessage": "Must be left empty or be a single non whitespace, non alpha-numeric character!",
+          "description": "Character which triggers displaying the completion items in a source file. Leave empty to disable the trigger feature."
         }
       }
     },

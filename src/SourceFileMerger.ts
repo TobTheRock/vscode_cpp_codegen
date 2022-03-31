@@ -2,17 +2,18 @@ import * as cpp from "./cpp";
 import * as io from "./io";
 import * as vscode from "vscode";
 import { IFileMerger, FileMergerOptions } from "./IFileMerger";
-import { flatten } from "lodash";
 import {
   Difference,
   TextDocumentScopeAdder,
   TextDocumentScopeDeleter,
-} from "./TextDocumentDifference";
+} from "./TextDocumentManipulation";
+import { NamespaceDefinitionDifference } from "./NamespaceDefinitionDifference";
 
 export class SourceFileMerger implements IFileMerger {
   private _scopeAdder: TextDocumentScopeAdder;
   private _scopeDeleter?: TextDocumentScopeDeleter;
   private _existingSourceFile: cpp.SourceFile;
+  private _definitionDiff: NamespaceDefinitionDifference;
 
   constructor(
     options: FileMergerOptions,
@@ -35,6 +36,7 @@ export class SourceFileMerger implements IFileMerger {
         options.skipConfirmRemoving
       );
     }
+    this._definitionDiff = new NamespaceDefinitionDifference(_serializeOptions);
 
     const text = existingDocument.getText();
     this._existingSourceFile = new cpp.SourceFile(
@@ -76,10 +78,9 @@ export class SourceFileMerger implements IFileMerger {
       existingNamespace.subnamespaces,
       generatedNamespace.subnamespaces
     );
-    const definitionDiff = this.createDefintionDiff(
-      existingNamespace.functions,
-      generatedNamespace.functions,
-      generatedNamespace.classes
+    const definitionDiff = this._definitionDiff.getDifference(
+      existingNamespace,
+      generatedNamespace
     );
 
     adderFunction(
@@ -119,99 +120,6 @@ export class SourceFileMerger implements IFileMerger {
         !namespace.subnamespaces.length) ||
       namespace.serialize(this._serializeOptions).isEmpty() // TODO this might be quite inefficent => find a better way
     );
-  }
-
-  private createDefintionDiff(
-    existingFunctions: cpp.IFunction[],
-    generatedFunctions: cpp.IFunction[],
-    generatedClasses: cpp.IClass[]
-  ): Difference<cpp.IDefinition> {
-    const existingDefinitions = existingFunctions.map((fnct) =>
-      cpp.SourceFileDefinition.createFromFunction(fnct, [])
-    );
-    const generatedDefinitions = flatten(
-      generatedClasses.map((cl) =>
-        this.extractDefinitionsFromClass(cl, this._serializeOptions.mode)
-      )
-    );
-    generatedDefinitions.push(
-      ...generatedFunctions.map((fnct) =>
-        cpp.SourceFileDefinition.createFromFunction(fnct, [])
-      )
-    );
-
-    return new Difference(
-      existingDefinitions,
-      generatedDefinitions,
-      this._serializeOptions
-    );
-  }
-
-  private extractDefinitionsFromClass(
-    cl: cpp.IClass,
-    mode: io.SerializableMode,
-    namespaceNames: string[] = [],
-    parentClassNames: string[] = []
-  ): cpp.IDefinition[] {
-    const className = mode ? cl.getName(mode) : cl.name;
-    const classNames = [...parentClassNames, className];
-    const definitions: cpp.IDefinition[] = [];
-
-    definitions.push(
-      ...flatten(
-        [cl.privateScope, cl.protectedScope, cl.publicScope].map((scope) =>
-          this.extractDefinitionsFromClassScope(
-            scope,
-            namespaceNames,
-            classNames,
-            mode
-          )
-        )
-      )
-    );
-
-    return definitions;
-  }
-
-  private extractDefinitionsFromClassScope(
-    scope: cpp.IClassScope,
-    namespaceNames: string[],
-    classNames: string[],
-    mode: io.SerializableMode
-  ): cpp.IDefinition[] {
-    const definitions: cpp.IDefinition[] = scope.constructors.map((ctor) =>
-      cpp.SourceFileDefinition.createFromConstructor(
-        ctor,
-        namespaceNames,
-        classNames
-      )
-    );
-    if (scope.destructor) {
-      definitions.push(
-        cpp.SourceFileDefinition.createFromDestructor(
-          scope.destructor,
-          namespaceNames,
-          classNames
-        )
-      );
-    }
-    definitions.push(
-      ...scope.memberFunctions.map((fnct) =>
-        cpp.SourceFileDefinition.createFromMemberFunction(
-          fnct,
-          namespaceNames,
-          classNames
-        )
-      )
-    );
-    definitions.push(
-      ...flatten(
-        scope.nestedClasses.map((cl) =>
-          this.extractDefinitionsFromClass(cl, mode, namespaceNames, classNames)
-        )
-      )
-    );
-    return definitions;
   }
 
   private createDiff<T extends cpp.Comparable<T>>(

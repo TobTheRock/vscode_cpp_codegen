@@ -9,8 +9,7 @@ import {
 } from "./UserInput";
 
 import * as vscode from "vscode";
-import anymatch, { Matcher } from "anymatch";
-import { config } from "process";
+import anymatch from "anymatch";
 
 export class DirectoryItem implements vscode.QuickPickItem {
   public readonly label: string;

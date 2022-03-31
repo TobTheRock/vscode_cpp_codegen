@@ -9,7 +9,6 @@ import {
 } from "./ClassScope";
 import { isAbstractFactorySerializationMode } from "../io";
 import { AbstractFactoryClassPublicScope } from "./Factory";
-import { remove } from "lodash";
 class ClassBodyDeserializer {
   constructor(private readonly _class: IClass) {}
 

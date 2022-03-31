@@ -17,6 +17,7 @@ export class ClassNameGenerator implements io.IClassNameProvider {
     this._createdNames = new Map([
       [io.SerializableMode.header, _origName],
       [io.SerializableMode.source, _origName],
+      [io.SerializableMode.completionItemLabel, _origName],
     ]);
   }
 

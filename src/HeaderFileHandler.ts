@@ -5,7 +5,11 @@ import * as vscode from "vscode";
 import * as ui from "./ui";
 import * as path from "path";
 import { IExtensionConfiguration, RefactoringPreview } from "./Configuration";
-import { asyncForEach, awaitMapEntries, getErrorMessage } from "./utils";
+import {
+  asyncForEach,
+  getActiveEditorIndentStep,
+  getErrorMessage,
+} from "./utils";
 import { HeaderFileMerger } from "./HeaderFileMerger";
 import { FileMergerOptions } from "./IFileMerger";
 import { compact } from "lodash";
@@ -27,15 +31,7 @@ export class HeaderFileHandler {
     private readonly _config: IExtensionConfiguration
   ) {
     this._userDialog = new ui.UserDialog(this._headerFile, this._config);
-    this._indentStep = this.getIndentStep();
-  }
-
-  private getIndentStep(): string {
-    const activeEditor = vscode.window.activeTextEditor;
-    const useSpaces = activeEditor?.options.insertSpaces;
-    const tabSize = activeEditor?.options.tabSize as number;
-
-    return useSpaces && tabSize ? " ".repeat(tabSize) : "\t";
+    this._indentStep = getActiveEditorIndentStep();
   }
 
   async writeFileAs(...modes: io.SerializableMode[]) {
@@ -166,6 +162,8 @@ export class HeaderFileHandler {
         );
         fileHeader += this.createIncludeStatements(outputDirectory, include);
         break;
+      default:
+        fileHeader = "";
     }
     return fileHeader;
   }

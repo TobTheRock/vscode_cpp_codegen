@@ -1,4 +1,4 @@
-import { KeyType } from "crypto";
+import * as vscode from "vscode";
 
 export async function asyncForEach<Type>(
   array: Type[],
@@ -28,4 +28,25 @@ export async function awaitMapEntries<KeyType, ValueType>(
 
 export function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "UNKOWN";
+}
+type FileConstructor<T> = new (name: string, content: string) => T;
+export function createCppFileFromDocument<T>(
+  ctor: FileConstructor<T>,
+  document: vscode.TextDocument
+): T | undefined {
+  try {
+    return new ctor(document.fileName, document.getText());
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      "Unable to parse file: " + getErrorMessage(error)
+    );
+    return;
+  }
+}
+export function getActiveEditorIndentStep(): string {
+  const activeEditor = vscode.window.activeTextEditor;
+  const useSpaces = activeEditor?.options.insertSpaces;
+  const tabSize = activeEditor?.options.tabSize as number;
+
+  return useSpaces && tabSize ? " ".repeat(tabSize) : "\t";
 }

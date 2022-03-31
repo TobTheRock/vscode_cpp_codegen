@@ -3,7 +3,7 @@ import * as cpp from "./cpp";
 import * as vscode from "vscode";
 import * as io from "./io";
 
-interface ChangedPair<T> {
+export interface ChangedPair<T> {
   generated: T;
   existing: T;
 }

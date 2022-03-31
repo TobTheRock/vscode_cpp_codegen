@@ -26,7 +26,7 @@ export abstract class FunctionBase
     throw new Error("Method not implemented.");
   }
 
-  protected getHeading(options: io.SerializationOptions) {
+  protected getHeading(options: io.SerializationOptions): string {
     throw new Error("Method not implemented.");
   }
 
@@ -51,5 +51,11 @@ export abstract class FunctionBase
     postfix: string = ""
   ): io.Text {
     return text.addLine(`${prefix}${this.getHeading(options)}${postfix};`);
+  }
+
+  protected serializeCompletionItemLable(
+    options: io.SerializationOptions
+  ): io.Text {
+    return io.Text.createEmpty().addLine(this.getHeading(options));
   }
 }

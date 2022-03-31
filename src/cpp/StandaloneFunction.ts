@@ -16,25 +16,31 @@ class StandaloneFunctionBase extends FunctionBase implements IFunction {
     super(name, returnVal, args, scope);
   }
 
-  protected getHeading(options: io.SerializationOptions) {
+  protected getHeading(options: io.SerializationOptions): string {
     switch (options.mode) {
       case io.SerializableMode.header:
       case io.SerializableMode.implHeader:
       case io.SerializableMode.interfaceHeader:
         return this.returnVal + " " + this.name + "(" + this.args + ")";
+
       case io.SerializableMode.source:
       case io.SerializableMode.implSource:
-        return (
-          this.returnVal +
-          " " +
-          joinNameScopesWithFunctionName(options.nameScopes, this.name) +
-          "(" +
-          removeDefaultInitializersFromArgs(this.args) +
-          ")"
-        );
+        return `${this.returnVal} ${this.getDefinitionSignature(options)}`;
+
+      case io.SerializableMode.completionItemLabel:
+        return this.getDefinitionSignature(options);
+
       default:
-        break;
+        return "";
     }
+  }
+  private getDefinitionSignature(options: io.SerializationOptions): string {
+    return (
+      joinNameScopesWithFunctionName(options.nameScopes, this.name) +
+      "(" +
+      removeDefaultInitializersFromArgs(this.args) +
+      ")"
+    );
   }
 
   serialize(options: io.SerializationOptions): io.Text {
@@ -47,6 +53,9 @@ class StandaloneFunctionBase extends FunctionBase implements IFunction {
       case io.SerializableMode.interfaceHeader:
       case io.SerializableMode.implHeader:
         return this.serializeDeclaration(text, options);
+
+      case io.SerializableMode.completionItemLabel:
+        return this.serializeCompletionItemLable(options);
 
       default:
         return text;
