@@ -2,8 +2,13 @@ import * as vscode from "vscode";
 import * as cpp from "./cpp";
 import * as io from "./io";
 import * as path from "path";
-import { Configuration, IExtensionConfiguration } from "./Configuration";
-import { createCppFileFromDocument } from "./utils";
+import {
+  Configuration,
+  getLanguage,
+  IExtensionConfiguration,
+  Language,
+} from "./Configuration";
+import { createFileFromDocument } from "./utils";
 import { SourceFileCompletionItems } from "./SourceFileCompletionItems";
 
 export class SourceFileCompletionProvider
@@ -40,18 +45,16 @@ export class SourceFileCompletionProvider
       return [];
     }
 
-    const headerDocument = await this.getHeaderDocument(sourceDocument.uri);
+    const language = getLanguage(sourceDocument);
+    const headerDocument = await this.getHeaderDocument(
+      sourceDocument.uri,
+      language
+    );
     if (!headerDocument) {
       return [];
     }
-    const headerFile = createCppFileFromDocument(
-      cpp.HeaderFile,
-      headerDocument
-    );
-    const sourceFile = createCppFileFromDocument(
-      cpp.SourceFile,
-      sourceDocument
-    );
+    const headerFile = createFileFromDocument(cpp.HeaderFile, headerDocument);
+    const sourceFile = createFileFromDocument(cpp.SourceFile, sourceDocument);
 
     if (!headerFile || !sourceFile) {
       return [];
@@ -94,14 +97,18 @@ export class SourceFileCompletionProvider
   }
 
   private async getHeaderDocument(
-    sourceFilePath: vscode.Uri
+    sourceFilePath: vscode.Uri,
+    language: Language
   ): Promise<vscode.TextDocument | undefined> {
     const extension = path.extname(sourceFilePath.fsPath);
     const basename = path.basename(sourceFilePath.fsPath, extension);
     const directory = path.dirname(sourceFilePath.fsPath);
 
-    const expectedHeaderFileName = `${basename}.${this._config.outputFileExtension.forCppHeader}`;
-
+    const expectedHeaderExtension =
+      language === Language.cpp
+        ? this._config.outputFileExtension.forCppHeader
+        : this._config.outputFileExtension.forCHeader;
+    const expectedHeaderFileName = `${basename}.${expectedHeaderExtension}`;
     const expectedPath = vscode.Uri.file(
       path.join(directory, expectedHeaderFileName)
     );

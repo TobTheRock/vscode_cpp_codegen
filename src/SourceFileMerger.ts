@@ -8,6 +8,7 @@ import {
   TextDocumentScopeDeleter,
 } from "./TextDocumentManipulation";
 import { NamespaceDefinitionDifference } from "./NamespaceDefinitionDifference";
+import { getLanguage, Language } from "./Configuration";
 
 export class SourceFileMerger implements IFileMerger {
   private _scopeAdder: TextDocumentScopeAdder;
@@ -41,7 +42,8 @@ export class SourceFileMerger implements IFileMerger {
     const text = existingDocument.getText();
     this._existingSourceFile = new cpp.SourceFile(
       existingDocument.fileName,
-      text
+      text,
+      getLanguage(existingDocument)
     );
   }
 

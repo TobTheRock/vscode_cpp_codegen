@@ -1,7 +1,7 @@
 {
   "name": "codegen-cpp",
-  "displayName": "Stub Code Generator for C++",
-  "description": "Facilitates writing C++ by generating stub definitions from header files",
+  "displayName": "Stub Code Generator for C/C++",
+  "description": "Facilitates writing C/C++ by generating stub definitions from header files",
   "publisher": "HerrFroehlich",
   "repository": {
     "type": "git",
@@ -12,6 +12,8 @@
     "vscode": "^1.51.0"
   },
   "categories": [
+    "Snippets",
+    "Programming Languages",
     "Other"
   ],
   "keywords": [
@@ -24,26 +26,29 @@
     "implementation",
     "header",
     "source",
-    "interface"
+    "interface",
+    "declaration",
+    "autocompletion"
   ],
   "activationEvents": [
+    "onLanguage:c",
     "onLanguage:cpp"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
-      "title": "Stub Code Generator C++",
+      "title": "Stub Code Generator C/1C++",
       "properties": {
         "codegen-cpp.FileHeader.ForC++Source": {
           "type": "array",
           "default": [],
-          "description": "File header which is added at the top of each generated C++ source file. Each element of the configuration value represents a new line.",
+          "description": "File header which is added at the top of each generated C/C++ source file. Each element of the configuration value represents a new line.",
           "scope": "resource"
         },
         "codegen-cpp.FileHeader.ForC++Header": {
           "type": "array",
           "default": [],
-          "description": "File header which is added at the top of each generated C++ header file. Each element of the configuration value represents a new line.",
+          "description": "File header which is added at the top of each generated C/C++ header file. Each element of the configuration value represents a new line.",
           "scope": "resource"
         },
         "codegen-cpp.OutputFileExtension.ForC++Source": {
@@ -61,6 +66,22 @@
           "pattern": "^[^\\s]+$",
           "patternErrorMessage": "Must not contain whitespaces!",
           "description": "File extension used when generating C++ header files"
+        },
+        "codegen-cpp.OutputFileExtension.ForCSource": {
+          "type": "string",
+          "default": "c",
+          "maxLength": "255",
+          "pattern": "^[^\\s]+$",
+          "patternErrorMessage": "Must not contain whitespaces!",
+          "description": "File extension used when generating C source files"
+        },
+        "codegen-cpp.OutputFileExtension.ForCHeader": {
+          "type": "string",
+          "default": "h",
+          "maxLength": "255",
+          "pattern": "^[^\\s]+$",
+          "patternErrorMessage": "Must not contain whitespaces!",
+          "description": "File extension used when generating C header files"
         },
         "codegen-cpp.deduceOutputFileNames": {
           "type": "boolean",
@@ -172,38 +193,33 @@
       {
         "command": "codegen-cpp.cppSourceFromHeader",
         "title": "codegen-cpp: Generate source file from header",
-        "when": "editorLangId == cpp",
-        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorLangId == cpp || editorLangId == c"
       },
       {
         "command": "codegen-cpp.cppInterfaceImplFromHeader",
         "title": "codegen-cpp: Generate interface implementation source/header files",
         "when": "editorLangId == cpp",
-        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorLangId == cpp"
       },
       {
         "command": "codegen-cpp.cppSourceFromHeaderSelection",
         "title": "codegen-cpp: Generate source stub(s) for selection",
-        "when": "editorLangId == cpp && editorHasSelection",
-        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorHasSelection && editorLangId == cpp || editorLangId == c"
       },
       {
         "command": "codegen-cpp.cppInterfaceImplFromHeaderSelection",
         "title": "codegen-cpp: Generate interface implementation source/header stub(s) for selection",
-        "when": "editorLangId == cpp",
-        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorHasSelection && editorLangId == cpp"
       },
       {
         "command": "codegen-cpp.cppAbstractFactoryFromHeader",
         "title": "codegen-cpp: Generate abstract factory(s) from header",
-        "when": "editorLangId == cpp",
-        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorLangId == cpp"
       },
       {
         "command": "codegen-cpp.cppAbstractFactoryFromHeaderSelection",
         "title": "codegen-cpp: Generate abstract factory(s) from header for selection",
-        "when": "editorLangId == cpp && editorHasSelection",
-        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorHasSelection && editorLangId == cpp"
       }
     ],
     "menus": {
@@ -211,7 +227,7 @@
         {
           "submenu": "codegen-cpp/context/generate",
           "group": "1_modification",
-          "when": "editorLangId == cpp && resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/"
+          "when": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorLangId == cpp || editorLangId == c"
         }
       ],
       "codegen-cpp/context/generate": [
@@ -221,11 +237,11 @@
         },
         {
           "command": "codegen-cpp.cppInterfaceImplFromHeader",
-          "when": "!editorHasSelection"
+          "when": "!editorHasSelection && editorLangId == cpp"
         },
         {
           "command": "codegen-cpp.cppAbstractFactoryFromHeader",
-          "when": "!editorHasSelection"
+          "when": "!editorHasSelection && editorLangId == cpp"
         },
         {
           "command": "codegen-cpp.cppSourceFromHeaderSelection",
@@ -233,11 +249,11 @@
         },
         {
           "command": "codegen-cpp.cppInterfaceImplFromHeaderSelection",
-          "when": "editorHasSelection"
+          "when": "editorHasSelection && editorLangId == cpp"
         },
         {
           "command": "codegen-cpp.cppAbstractFactoryFromHeaderSelection",
-          "when": "editorHasSelection"
+          "when": "editorHasSelection && editorLangId == cpp"
         }
       ]
     },

@@ -8,6 +8,7 @@ import {
   TextDocumentScopeAdder,
   TextDocumentScopeDeleter,
 } from "./TextDocumentManipulation";
+import { getLanguage } from "./Configuration";
 
 export class HeaderFileMerger implements IFileMerger {
   private _scopeAdder: TextDocumentScopeAdder;
@@ -38,7 +39,8 @@ export class HeaderFileMerger implements IFileMerger {
     const text = existingDocument.getText();
     this._existingHeaderFile = new cpp.HeaderFile(
       existingDocument.fileName,
-      text
+      text,
+      getLanguage(existingDocument)
     );
   }
 

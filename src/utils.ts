@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { Language, getLanguage } from "./Configuration";
 
 export async function asyncForEach<Type>(
   array: Type[],
@@ -29,13 +30,18 @@ export async function awaitMapEntries<KeyType, ValueType>(
 export function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "UNKOWN";
 }
-type FileConstructor<T> = new (name: string, content: string) => T;
-export function createCppFileFromDocument<T>(
+type FileConstructor<T> = new (
+  name: string,
+  content: string,
+  language: Language
+) => T;
+export function createFileFromDocument<T>(
   ctor: FileConstructor<T>,
   document: vscode.TextDocument
 ): T | undefined {
+  const language = getLanguage(document);
   try {
-    return new ctor(document.fileName, document.getText());
+    return new ctor(document.fileName, document.getText(), language);
   } catch (error) {
     vscode.window.showErrorMessage(
       "Unable to parse file: " + getErrorMessage(error)

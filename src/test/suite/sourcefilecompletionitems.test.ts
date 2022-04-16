@@ -10,6 +10,7 @@ import chai = require("chai");
 import { ClassImplementation } from "../../cpp/Class";
 import { Namespace } from "../../cpp/Namespace";
 import { SourceFileCompletionItems } from "../../SourceFileCompletionItems";
+import { Language } from "../../Configuration";
 chai.use(require("chai-string"));
 const assert = chai.assert;
 const expect = chai.expect;
@@ -39,11 +40,13 @@ suite("SourceFileCompletionItems", async () => {
   beforeEach(() => {
     testHeaderFile = new cpp.HeaderFile(
       testHeaderDocument.fileName,
-      testHeaderDocument.getText()
+      testHeaderDocument.getText(),
+      Language.cpp
     );
     testSourceFile = new cpp.SourceFile(
       testSourceDocument.fileName,
-      testSourceDocument.getText()
+      testSourceDocument.getText(),
+      Language.cpp
     );
   });
 

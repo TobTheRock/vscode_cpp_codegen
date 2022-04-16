@@ -74,6 +74,8 @@ interface IFileHeaderSection {
 interface IOutputFileExtensionSection {
   forCppSource: string;
   forCppHeader: string;
+  forCSource: string;
+  forCHeader: string;
 }
 interface IOutputDirectorySelectorSection {
   mode: DirectorySelectorMode;
@@ -141,6 +143,8 @@ export class Configuration {
       forCppHeader: getConfigString(
         "codegen-cpp.OutputFileExtension.ForC++Header"
       ),
+      forCSource: getConfigString("codegen-cpp.OutputFileExtension.ForCSource"),
+      forCHeader: getConfigString("codegen-cpp.OutputFileExtension.ForCHeader"),
     };
 
     const outputDirectorySelector: IOutputDirectorySelectorSection = {
@@ -193,4 +197,20 @@ export class Configuration {
   }
 
   private static _config: IExtensionConfiguration | undefined;
+}
+
+export enum Language {
+  cpp,
+  c,
+}
+
+export function getLanguage(document: vscode.TextDocument): Language {
+  const languageId = document.languageId;
+  if (languageId === "cpp") {
+    return Language.cpp;
+  } else if (languageId === "c") {
+    return Language.c;
+  } else {
+    return Language.cpp;
+  }
 }

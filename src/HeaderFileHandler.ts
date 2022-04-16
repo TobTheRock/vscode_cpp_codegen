@@ -4,7 +4,11 @@ import * as io from "./io";
 import * as vscode from "vscode";
 import * as ui from "./ui";
 import * as path from "path";
-import { IExtensionConfiguration, RefactoringPreview } from "./Configuration";
+import {
+  IExtensionConfiguration,
+  Language,
+  RefactoringPreview,
+} from "./Configuration";
 import {
   asyncForEach,
   getActiveEditorIndentStep,
@@ -120,11 +124,31 @@ export class HeaderFileHandler {
     fileName: string
   ): vscode.Uri {
     if (io.isSourceFileSerializationMode(mode)) {
-      fileName += "." + this._config.outputFileExtension.forCppSource;
+      fileName += "." + this.getSourceExtension();
     } else {
-      fileName += "." + this._config.outputFileExtension.forCppHeader;
+      fileName += "." + this.getHeaderExtension();
     }
     return vscode.Uri.joinPath(outputDirectory, fileName);
+  }
+
+  private getSourceExtension(): string {
+    switch (this._headerFile.language) {
+      case Language.c:
+        return this._config.outputFileExtension.forCSource;
+      case Language.cpp:
+      default:
+        return this._config.outputFileExtension.forCppSource;
+    }
+  }
+
+  private getHeaderExtension(): string {
+    switch (this._headerFile.language) {
+      case Language.c:
+        return this._config.outputFileExtension.forCHeader;
+      case Language.cpp:
+      default:
+        return this._config.outputFileExtension.forCppHeader;
+    }
   }
 
   private createFileHeader(

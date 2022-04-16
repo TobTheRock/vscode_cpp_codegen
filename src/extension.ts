@@ -4,9 +4,13 @@ import * as vscode from "vscode";
 import * as io from "./io";
 import * as cpp from "./cpp";
 import * as ui from "./ui";
-import { Configuration, IExtensionConfiguration } from "./Configuration";
+import {
+  Configuration,
+  getLanguage,
+  IExtensionConfiguration,
+} from "./Configuration";
 import { HeaderFileHandler } from "./HeaderFileHandler";
-import { createCppFileFromDocument, getErrorMessage } from "./utils";
+import { createFileFromDocument, getErrorMessage } from "./utils";
 import { SourceFileCompletionProvider } from "./SourceFileCompletionProvider";
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -18,52 +22,6 @@ export async function activate(context: vscode.ExtensionContext) {
       registerCompletionProvider(config);
     })
   );
-
-  async function createSourceFromHeader(
-    textEditor: vscode.TextEditor,
-    selection?: io.TextScope
-  ) {
-    const headerFile = createHeaderFile(textEditor);
-    if (headerFile) {
-      await generateStubsFromHeader(
-        headerFile,
-        config,
-        selection,
-        io.SerializableMode.source
-      );
-    }
-  }
-
-  async function createImplFromHeader(
-    textEditor: vscode.TextEditor,
-    selection?: io.TextScope
-  ) {
-    const headerFile = createHeaderFile(textEditor);
-    if (headerFile) {
-      await generateStubsFromHeader(
-        headerFile,
-        config,
-        selection,
-        io.SerializableMode.implHeader,
-        io.SerializableMode.implSource
-      );
-    }
-  }
-
-  async function createAbstractFactory(
-    textEditor: vscode.TextEditor,
-    selection?: io.TextScope
-  ) {
-    const headerFile = createHeaderFile(textEditor);
-    if (headerFile) {
-      await generateStubsFromHeader(
-        headerFile,
-        config,
-        selection,
-        io.SerializableMode.abstractFactoryHeader
-      );
-    }
-  }
 
   context.subscriptions.push(
     vscode.commands.registerTextEditorCommand(
@@ -108,16 +66,47 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   registerCompletionProvider(config);
+
+  async function createSourceFromHeader(
+    textEditor: vscode.TextEditor,
+    selection?: io.TextScope
+  ) {
+    createHeaderFileAndGenerateStubs(
+      textEditor,
+      config,
+      selection,
+      io.SerializableMode.source
+    );
+  }
+
+  async function createImplFromHeader(
+    textEditor: vscode.TextEditor,
+    selection?: io.TextScope
+  ) {
+    createHeaderFileAndGenerateStubs(
+      textEditor,
+      config,
+      selection,
+      io.SerializableMode.implHeader,
+      io.SerializableMode.implSource
+    );
+  }
+
+  async function createAbstractFactory(
+    textEditor: vscode.TextEditor,
+    selection?: io.TextScope
+  ) {
+    createHeaderFileAndGenerateStubs(
+      textEditor,
+      config,
+      selection,
+      io.SerializableMode.abstractFactoryHeader
+    );
+  }
 }
 
 // this method is called when your extension is deactivated
 export function deactivate() {}
-
-function createHeaderFile(
-  textEditor: vscode.TextEditor
-): cpp.HeaderFile | undefined {
-  return createCppFileFromDocument(cpp.HeaderFile, textEditor.document);
-}
 
 function getSelection(textEditor: vscode.TextEditor): io.TextScope | undefined {
   const selectionStart = textEditor.document.offsetAt(
@@ -130,6 +119,24 @@ function getSelection(textEditor: vscode.TextEditor): io.TextScope | undefined {
   }
 
   return new io.TextScope(selectionStart, selectionEnd);
+}
+
+async function createHeaderFileAndGenerateStubs(
+  textEditor: vscode.TextEditor,
+  config: IExtensionConfiguration,
+  selection?: io.TextScope,
+  ...modes: io.SerializableMode[]
+) {
+  const headerFile = createHeaderFile(textEditor);
+  if (headerFile) {
+    await generateStubsFromHeader(headerFile, config, selection, ...modes);
+  }
+}
+
+function createHeaderFile(
+  textEditor: vscode.TextEditor
+): cpp.HeaderFile | undefined {
+  return createFileFromDocument(cpp.HeaderFile, textEditor.document);
 }
 
 async function generateStubsFromHeader(
@@ -158,7 +165,7 @@ async function generateStubsFromHeader(
 
 function registerCompletionProvider(config: IExtensionConfiguration) {
   vscode.languages.registerCompletionItemProvider(
-    "cpp",
+    ["c", "cpp"],
     new SourceFileCompletionProvider(config),
     config.sourceFileCompletionProvider.trigger
   );

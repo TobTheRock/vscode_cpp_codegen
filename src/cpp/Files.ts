@@ -3,16 +3,23 @@ import * as io from "../io";
 import * as path from "path";
 import { HeaderParser } from "./HeaderParser";
 import { SourceParser } from "./SourceParser";
+import { Language } from "../Configuration";
 
 export interface IFile extends io.IDeserializable {
   readonly directory: string;
   readonly basename: string;
   readonly extension: string;
+  readonly language: Language;
   readonly rootNamespace: INamespace;
 }
 
 abstract class FileBase implements IFile {
-  constructor(filePath: string, content: string, private _parser: IParser) {
+  constructor(
+    filePath: string,
+    content: string,
+    public language: Language,
+    private _parser: IParser
+  ) {
     this.directory = path.dirname(filePath);
     this.extension = filePath.split(".").slice(-1)[0];
     this.basename = path.basename(filePath, "." + this.extension);
@@ -44,14 +51,14 @@ abstract class FileBase implements IFile {
 }
 
 export class SourceFile extends FileBase {
-  constructor(filePath: string, content: string) {
-    super(filePath, content, SourceParser);
+  constructor(filePath: string, content: string, language: Language) {
+    super(filePath, content, language, SourceParser);
   }
 }
 
 export class HeaderFile extends FileBase {
-  constructor(filePath: string, content: string) {
-    super(filePath, content, HeaderParser);
+  constructor(filePath: string, content: string, language: Language) {
+    super(filePath, content, language, HeaderParser);
   }
 
   serialize(options: io.SerializationOptions): string {
