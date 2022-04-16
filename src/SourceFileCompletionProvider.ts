@@ -147,7 +147,7 @@ export class SourceFileCompletionProvider
     const escapedConfiguredTriggerCharacter =
       configuredTriggerCharacter.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 
-    const regex = `^(\\s*)${escapedConfiguredTriggerCharacter}`;
+    const regex = `^(\\s*)${escapedConfiguredTriggerCharacter}(\\s*)$`;
     return RegExp(regex).test(currentLine);
   }
 
