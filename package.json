@@ -37,7 +37,7 @@
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
-      "title": "Stub Code Generator C/1C++",
+      "title": "Stub Code Generator C/C++",
       "properties": {
         "codegen-cpp.FileHeader.ForC++Source": {
           "type": "array",
@@ -193,33 +193,33 @@
       {
         "command": "codegen-cpp.cppSourceFromHeader",
         "title": "codegen-cpp: Generate source file from header",
-        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorLangId == cpp || editorLangId == c"
+        "enablement": "resourceExtname in codegen-cpp.headerFileExt && editorLangId == cpp || editorLangId == c"
       },
       {
         "command": "codegen-cpp.cppInterfaceImplFromHeader",
         "title": "codegen-cpp: Generate interface implementation source/header files",
         "when": "editorLangId == cpp",
-        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorLangId == cpp"
+        "enablement": "resourceExtname in codegen-cpp.headerFileExt && editorLangId == cpp"
       },
       {
         "command": "codegen-cpp.cppSourceFromHeaderSelection",
         "title": "codegen-cpp: Generate source stub(s) for selection",
-        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorHasSelection && editorLangId == cpp || editorLangId == c"
+        "enablement": "resourceExtname in codegen-cpp.headerFileExt && editorHasSelection && editorLangId == cpp || editorLangId == c"
       },
       {
         "command": "codegen-cpp.cppInterfaceImplFromHeaderSelection",
         "title": "codegen-cpp: Generate interface implementation source/header stub(s) for selection",
-        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorHasSelection && editorLangId == cpp"
+        "enablement": "resourceExtname in codegen-cpp.headerFileExt && editorHasSelection && editorLangId == cpp"
       },
       {
         "command": "codegen-cpp.cppAbstractFactoryFromHeader",
         "title": "codegen-cpp: Generate abstract factory(s) from header",
-        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorLangId == cpp"
+        "enablement": "resourceExtname in codegen-cpp.headerFileExt && editorLangId == cpp"
       },
       {
         "command": "codegen-cpp.cppAbstractFactoryFromHeaderSelection",
         "title": "codegen-cpp: Generate abstract factory(s) from header for selection",
-        "enablement": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorHasSelection && editorLangId == cpp"
+        "enablement": "resourceExtname in codegen-cpp.headerFileExt && editorHasSelection && editorLangId == cpp"
       }
     ],
     "menus": {
@@ -227,7 +227,7 @@
         {
           "submenu": "codegen-cpp/context/generate",
           "group": "1_modification",
-          "when": "resourceExtname =~ /^\\.hpp$|^\\.h$|^\\.hxx$|^\\.hh|^\\.H/ && editorLangId == cpp || editorLangId == c"
+          "when": "resourceExtname in codegen-cpp.headerFileExt && editorLangId == cpp || editorLangId == c"
         }
       ],
       "codegen-cpp/context/generate": [

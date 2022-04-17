@@ -5,8 +5,8 @@ Still not perfect, but should work for the most common use cases.
 
 ## Features
 
-The extension is automatically loaded when using the C++ language.
-The following commands are provided while a C++ header file (extension: `hpp`, `h`, `hxx`, `hh`) is open in the editor:
+The extension is automatically loaded when using the C or C++ language.
+The following commands are provided while a C/C++ header file is open in the editor:
 
 - `codegen-cpp: Generate interface implementation source/header files` : Parses the currently opened header file and generates implementation stubs for all available interfaces. The names of the interface implementations can be provided via the UI.
 - `codegen-cpp: Generate interface implementation source/header stub(s) for selection`: Same as above, but only for a certain text selection in the currently opened header file

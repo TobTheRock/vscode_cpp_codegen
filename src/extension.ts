@@ -15,11 +15,13 @@ import { SourceFileCompletionProvider } from "./SourceFileCompletionProvider";
 
 export async function activate(context: vscode.ExtensionContext) {
   let config = Configuration.get();
+  setSupportedHeaderExtensions(config);
 
   context.subscriptions.push(
     Configuration.registerOnChanged(async (updatedConfig) => {
       config = updatedConfig;
       registerCompletionProvider(config);
+      setSupportedHeaderExtensions(config);
     })
   );
 
@@ -107,6 +109,28 @@ export async function activate(context: vscode.ExtensionContext) {
 
 // this method is called when your extension is deactivated
 export function deactivate() {}
+
+function setSupportedHeaderExtensions(config: IExtensionConfiguration) {
+  const supportedHeaderExtensions = [
+    `.${config.outputFileExtension.forCppHeader}`,
+    `.${config.outputFileExtension.forCHeader}`,
+    ".h",
+    ".hpp",
+    ".hh",
+    ".hxx",
+    ".h++",
+    ".H",
+    ".HPP",
+    ".HH",
+    ".HXX",
+    ".H++",
+  ];
+  vscode.commands.executeCommand(
+    "setContext",
+    "codegen-cpp.headerFileExt",
+    supportedHeaderExtensions
+  );
+}
 
 function getSelection(textEditor: vscode.TextEditor): io.TextScope | undefined {
   const selectionStart = textEditor.document.offsetAt(
