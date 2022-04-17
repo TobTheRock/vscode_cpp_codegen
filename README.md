@@ -23,42 +23,12 @@ The following commands are provided while a C/C++ header file is open in the edi
 
 Additional features:
 
-- _Merging header/source files_: in case new file is generated, but one with the same name already exists, a refactoring preview is displayed in VS Code to help merging the files manually (configurable)
-- _Directory Quick Picker_: You can select the output directory of the created files easily and fastly via a VS Code quick pick (configurable)
+- `Source file auto completion`: Provides completion items for missing defintions in a source file (namespace aware). Displaying the completion items can also be triggered by typing a configurable character (default: `.`) in an empty line. Currently this only works if there is a header file with a matching name next to the current source file.
+  ![](./docu/showcase_source_file_autocompletion.gif)
+- `Merging header/source files`: in case new file is generated, but one with the same name already exists, a refactoring preview is displayed in VS Code to help merging the files manually (configurable)
+- `Directory Quick Picker`: You can select the output directory of the created files easily and fastly via a VS Code quick pick (configurable)
 - custom, configurable file headers for the generated files
 - names of to newly created files can be either entered via an input field or deduced from a namepattern
-
-## Extension Settings
-
-The following settings are available:
-
-- `codegen-cpp.FileHeader.ForC++Source`: File header which is added at the top of each generated C++ source file
-- `codegen-cpp.FileHeader.ForC++Header"`: File header which is added at the top of each generated C++ header file
-- `codegen-cpp.OutputFileExtension.ForC++Header`: File extension used when generating C++ header files
-- `codegen-cpp.OutputFileExtension.ForC++Source`: File extension used when generating C++ source files
-- `codegen-cpp.deduceOutputFileNames`: Whether the output file name(s) should be deduced when generating:
-  - _Source from Header_: by keeping the base name
-  - _Interface implementations_: by using the name of the (first) implementation
-    Else the file base name has to be entered via the UI.
-- `codegen-cpp.OutputDirectorySelector.Mode`: Sets how the output directory of generated files can be selected, either:
-  - `Disabled`: Disables the directory selector and created files are put in the directory of the root file.
-  - `QuickPick`: Uses a quick pick selector with fuzzy find
-  - `UI`: Uses a UI window
-- `codegen-cpp.OutputDirectorySelector.IgnoredDirectories`: Relative directory paths which are ignored for selection (anymatch-compatible definition)
-- `codegen-cpp.OutputDirectorySelector.UseGitIgnore`: Extracts ignored directories from the `.gitignore` file if available. Needs a window reload to be applied, as well when `.gitignore` is changed
-- `codegen-cpp.SourceFileNamespace.Serialization`: Sets how namespaces are serialized in generated source files
-  - _Named_: Serialized with an explicit named definition, e.g. `namespace myNamespace{...}`
-  - _Prepended_: Serialized prepended in front of function definitions, e.g. `void myNamespace::MyClass::funct()`
-- `codegen-cpp.RefactoringPreview`: Configure when the refactoring preview is displayed when merging files
-  - _Always_: Always show the refactoring preview
-  - _Never_: Never show the refactoring preview
-  - _Deletion_: Show the refactoring preview when definitions are deleted
-  - _Adding_: Show the refactoring preview when definitions are added
-- `codegen-cpp.Interface.NamePattern`: Pattern for generated interface names of a given class name(`${name}`):
-- `codegen-cpp.Interface.DeduceImplementationName`: Whether to deduce the name of an implementation for an interface from the name pattern. Else an input prompt is displayed.
-
-- `codegen-cpp.AbstractFactory.NamePattern`: PPattern for generated abstract factory names of a given class name(`${name}`)
-- `codegen-cpp.AbstractFactory.DeduceImplementationName`: Whether to deduce the name of an abstract factoryfrom the name pattern. Else an input prompt is displayed.
 
 ## Issues
 
@@ -78,6 +48,12 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 - ...
 
 ## Release Notes
+
+### 0.4.0
+
+- feat: Language support for C
+- feat: Stub definition auto completion in a source file in case there is a header file with matching name next to it
+- fix: enable commands also for custom header extensions
 
 ### 0.3.2
 
