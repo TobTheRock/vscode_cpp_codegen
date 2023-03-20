@@ -49,6 +49,10 @@ Can be reported [here](https://github.com/HerrFroehlich/vscode_cpp_codegen/issue
 
 ## Release Notes
 
+### 0.4.1
+
+- updated dependencies
+
 ### 0.4.0
 
 - feat: Language support for C
