@@ -1,12 +1,12 @@
 import { it } from "mocha";
 
-export function callItAsync<T>(
+export function callItAsync<T extends Object>(
   desc: string,
   data: Array<T>,
   callback: Function
 ) {
   data.forEach(function (val) {
-    it(renderTemplate(desc, val), async() =>  {
+    it(renderTemplate(desc, val), async () => {
       await callback(val);
     });
   });
